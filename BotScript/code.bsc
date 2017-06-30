@@ -1,0 +1,3 @@
+print( "hallo\n\tlol\n" )
+print(input("type smth: "))
+delay(input("type a number: "))

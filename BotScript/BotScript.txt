@@ -1,0 +1,67 @@
+/////////////
+//botscript//
+/////////////
+
+keywords: import, loop, not, and, or, return, var, break, continue
+symbs: , ; [ ] > < = == != <= >= + - * / % (mod) += -= ++ -- ** ? : " '
+datatypes: int,str,bool,float,scope,list,object
+builtins: print(value:*,nobreak:bool), input(value:*,nobreak:bool), delay(ms)
+
+//comment
+/*
+comment
+*/
+
+print(value) //output
+input(message) //input (as string)
+
+import "a" //import file
+
+var a = 8 //declare new variable
+//declare functions
+var foo(arg1,arg2,..) = (scope) //local var args
+foo(args) //call function
+//if a scope wasnt assigned to a variable it will be executed automatically
+
+//use 'return' or 'return v' to jump out of a scope
+//otherwise a scope returns its last unused value
+(true) //returns true
+(a=5,a) //returns 5
+
+main = (scope) //called (if existant) when global part loaded and not called before)
+
+a,b //comma -> a and b will be done
+a;b //semikolon equal next line (not needed)
+
+//if implementation
+(cond)?(/*true*/):(cond)?(/*true*/):(/*false*/)
+a = (cond)?(scope):(scope)
+
+//loops
+loop (scope) //use break to cancel
+
+{k:v, k:v,} //object
+{v,v,} //list -> special object
+list[index]
+
+//case implementation
+	{
+		a:(scope)
+		b:(scope)
+		c:(scope)
+	}(b) //jump to b, other ignored
+
+//type conversion
+datatype(value)
+
+	bool(0) //-> false
+	bool(3) //-> true
+	bool(-3) //-> ?
+	scope('(print("hi"))') //-> (print("hi"))
+	str((print("hi"))) //-> '(print("hi"))'
+	object({a,b,c}) //-> {0:a, 1:b, 2:c}
+	list({0:a, 1:b, 2:c}) //-> {a,b,c}
+
+obj = {"Key":value}
+obj.key //-> value
+obj["key"] //-> value
