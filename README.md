@@ -2,7 +2,7 @@
 # BotScript
 script language with optimized PIN access features
 
-planned syntax: BotScript.txt
+planned syntax: Syntax.txt
 
 execute config.sh to
   create 'botsc' alias for shell terminal
