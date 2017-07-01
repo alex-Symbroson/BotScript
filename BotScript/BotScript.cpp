@@ -41,7 +41,7 @@ variable callBuiltin(uint8 index, variable *var) {
 		break;
 
 		case 3: //delay
-			delay(stof(var->value));
+			delay(strtof(var->value));
 		break;
 	}
 	return ret;
@@ -64,7 +64,7 @@ variable handleScope(Scope *scope) {
 			c++;
 		} else if(*c == '(') {
 			Scope scp("");
-			uint16 scopecount;
+			uint16 scopecount(0);
 			while(*++c != ')' || scopecount) {
 				if(*c == '(') scopecount++;
 				else if(*c == ')') scopecount--;
@@ -88,9 +88,14 @@ variable handleScope(Scope *scope) {
 int main(int argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
 
-	//create code scope of content from default or argument file path
-	Scope code(readFile(argc > 1 ? argv[1] : "code.bsc"));
+		//cout settings
+	cout.precision(15);
+	cout << fixed;
+	cout << strtof("-12345678987654321.12345678987654321") << endl;
 
-	//execute code
-	handleScope(&code);
+		//create code scope of content from default or argument file path
+	//Scope code(readFile(argc > 1 ? argv[1] : "code.bsc"));
+
+		//execute code
+	//handleScope(&code);
 }

@@ -14,6 +14,7 @@
 extern "C" FILE *fopen(const char* path, const char* modes);
 extern "C" int fclose(FILE *f);
 extern "C" int fgetc(FILE *f);
+extern "C" int printf(const char* f, ...);
 
 	//<err.h>
 extern "C" void err(int status=0, const char* format="", ...);
@@ -53,38 +54,33 @@ public:
 };
 
 void replace(string *str, const string& src, const string& ovr) {
-    long int start = 0;
-    while((start = str->find(src, start)) != -1) {
-        str->replace(start, src.length(), ovr);
-        start += ovr.length(); // case 'ovr' is substring of 'src'
+	long int start = 0;
+	while((start = str->find(src, start)) != -1) {
+		str->replace(start, src.length(), ovr);
+		start += ovr.length(); // case 'ovr' is substring of 'src'
     }
 }
 
-/*
-float pow10(int exp) {
-	float ret(1);
+double pow10(int exp) {
+	double ret(1);
 	if(exp > 0) while(exp--) ret *= 10;
 	else if(exp < 0) while(exp++) ret *= 0.1;
 	return ret;
-}*/
+}
 
-float stof(string s) {
-	float f;
-	return istringstream(s) >> f, f;
+double strtof(string s) {
+	double ret(0);
+	if(*(s.end()-1) == '.') s += "0";
+	string::reverse_iterator c(s.begin()), end(s.end());
+	uint f(s.find('.') + 1);
+	if(!f) f = s.length();
+	else f--;
 
-	/*
-	float ret(0);
-	bool neg(*s.begin()=='-');
-	if(neg) replace(&s, ",", "");
-
-
-	uint8 len(s->length());
-	uint8 flt(s->rfind('.'));
-	cout << flt << endl;
-	uint8 i(len);
-
-	//while(i--) ret += pow10(i)
-	*/
+	while(--c >= end) {
+		if(*c == '.' || *c == '-') --c;
+		ret += pow10(--f) * (*c - 48);
+	}
+	return *s.begin()=='-'?-ret:ret;
 }
 
 void delay(uint time) {
