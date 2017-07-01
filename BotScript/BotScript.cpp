@@ -19,6 +19,7 @@ variable getVar(vector<uint16> vec, string name) {
 	return variable("", "", "");
 }
 
+	//returns builtin index (0 = not found)
 uint16 builtin(string s) {
 	uint16 i(0);
 	do if(*(builtins+i) == s) return i + 1;
@@ -26,6 +27,7 @@ uint16 builtin(string s) {
 	return 0;
 }
 
+	//handle builtin call by index
 variable callBuiltin(uint8 index, variable *var) {
 	variable ret("", "", "");
 	switch(index) {
@@ -47,6 +49,7 @@ variable callBuiltin(uint8 index, variable *var) {
 	return ret;
 }
 
+	//scope interpreter
 variable handleScope(Scope *scope) {
 	variable temp("", "", "");
 	if(scope->value == "") return temp;
@@ -85,17 +88,17 @@ variable handleScope(Scope *scope) {
 	return temp;
 }
 
+	//initialisation
 int main(int argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
 
 		//cout settings
-	cout.precision(15);
-	cout << fixed;
-	cout << strtof("-12345678987654321.12345678987654321") << endl;
+	cout.precision(15); //float digits
+	cout << fixed; //prevent scientific notation (e+00)
 
 		//create code scope of content from default or argument file path
-	//Scope code(readFile(argc > 1 ? argv[1] : "code.bsc"));
+	Scope code(readFile(argc > 1 ? argv[1] : "code.bsc"));
 
 		//execute code
-	//handleScope(&code);
+	handleScope(&code);
 }

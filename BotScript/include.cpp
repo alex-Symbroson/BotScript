@@ -1,16 +1,14 @@
 
-#include <iostream> //cout, string, file operations
-#include <string>   //stoi (string non member functions)
-#include <sstream>  //for string to float conversion
+#include <iostream> //cout, string, FILE, freadc,fopen, fclose
+#include <cmath>    //pow10
 #include <vector>   //alternative list container
 
 #define uint   unsigned int       // [0, 4.294.967.295]
 #define uint8  unsigned char      // [0, 255]
 #define uint16 unsigned short int // [0, 65.535]
 
-#define ufloat unsigned float
 
-	//<stdio,h>
+	//<stdio.h>
 extern "C" FILE *fopen(const char* path, const char* modes);
 extern "C" int fclose(FILE *f);
 extern "C" int fgetc(FILE *f);
@@ -53,21 +51,16 @@ public:
 	}
 };
 
+	//replace string
 void replace(string *str, const string& src, const string& ovr) {
 	long int start = 0;
-	while((start = str->find(src, start)) != -1) {
+	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
 		start += ovr.length(); // case 'ovr' is substring of 'src'
     }
 }
 
-double pow10(int exp) {
-	double ret(1);
-	if(exp > 0) while(exp--) ret *= 10;
-	else if(exp < 0) while(exp++) ret *= 0.1;
-	return ret;
-}
-
+	//convert string to double precision float (16 digits)
 double strtof(string s) {
 	double ret(0);
 	if(*(s.end()-1) == '.') s += "0";
@@ -83,13 +76,14 @@ double strtof(string s) {
 	return *s.begin()=='-'?-ret:ret;
 }
 
+	//delay in milliseond
 void delay(uint time) {
 	time = clock() + time*1000;
 	while(clock() < time);
 }
 
-void format(string *s) {
 	//replace some \ placeholders
+void format(string *s) {
 	replace(s, "\\n", "\n");
 	replace(s, "\\t", "\t");
 	replace(s, "\\\\", "\\"); //must be last!!
