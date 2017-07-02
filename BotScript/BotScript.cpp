@@ -2,8 +2,8 @@
 #include "include.h" //includes basic libraries, functions and classes
 
 	//list of builtin functions
-const char* builtins[] = {"print", "input", "delay"};
-const int num_builtins = 3;
+const char* builtins[] = {"print", "input", "delay", "clock"};
+const int num_builtins = 4;
 
 	//list of defined variables
 vector<variable> variables;
@@ -44,6 +44,14 @@ variable callBuiltin(uint8_t index, variable *var) {
 
 		case 3: //delay
 			delay(strtof(var->value));
+		break;
+
+			//clock
+		case 4:
+			ret.type = "integer";
+			char buffer[16];
+			snprintf(buffer, sizeof(buffer), "%i", (int)(clock()/1000));
+			ret.value = buffer;
 		break;
 	}
 	return ret;

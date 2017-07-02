@@ -10,6 +10,7 @@ extern "C" {
 	int fclose(FILE *f);
 	int fgetc(FILE *f);
 	int printf(const char* f, ...);
+	int snprintf(...);
 
 	//<err.h>
 	void err(int status = 0, const char* format = "", ...);
