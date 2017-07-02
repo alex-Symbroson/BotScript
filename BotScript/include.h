@@ -2,7 +2,7 @@
 #include <iostream>  //cout, string, FILE, freadc, fopen, fclose
 #include <cmath>     //pow10
 #include <vector>    //alternative list container
-#include <stdint.h>  //uintn_t types
+#include <stdint.h>   //uintn_t types
 
 	//<stdio.h>
 extern "C" {
