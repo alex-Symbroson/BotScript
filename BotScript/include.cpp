@@ -1,24 +1,27 @@
 
-#include <iostream> //cout, string, FILE, freadc,fopen, fclose
-#include <cmath>    //pow10
-#include <vector>   //alternative list container
+#include <iostream>  //cout, string, FILE, freadc, fopen, fclose
+#include <cmath>     //pow10
+#include <vector>    //alternative list container
+#include <cinttypes> //integer types
 
-#define uint   unsigned int       // [0, 4.294.967.295]
-#define uint8  unsigned char      // [0, 255]
-#define uint16 unsigned short int // [0, 65.535]
+#define uint   uint32_t    // [0, 4.294.967.295]
+#define uint8  uint8_t     // [0, 255]
+#define uint16 uint16_t    // [0, 65.535]
 
 
 	//<stdio.h>
-extern "C" FILE *fopen(const char* path, const char* modes);
-extern "C" int fclose(FILE *f);
-extern "C" int fgetc(FILE *f);
-extern "C" int printf(const char* f, ...);
+extern "C" {
+	FILE *fopen(const char* path, const char* modes);
+	int fclose(FILE *f);
+	int fgetc(FILE *f);
+	int printf(const char* f, ...);
 
 	//<err.h>
-extern "C" void err(int status=0, const char* format="", ...);
+	void err(int status = 0, const char* format = "", ...);
 
 	//<time.h>
-extern "C" long int clock(void);
+	long int clock(void);
+}
 
 using namespace std;
 
