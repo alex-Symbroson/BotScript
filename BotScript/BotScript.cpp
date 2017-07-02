@@ -1,5 +1,5 @@
 
-#include "include.cpp" //includes basic libraries, functions and classes
+#include "include.h" //includes basic libraries, functions and classes
 
 	//list of builtin functions
 const char* builtins[] = {"print", "input", "delay"};
@@ -9,9 +9,9 @@ const int num_builtins = 3;
 vector<variable> variables;
 
 	//returns variable by name based on a list of indices of available variables
-variable getVar(vector<uint16> vec, string name) {
+variable getVar(vector<uint16_t> vec, string name) {
 	if(vec.size()) {
-		vector<uint16>::iterator i(vec.begin()), end(vec.end());
+		vector<uint16_t>::iterator i(vec.begin()), end(vec.end());
 		do if(variables[*i].name == name)
 				return variables[*i];
 		while(++i < end);
@@ -20,15 +20,15 @@ variable getVar(vector<uint16> vec, string name) {
 }
 
 	//returns builtin index (0 = not found)
-uint16 builtin(string s) {
-	uint16 i(0);
+uint16_t builtin(string s) {
+	uint16_t i(0);
 	do if(*(builtins+i) == s) return i + 1;
 	while(++i < num_builtins);
 	return 0;
 }
 
 	//handle builtin call by index
-variable callBuiltin(uint8 index, variable *var) {
+variable callBuiltin(uint8_t index, variable *var) {
 	variable ret("", "", "");
 	switch(index) {
 		case 1: //print
@@ -67,7 +67,7 @@ variable handleScope(Scope *scope) {
 			c++;
 		} else if(*c == '(') {
 			Scope scp("");
-			uint16 scopecount(0);
+			uint16_t scopecount(0);
 			while(*++c != ')' || scopecount) {
 				if(*c == '(') scopecount++;
 				else if(*c == ')') scopecount--;
@@ -78,7 +78,7 @@ variable handleScope(Scope *scope) {
 
 		if(word.length()) {
 			//wenn word = scope & gefolgt von scope then call 1st scope
-			uint16 index(builtin(word));
+			uint16_t index(builtin(word));
 			if(index) //builtin detected
 				temp = callBuiltin(index, &temp);
 
