@@ -1,11 +1,11 @@
 
-#include <iostream>  //cout, string, FILE, freadc, fopen, fclose
+#include <iostream>  //cout, string
 #include <cmath>     //pow10
 #include <vector>    //alternative list container
-#include <stdint.h>   //uintn_t types
+#include <stdint.h>  //uintn_t types
 
-	//<stdio.h>
 extern "C" {
+	//<stdio.h>
 	FILE *fopen(const char* path, const char* modes);
 	int fclose(FILE *f);
 	int fgetc(FILE *f);
@@ -74,7 +74,7 @@ double strtof(string s) {
 	return *s.begin()=='-'?-ret:ret;
 }
 
-	//delay in milliseond
+	//delay in milliseonds
 void delay(uint32_t time) {
 	time = clock() + time*1000;
 	while(clock() < time);
@@ -94,21 +94,18 @@ string readFile(const char* path) {
 		//file may not exist
 	if(!f) err(0, "error reading \"%s\"", path);
 
-		//charakter from file
+		//character from file
 	uint8_t c;
-
-		//whole content
 	string content;
 
-	bool isString, wasSymbol;
-
-
 	while( (c = fgetc(f)) != 255 ) { // 255: eof
-		if(c == '"') isString = !isString;
+		if(c == '"') {
+			content += c;
+			while((c = fgetc(f)), c != '"') content += c;
+		}
 
 			//ignore whitespace
-		if(!isString && wasSymbol)
-			while(whitespace.find(c) < 3) c = fgetc(f);
+		if(whitespace.find(c) < 3) continue;
 
 			//ignore comments
 		if(c == '/') {
@@ -129,7 +126,6 @@ string readFile(const char* path) {
 			continue;
 		}
 
-		wasSymbol = (symbols.find(c) < 22);
 		content += c;
 	}
 	fclose(f);
