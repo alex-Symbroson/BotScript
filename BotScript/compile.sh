@@ -1,1 +1,0 @@
-LTIME=`stat -c %Z /home/pi/Projects/c++/botsc/botsc.cpp`; while true; do ATIME=`stat -c %Z /home/pi/Projects/c++/botsc/botsc.cpp`; if [ "$ATIME" != "$LTIME" ]; then echo compiling botsc.cpp; c++ -O3 /home/pi/Projects/c++/botsc/botsc.cpp; echo compiled; LTIME=; fi; sleep .5; done
