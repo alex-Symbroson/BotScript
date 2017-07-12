@@ -1,18 +1,12 @@
-#!/bin/sh
 
 # gt dir path of script
 path=$(dirname $0)
 
 # if botsc alias not defined in .bashrc -> append .bashrc, execute to enable alias
-[ $(cat ~/.bashrc|egrep "alias botsc" | wc -l) = 0 ] && echo "alias botsc=\'$path/a.out\'" >>~/.bashrc && bash
-
-#compile botsc.cpp if a.out not exist
-[ -e $path/a.out ] || c++ $path/botsc.cpp;
-
-#create compile.sh file if not exist -> checks repeatedly wether botsc.cpp changed - case yes -> recompile
-[ -e $path/compile.sh ] || echo "LTIME=\`stat -c %Z $path/botsc.cpp\`; while true; do ATIME=\`stat -c %Z $path/botsc.cpp\`; if [ \"\$ATIME\" != \"\$LTIME\" ]; then echo compiling botsc.cpp; c++ -O3 $path/botsc.cpp; echo compiled; LTIME=$ATIME; fi; sleep .5; done" > $path/compile.sh && chmod +x $path/compile.sh
+[ $(cat ~/.bashrc|egrep "alias botsc" | wc -l) = 0 ] && echo "alias botsc=\'$path/a.out\'" >> ~/.bashrc && bash
+[ $(cat ~/.bashrc|egrep "alias compile" | wc -l) = 0 ] && echo "alias compile='function f() { c++ -std=c++11 -O3 -lwiringPi -pthread -o $path/src/\$1.out $path/src/\$1.cpp; [ \$2 ] && $path/src/\$1.out; }; f'" >> ~/.bashrc && bash
 
 #create default code.bsc file if not exist
-[ -e $path/code.bsc ] || echo "print(\"hallo\")" > $path/code.bsc
+[ -e $path/src/code.bsc ] || echo "print(\"hallo\")" > $path/src/code.bsc
 
 exit
