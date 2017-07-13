@@ -17,6 +17,5 @@ linux shell commands:
 
 execute config.sh to
 - create 'botsc' alias for shell terminal
-- compile c-code and create 'a.out'
-- create 'compile.sh' (compile BotScript.cpp automatically if changed
+- create 'compile' alias for shell terminal
 - create default 'code.bsc' file
