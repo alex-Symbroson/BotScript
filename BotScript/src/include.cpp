@@ -8,7 +8,7 @@
 
 
 #include "extern.h"
-#include <vector>    //alternative list container
+#include <vector>    //alternative array based list container
 
 
 #ifndef _BSINC_CPP_
@@ -20,28 +20,6 @@ const string symbols(" \n\t!\"%'()*+,-/:;<=>?[]");
 	//whitespace characters
 const string whitespace(" \t\n");
 
-
-class variable {
-public:
-	string type, name, value;
-
-	variable(string name, string value, string type) {
-		this->type  = type;
-		this->name  = name;
-		this->value = value;
-	}
-};
-
-class Scope {
-public:
-	string type, value;
-	vector<uint16_t> variables;
-
-	Scope(string content) {
-		this->type  = "scope";
-		this->value = content;
-	}
-};
 
 	//replace string
 void replace(string *str, const string& src, const string& ovr) {
