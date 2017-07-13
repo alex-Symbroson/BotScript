@@ -14,15 +14,15 @@
 
 class variable;
 
-typedef variable* var;
-typedef vector<var> bs_list;
-typedef unordered_map<string,var> bs_object;
-
-const char* getType(int t) {
-	return t==0?"undefined":t==1?"integer":t==2?"string":t==3?"list":t==4?"object":"unknown";
-}
+#define var       variable*
+#define var_lst   vector<var>
+#define var_obj   unordered_map<string,var>
 
 namespace Variables {
+
+	const char* getType(int t) {
+		return t==0?"undefined":t==1?"integer":t==2?"string":t==3?"list":t==4?"object":"unknown";
+	}
 
 		//integers
 	forward_list<int> integers;
@@ -39,15 +39,15 @@ namespace Variables {
 	}
 
 		//lists
-	forward_list<bs_list> lists;
-	bs_list* addLst(bs_list* v) {
+	forward_list<var_lst> lists;
+	var_lst* addLst(var_lst* v) {
 		lists.push_front(*v);
 		return &lists.front();
 	}
 
 		//objects
-	forward_list<bs_object> objects;
-	bs_object* addObj(bs_object* v) {
+	forward_list<var_obj> objects;
+	var_obj* addObj(var_obj* v) {
 		objects.push_front(*v);
 		return &objects.front();
 	}
@@ -81,36 +81,36 @@ public:
 	}
 
 
-	bs_list* getLst() {return (bs_list*)value;}
-	void get(bs_list** v) {*v = (bs_list*)value;}
-	void set(bs_list v) {*(bs_list*)value = v;}
+	var_lst* getLst() {return (var_lst*)value;}
+	void get(var_lst** v) {*v = (var_lst*)value;}
+	void set(var_lst v) {*(var_lst*)value = v;}
 		//list constuctor
-	variable(bs_list v) {
+	variable(var_lst v) {
 		this->type = 3;
 		this->value = Variables::addLst(&v);
 	}
 
 
-	bs_object* getObj() {return (bs_object*)value;}
-	void get(bs_object** v) {*v = (bs_object*)value;}
-	void set(bs_object v) {*(bs_object*)value = v;}
+	var_obj* getObj() {return (var_obj*)value;}
+	void get(var_obj** v) {*v = (var_obj*)value;}
+	void set(var_obj v) {*(var_obj*)value = v;}
 		//object constuctor
-	variable(bs_object v) {
+	variable(var_obj v) {
 		this->type = 4;
 		this->value = Variables::addObj(&v);
 	}
 
 		//random access for strings and lists
 	var at(int i) {
-		if(type==3) return (*(bs_list*)value)[i];
+		if(type==3) return (*(var_lst*)value)[i];
 		else if(type==2) return new variable((*(string*)(value))[i]);
-		error("%ss don't support random access",getType(type));
+		Error::error("%ss don't support random access",Variables::getType(type));
 	}
 
 		//random access for objects
 	var at(string key) {
-		if(type==4) return (*(bs_object*)value)[key];
-		error("%s don't support random access",getType(type));
+		if(type==4) return (*(var_obj*)value)[key];
+		Error::error("%s don't support random access",Variables::getType(type));
 	}
 
 	var copy() {
@@ -118,49 +118,37 @@ public:
 			case 0: return new variable(nullptr);
 			case 1: return new variable(*(int*)value);
 			case 2: return new variable(*(string*)value);
-			case 3: return new variable(*(bs_list*)value);
-			case 4: return new variable(*(bs_object*)value);
+			case 3: return new variable(*(var_lst*)value);
+			case 4: return new variable(*(var_obj*)value);
 		}
 	}
 
 	void operator=(var v) {
-		const char* vtype = getType(v->type);
-
 		switch(type) {
-			case 0: Error::ict("undefined", vtype);
-
-			case 1: if(v->type==1) value = v->value; break;
-				Error::ict("integer", vtype);
-
-			case 2: if(v->type==2) value = v->value; break;
-				Error::ict("string", vtype);
-
-			case 3: if(v->type==3) value = v->value; break;
-				Error::ict("list", vtype);
-
-			case 4: if(v->type==4) value = v->value; break;
-				Error::ict("object", vtype);
+			case 1: if(v->type==1) value = v->value; return;
+			case 2: if(v->type==2) value = v->value; return;
+			case 3: if(v->type==3) value = v->value; return;
+			case 4: if(v->type==4) value = v->value; return;
 		}
+		Error::ict(Variables::getType(type), Variables::getType(v->type));
 	}
 
 	void operator+=(var v) {
-		const char* vtype = getType(v->type);
-
 		switch(type) {
 			case 0: Error::iop("undefined","+=");
-
-			case 1: if(v->type==1) *(int*)value += *(int*)v->value; break;
-				Error::ict("integer", vtype);
-
-			case 2: if(v->type==2) value = v->value; break;
-				Error::ict("string", vtype);
-
-			case 3: if(v->type==3) value = v->value; break;
-				Error::ict("list", vtype);
-
-			case 4: if(v->type==4) value = v->value; break;
-				Error::ict("object", vtype);
+			case 1: if(v->type==1) *(int*)value += *(int*)v->value; return;
+			case 2: if(v->type==2) *(string*)value += *(string*)v->value; return;
+			case 3: if(v->type==3) ((var_lst*)value)->insert(((var_lst*)value)->end(), ((var_lst*)v)->begin(), ((var_lst*)v)->end()); return;
+			case 4: if(v->type==4) ((var_obj*)value)->insert(((var_obj*)v)->begin(), ((var_obj*)v)->end()); return;
 		}
+		Error::ict(Variables::getType(type), Variables::getType(v->type));
+	}
+
+	void operator-=(var v) {
+		if(type == 1)
+			if(v->type == 1) *(int*)value += *(int*)v->value;
+			else Error::ict("integer", Variables::getType(v->type));
+		else Error::iop(Variables::getType(type), "-=");
 	}
 };
 
@@ -169,23 +157,29 @@ public:
 int main() {
 
 	int* temp1;
-	var a = new variable(15);
+	var a = new variable(5);
 	a->get(&temp1);
 	cout << *temp1 << endl;
 
-	*a = new variable(20);
+	*a = 10;
 	cout << *a->getInt() << endl;
 
 
-	var list = new variable(bs_list({new variable("Hello "), new variable("World!")}));
-	cout << *list->at(0)->getStr() << endl;
+	var list = new variable(var_lst({new variable("Hello "), new variable("World! "), new variable(123)}));
+	cout << *list->at(0)->getStr() << *list->at(1)->getStr() << *list->at(2)->getInt() << endl;
 
+	*list->at(2) = a; //reference
+	a->set(15);
+	cout << *list->at(2)->getInt() << endl;
 
-	bs_object obj;
-	obj["f"] = new variable(555);
+	*list->at(2) = a->copy(); //real copy
+	a->set(20);
+	cout << *list->at(2)->getInt() << endl;
+
+	var_obj obj;
+	obj["f"] = new variable("reference");
 	var vobj = new variable(obj);
 	cout << *vobj->at("f")->getInt() << endl;
-
 	return 0;
 }
 

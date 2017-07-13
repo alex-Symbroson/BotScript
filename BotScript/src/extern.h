@@ -2,44 +2,16 @@
 #ifndef _BS_EXT_H_
 #define _BS_EXT_H_
 
-	#include <stdint.h>  //uintN_t types
+	#include <time.h>    //clock
+	#include <stdio.h>   //fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
 	#include <stdarg.h>  //va_start
+	#include <stdlib.h>  //exit, free
+	#include <stdint.h>  //uintN_t types
 	#include <iostream>  //cout, string
+	#include <string>    //+string non-members
 	#include <cmath>     //pow10
 
 	using namespace std;
-
-	extern "C" {
-		//<stdio.h>
-		#ifndef	_STDIO_H
-		FILE *fopen(const char* path, const char* modes);
-		int fclose(FILE *f);
-		int fgetc(FILE *f);
-		int printf(const char* f, ...);
-		int vprintf(const char* format, ...);
-		int sprintf(...);
-		int snprintf(...);
-		#endif
-
-		//<stdlib.h>
-		#ifndef	_STDLIB_H
-		extern void exit(int status);
-		#endif
-
-		//<time.h>
-		#ifndef	_TIME_H
-		long int clock(void);
-		#endif
-	}
-
-	void error(const char* format, ...) {
-		va_list args;           //argument list ...
-		va_start(args,0);       //init args
-		printf("\033[31;1m");   //style: bold red
-		vprintf(format,args);   //print formatted error msg
-		printf("\033[0;37m\n"); //style: normal white
-		exit(0);
-	}
 
 	#ifndef delay
 			//delay in milliseonds
@@ -77,6 +49,16 @@
 
 
 	namespace Error {
+
+		void error(const char* format, ...) {
+			va_list args;           //argument list ...
+			va_start(args,0);       //init args
+			printf("\033[31;1m");   //style: bold red
+			vprintf(format,args);   //print formatted error msg
+			printf("\033[0;37m\n"); //style: normal white
+			exit(0);
+		}
+
 		//incompatible type
 		void ict(const char* a, const char* b) {
 			error("incompatible types %s and %s", a, b);

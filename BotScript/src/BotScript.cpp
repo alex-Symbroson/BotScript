@@ -69,42 +69,8 @@ variable callBuiltin(uint8_t index, variable *var) {
 }
 
 	//scope interpreter
-variable handleScope(Scope *scope) {
-	variable temp("", "", "");
-	if(scope->value == "") return temp;
+void* handleScope(Scope *scope) {
 
-	string word;
-	string::iterator c(scope->value.begin()), end(scope->value.end());
-
-	do {
-		while(symbols.find(*c) > 21) word += *c++;
-
-		if(*c == '"') {
-			temp.type = "string";
-			while(*++c != '"') temp.value += *c;
-			format(&temp.value);
-			c++;
-		} else if(*c == '(') {
-			Scope scp("");
-			uint16_t scopecount(0);
-			while(*++c != ')' || scopecount) {
-				if(*c == '(') scopecount++;
-				else if(*c == ')') scopecount--;
-				scp.value += *c;
-			}
-			temp = handleScope(&scp);
-		}
-
-		if(word.length()) {
-			//wenn word = scope & gefolgt von scope then call 1st scope
-			uint16_t index(builtin(word));
-			if(index) //builtin detected
-				temp = callBuiltin(index, &temp);
-
-			word = "";
-		}
-	} while(++c < end);
-	return temp;
 }
 
 
@@ -119,7 +85,7 @@ int main(int argc, char *argv[]) {
 	cout << fixed; //prevent scientific notation (e+00)
 
 		//create code scope of content from default or argument file path
-	Scope code(readFile(argc > 1 ? argv[1] : "code.bsc"));
+	Scope code = readFile(argc > 1 ? argv[1] : "code.bsc");
 
 		//execute code
 	handleScope(&code);
