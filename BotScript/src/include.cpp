@@ -22,7 +22,7 @@ const string whitespace(" \t\n");
 
 
 	//replace string
-void replace(string *str, const string *src, const string *ovr) {
+void replace(string* str, string src, string ovr) {
 	long int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
@@ -60,7 +60,10 @@ var_lst readFile(const char* path) {
 #if MAIN == 2
 
 int main() {
-	readfile("code.bsc");
+	//readFile("code.bsc");
+	cout.precision(20);
+	cout << fixed;
+	cout << stod("1.2", 10) << endl;
 	return 0;
 };
 

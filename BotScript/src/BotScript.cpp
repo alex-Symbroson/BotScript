@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
 		//cout settings
 	cout.precision(15); //float digits
-	cout << fixed; //prevent scientific notation (e + 00)
+	//cout << fixed; //prevent scientific notation (e + 00)
 
 		//create code scope of content from default or argument file path
 	var_lst code = readFile(argc > 1? argv[1] : "code.bsc");

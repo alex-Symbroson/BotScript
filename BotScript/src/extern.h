@@ -2,15 +2,15 @@
 #ifndef _BS_EXT_H_
 #define _BS_EXT_H_
 
-	#include <time.h>//clock
-	#include <stdio.h>//fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
-	#include <stdarg.h>//va_start
-	#include <stdlib.h>//exit, free
-	#include <stdint.h>//uintN_t types
-	#include <iostream>//cout, string
-	#include <string>//+ string non - members
-	#include <vector>//alternative array based list container
-	#include <cmath>//pow10
+	#include <time.h>	//clock
+	#include <stdio.h>	//fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
+	#include <stdarg.h>	//va_start
+	#include <stdlib.h>	//exit, free
+	#include <stdint.h>	//uintN_t types
+	#include <iostream>	//cout, string
+	#include <string>	//+ string non - members
+	#include <vector>	//alternative array based list container
+	#include <cmath>	//pow10
 
 	using namespace std;
 
@@ -21,7 +21,7 @@
 			while(clock() < time);
 		}
 	#endif
-
+/*
 		//convert string to double precision float (16 digits)
 	double strtof(string s) {
 		double ret(0);
@@ -46,6 +46,16 @@
 
 			//if first digit is '-' return negative, else positive result
 		return *s.begin() == '-'? - ret:ret;
+	}*/
+
+		//copied (and modified) from stackoverflow, "ausercomment"
+	double stod(string s, uint16_t radix) {
+		double n = 0;
+		uint16_t x = s.size(), y = 0;
+		while(x)
+			if(!(s[--x]^'.')) n /= pow(radix, s.size()-1-x), y += s.size()-x;
+			else n += ((s[x] - (s[x] <= '9'?'0':'7')) * pow(radix, s.size()-1-x-y));
+		return n;
 	}
 
 
