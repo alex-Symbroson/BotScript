@@ -18,7 +18,7 @@
 			//delay in milliseonds
 		void delay(uint32_t time) {
 			time = clock() + time*1000;
-			while(clock()<time);
+			while(clock() < time);
 		}
 	#endif
 
@@ -53,9 +53,9 @@
 
 		void error(const char* format, ...) {
 			va_list args; //argument list ...
-			va_start(args,0); //init args
+			va_start(args, 0); //init args
 			printf("\033[31;1m"); //style: bold red
-			vprintf(format,args); //print formatted error msg
+			vprintf(format, args); //print formatted error msg
 			printf("\033[0;37m\n"); //style: normal white
 			exit(0);
 		}

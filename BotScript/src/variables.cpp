@@ -14,8 +14,8 @@
 class variable;
 
 typedef variable* var;
-typedef vector<var>var_lst;
-typedef unordered_map<string, var>var_obj;
+typedef vector<var> var_lst;
+typedef unordered_map<string, var> var_obj;
 
 namespace Variables {
 
@@ -24,28 +24,28 @@ namespace Variables {
 	}
 
 		//integers
-	forward_list<int>integers;
+	forward_list<int> integers;
 	int* addInt(int* v) {
 		integers.push_front(*v);
 		return &integers.front();
 	}
 
 		//strings
-	forward_list<string>strings;
+	forward_list<string> strings;
 	string* addStr(string* v) {
 		strings.push_front(*v);
 		return &strings.front();
 	}
 
 		//lists
-	forward_list<var_lst>lists;
+	forward_list<var_lst> lists;
 	var_lst* addLst(var_lst* v) {
 		lists.push_front(*v);
 		return &lists.front();
 	}
 
 		//objects
-	forward_list<var_obj>objects;
+	forward_list<var_obj> objects;
 	var_obj* addObj(var_obj* v) {
 		objects.push_front(*v);
 		return &objects.front();
@@ -102,7 +102,7 @@ public:
 	var keys() {
 		if(type == 4) {
 			var_lst keys;
-			for(pair<string, var>kvp : *getObj()) keys.push_back(new variable(kvp.first));
+			for(pair<string, var> kvp : *getObj()) keys.push_back(new variable(kvp.first));
 			return new variable(keys);
 		}
 		Error::imu(Variables::getType(type), "keys");
@@ -111,7 +111,7 @@ public:
 	var values() {
 		if(type == 4) {
 			var_lst vals;
-			for(pair<string, var>kvp : *getObj()) vals.push_back(kvp.second);
+			for(pair<string,var> kvp : *getObj()) vals.push_back(kvp.second);
 			return new variable(vals);
 		}
 		Error::imu(Variables::getType(type), "values");
@@ -198,7 +198,7 @@ int main() {
 	var vobj = new variable(obj);
 	cout << *vobj->at("f")->getStr() << endl;
 
-	for(pair<string, var>kvp : obj) cout << kvp.first << endl;
+	for(pair<string,var> kvp : obj) cout << kvp.first << endl;
 	//for(string v : keys) cout << v << endl;
 	return 0;
 }

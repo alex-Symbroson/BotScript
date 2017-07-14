@@ -14,7 +14,7 @@ const char* builtins[] = {"print", "input", "delay", "clock"};
 const int num_builtins = 4;
 
 	//list of defined variables
-vector<variable>variables;
+vector<variable> variables;
 
 	//returns builtin index (0 = not found)
 uint16_t builtin(string s) {
@@ -22,7 +22,7 @@ uint16_t builtin(string s) {
 	do
 		if(*(builtins + i) == s)
 			return i + 1;
-	while(++i<num_builtins);
+	while(++i < num_builtins);
 	return 0;
 }
 
@@ -35,7 +35,7 @@ var callBuiltin(uint8_t index, var param) {
 		cout << "in progress"; //TODO param->value;
 		string inp;
 		cin >> inp;
-		format( &inp);
+		format(&inp);
 		return new variable(inp);
 	}
 	else if(index == 3) //delay
@@ -43,7 +43,7 @@ var callBuiltin(uint8_t index, var param) {
 
 	else if(index == 4) {//clock
 		char buffer[16];
-		snprintf(buffer, sizeof(buffer), "%i", (int)(clock() / 1));
+		snprintf(buffer, sizeof(buffer), "%i", (int)(clock() / 1000));
 		return new variable((int)(strtof(string(buffer))));
 	}
 	return new variable((int*)0);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 	cout << fixed; //prevent scientific notation (e + 00)
 
 		//create code scope of content from default or argument file path
-	var_lst code = readFile(argc>1? argv[1] : "code.bsc");
+	var_lst code = readFile(argc > 1? argv[1] : "code.bsc");
 
 		//execute code
 	handleScope( &code);
