@@ -24,7 +24,7 @@ Datatypes
 	Object  + +=
 		keys->Lst
 		pop(key)->var
-		values->var
+		values->Lst
 	Scope
 		arguments->Lst
 		content->Str

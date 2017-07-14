@@ -69,6 +69,12 @@
 		void iop(const char* a, const char* b) {
 			error("invalid operator %s for %s", b, a);
 		}
+
+		//invalid member use
+		void imu(const char* a, const char* b) {
+			error("%ss have no '%s' member", a, b);
+		}
+
 	};
 
 #endif

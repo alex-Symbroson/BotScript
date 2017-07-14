@@ -98,16 +98,24 @@ public:
 		this->type = 4;
 		this->value = Variables::addObj(&v);
 	}
-
-	var getKeys() {
-		switch(type) {
-			case 4:
-				var keys;
-				for(pair<string,var> kvp : *getObj()) ((var_lst*)value)->push_back(new variable(kvp.first));
-			return keys;
+/*
+	var keys() {
+		if(type == 4) {
+			var_lst keys;
+			for(pair<string,var> kvp : *getObj()) keys.push_back(new variable(kvp.first));
+			return new variable(keys);
 		}
-		Error::error("%ss have no 'Keys()' member",Variables::getType(type));
+		Error::imu(Variables::getType(type), "keys");
 	}
+
+	var values() {
+		if(type == 4) {
+			var_lst vals;
+			for(pair<string,var> kvp : *getObj()) vals.push_back(kvp.second);
+			return new variable(vals);
+		}
+		Error::imu(Variables::getType(type), "values");
+	}*/
 
 		//random access for strings and lists
 	var at(int i) {
@@ -118,7 +126,7 @@ public:
 
 		//random access for objects
 	var at(string key) {
-		if(type==4) return (*(var_obj*)value)[key];
+		if(type == 4) return (*(var_obj*)value)[key];
 		Error::error("%s don't support random access",Variables::getType(type));
 	}
 
