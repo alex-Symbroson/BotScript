@@ -7,14 +7,14 @@
 #endif
 
 
-#include <wiringPi.h> //-
+#include<wiringPi.h>//- 
 #include "extern.h"
 
 extern "C" {
 	//<softPwm.h>
-	extern int  softPwmCreate (int pin, int value, int range);
-	extern void softPwmWrite  (int pin, int value);
-	extern void softPwmStop   (int pin);
+	extern intsoftPwmCreate (int pin, int value, int range);
+	extern void softPwmWrite(int pin, int value);
+	extern void softPwmStop (int pin);
 }
 
 void setup() {
@@ -28,9 +28,9 @@ int main() {
 	setup();
 
 	int ledRed = 0;
-	softPwmCreate(ledRed, 0, 255);
+	softPwmCreate(ledRed,0, 255);
 
-	for(int i = 0; i<3; i++) {
+	for(int i = 0;i<3;i++) {
 		softPwmWrite(ledRed, 255);
 		delay(1000);
 		softPwmWrite(ledRed, 0);

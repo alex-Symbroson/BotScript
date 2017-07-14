@@ -1,5 +1,5 @@
 
-//c ++- std = c ++ 11 - O3 - o variables.out variables.cpp;./variables.out
+//c++ -std=c++11 -O3 -o variables.out variables.cpp;./variables.out
 
 #ifndef MAIN
 	#define MAIN 5
@@ -7,15 +7,16 @@
 #endif
 
 
-#include <forward_list>  //alternative linked list container
-#include <unordered_map> //k:v object container
+#include<vector>//alternative list container
+#include<forward_list>//alternative linked list container
+#include<unordered_map>//k:v object container
 #include "extern.h"
 
 class variable;
 
-typedef variable* var;
-typedef vector<var>var_lst;
-typedef unordered_map<string, var>var_obj;
+#define var variable*
+#define var_lst vector<var>
+#define var_obj unordered_map<string,var>
 
 namespace Variables {
 
@@ -98,36 +99,18 @@ public:
 		this->type = 4;
 		this->value = Variables::addObj( &v);
 	}
-/*
-	var keys() {
-		if(type == 4) {
-			var_lst keys;
-			for(pair<string, var>kvp : *getObj()) keys.push_back(new variable(kvp.first));
-			return new variable(keys);
-		}
-		Error::imu(Variables::getType(type), "keys");
-	}
-
-	var values() {
-		if(type == 4) {
-			var_lst vals;
-			for(pair<string, var>kvp : *getObj()) vals.push_back(kvp.second);
-			return new variable(vals);
-		}
-		Error::imu(Variables::getType(type), "values");
-	}*/
 
 		//random access for strings and lists
 	var at(int i) {
 		if(type == 3) return (*(var_lst*)value)[i];
 		else if(type == 2) return new variable((*(string*)(value))[i]);
-		Error::error("%ss don't support random access", Variables::getType(type));
+		Error::error("%ss don't support random access",Variables::getType(type));
 	}
 
 		//random access for objects
 	var at(string key) {
 		if(type == 4) return (*(var_obj*)value)[key];
-		Error::error("%s don't support random access", Variables::getType(type));
+		Error::error("%s don't support random access",Variables::getType(type));
 	}
 
 	var copy() {
@@ -152,7 +135,7 @@ public:
 
 	void operator += (var v) {
 		switch(type) {
-			case 0: Error::iop("undefined", "+=");
+			case 0: Error::iop("undefined","+=");
 			case 1: if(v->type == 1) *(int*)value += *(int*)v->value; return;
 			case 2: if(v->type == 2) *(string*)value += *(string*)v->value; return;
 			case 3: if(v->type == 3) ((var_lst*)value)->insert(((var_lst*)value)->end(), ((var_lst*)v)->begin(), ((var_lst*)v)->end()); return;
@@ -193,13 +176,10 @@ int main() {
 	a->set(20);
 	cout << *list->at(2)->getInt() << endl;
 
-	var_obj obj = {{"a", new variable(1)}, {"b", new variable(4) }} ;
+	var_obj obj;
 	obj["f"] = new variable("reference");
 	var vobj = new variable(obj);
-	cout << *vobj->at("f")->getStr() << endl;
-
-	for(pair<string, var>kvp : obj) cout << kvp.first << endl;
-	//for(string v : keys) cout << v << endl;
+	cout << *vobj->at("f")->getInt() << endl;
 	return 0;
 }
 

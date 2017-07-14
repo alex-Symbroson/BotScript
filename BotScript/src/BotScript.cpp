@@ -16,6 +16,18 @@ const int num_builtins = 4;
 	//list of defined variables
 vector<variable>variables;
 
+	//returns variable by name based on a list of indices of available variables
+variable getVar(vector<uint16_t>vec, string name) {
+	if(vec.size()) {
+		vector<uint16_t>::iterator i(vec.begin()), end(vec.end());
+		do
+			if(variables[*i].name == name)
+				return variables[*i];
+		while(++i<end);
+	}
+	return variable("", "", "");
+}
+
 	//returns builtin index (0 = not found)
 uint16_t builtin(string s) {
 	uint8_t i(0);
@@ -27,31 +39,72 @@ uint16_t builtin(string s) {
 }
 
 	//handle builtin call by index
-var callBuiltin(uint8_t index, var param) {
-	if(index == 1) //print
-		cout << "in progress"; //TODO param->value;
+variable callBuiltin(uint8_t index, variable *var) {
+	variable ret("", "", "");
+	switch(index) {
+		case 1: //print
+			cout << var->value;
+		break;
 
-	else if(index == 2) {//input
-		cout << "in progress"; //TODO param->value;
-		string inp;
-		cin >> inp;
-		format( &inp);
-		return new variable(inp);
-	}
-	else if(index == 3) //delay
-		delay(*param->getInt());
+		case 2: //input
+			cout << var->value;
+			ret.type = "string";
+			cin >> ret.value;
+			format( &ret.value);
+		break;
 
-	else if(index == 4) {//clock
-		char buffer[16];
-		snprintf(buffer, sizeof(buffer), "%i", (int)(clock() / 1));
-		return new variable((int)(strtof(string(buffer))));
+		case 3: //delay
+			delay(strtof(var->value));
+		break;
+
+			//clock
+		case 4:
+			ret.type = "integer";
+			char buffer[16];
+			snprintf(buffer, sizeof(buffer), "%i", (int)(clock() / 1));
+			ret.value = buffer;
+		break;
 	}
-	return new variable((int*)0);
+	return ret;
 }
 
 	//scope interpreter
-void* handleScope(var_lst *scope) {
+variable handleScope(Scope *scope) {
+	variable temp("", "", "");
+	if(scope->value == "") return temp;
 
+	string word;
+	string::iterator c(scope->value.begin()), end(scope->value.end());
+
+	do {
+		while(symbols.find(*c)>21) word += *c++;
+
+		if(*c == '"') {
+			temp.type = "string";
+			while(*++c != '"') temp.value += *c;
+			format( &temp.value);
+			c++;
+		}else if(*c == '(') {
+			Scope scp("");
+			uint16_t scopecount(0);
+			while(*++c != ')' || scopecount) {
+				if(*c == '(') scopecount++;
+				else if(*c == ')') scopecount--;
+				scp.value += *c;
+			}
+			temp = handleScope( &scp);
+		}
+
+		if(word.length()) {
+			//wenn word = scope & gefolgt von scope then call 1st scope
+			uint16_t index(builtin(word));
+			if(index) //builtin detected
+				temp = callBuiltin(index, &temp);
+
+			word = "";
+		}
+	}while(++c<end);
+	return temp;
 }
 
 
@@ -66,7 +119,7 @@ int main(int argc, char *argv[]) {
 	cout << fixed; //prevent scientific notation (e + 00)
 
 		//create code scope of content from default or argument file path
-	var_lst code = readFile(argc>1? argv[1] : "code.bsc");
+	Scope code(readFile(argc>1? argv[1] : "code.bsc"));
 
 		//execute code
 	handleScope( &code);

@@ -8,7 +8,7 @@
 
 
 #include "extern.h"
-#include "variables.cpp"
+#include<vector>//alternative list container
 
 
 #ifndef _BSINC_CPP_
@@ -21,13 +21,35 @@ const string symbols(" \n\t!\"%'()* + , - / :;<=>?[]");
 const string whitespace(" \t\n");
 
 
+class variable {
+public:
+	string type, name, value;
+
+	variable(string name, string value, string type) {
+		this->type = type;
+		this->name = name;
+		this->value = value;
+	}
+};
+
+class Scope {
+public:
+	string type, value;
+	vector<uint16_t>variables;
+
+	Scope(string content) {
+		this->type = "scope";
+		this->value = content;
+	}
+};
+
 	//replace string
-void replace(string *str, const string *src, const string *ovr) {
+void replace(string *str, const string &src, const string &ovr) {
 	long int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
 		start += ovr.length(); //case 'ovr' is substring of 'src'
-	}
+}
 }
 
 	//replace some \ placeholders
@@ -38,7 +60,7 @@ void format(string *s) {
 	replace(s, "\\\\", "\\"); //must be last!!
 }
 
-var_lst readFile(const char* path) {
+string readFile(const char* path) {
 		//file buffer
 	FILE *f = fopen(path, "r");
 
@@ -47,11 +69,46 @@ var_lst readFile(const char* path) {
 
 		//character from file
 	uint8_t c;
-	var_lst content;
+	string content;
 
 	while( (c = fgetc(f)) != 255 ) {//255: eof
+		if(c == '"') {
+			content += c;
+			while((c = fgetc(f)), c != '"') content += c;
+		}
 
+			//ignore whitespace
+		if(whitespace.find(c)<3) {
+			if(c == '\n') c = ';';
+			continue;
+		}
+
+			//ignore comments
+		if(c == '/') {
+			switch(c = fgetc(f)) {
+				case '/': //comment line
+					while((c = fgetc(f)), c != 255 && c != '\n');
+				break;
+
+				case '*': //comment block
+					bool brk;
+					while((c = fgetc(f)) != 255) {
+						if(brk && c == '/') break;
+						brk = (c == '*');
+					}
+				break;
+			}
+			continue;
+		}
+
+		content += c;
 	}
+	fclose(f);
+
+		//file may be dir (or empty)
+	if(content == "") Error::error("error reading empty \"%s\"", path);
+	cout << content << "\n\n";
+	return content;
 }
 
 #endif
