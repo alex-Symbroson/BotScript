@@ -99,6 +99,16 @@ public:
 		this->value = Variables::addObj(&v);
 	}
 
+	var getKeys() {
+		switch(type) {
+			case 4:
+				var keys;
+				for(pair<string,var> kvp : *getObj()) ((var_lst*)value)->push_back(new variable(kvp.first));
+			return keys;
+		}
+		Error::error("%ss have no 'Keys()' member",Variables::getType(type));
+	}
+
 		//random access for strings and lists
 	var at(int i) {
 		if(type==3) return (*(var_lst*)value)[i];
@@ -175,10 +185,13 @@ int main() {
 	a->set(20);
 	cout << *list->at(2)->getInt() << endl;
 
-	var_obj obj;
+	var_obj obj = {{"a", new variable(1)}, {"b", new variable(4)}};
 	obj["f"] = new variable("reference");
 	var vobj = new variable(obj);
-	cout << *vobj->at("f")->getInt() << endl;
+	cout << *vobj->at("f")->getStr() << endl;
+
+	for(pair<string,var> kvp : obj) cout << kvp.first << endl;
+	//for(string v : keys) cout << v << endl;
 	return 0;
 }
 

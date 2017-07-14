@@ -3,9 +3,53 @@
 /////////////
 
 keywords: import, loop, not, and, or, return, var, break, continue
-symbs: , ; [ ] > < = == != <= >= + - * / % (mod) += -= ++ -- ** ? : " '
-datatypes: int,str,bool,float,scope,list,object
-builtins: print(value:*,nobreak:bool), input(value:*,nobreak:bool), delay(ms)
+symbs: , ; [ ] > < = == != <= >= + - * / % += -= ++ -- ** ? : " '
+
+Datatypes
+	Bool    =
+		reverse()
+	Number  + - * / % += -= *= /= %= ++ -- **
+		string->Str
+		isInt()->Bool
+	String  + * += *=
+		find(Str)->int
+		insert(Str)
+		replace(Str,Str)->Str
+		split(Str)->Lst
+	List    + +=
+		find(var)->Num
+		insert(var)
+		pop(Int=List.length-1)->var
+		push(var)
+	Object  + +=
+		keys->Lst
+		pop(key)->var
+		values->var
+	Scope
+		arguments->Lst
+		content->Str
+	Thread
+		create(Scope,var)->Int
+		join()->var
+		cancel()
+	Pin
+		setPin(Num)
+		setInput()
+		Read()->Num
+		setOutput()
+		Write(Num)
+		Stop()
+		...
+
+Namespaces
+	Math
+	...
+
+Builtins
+	print(var)
+	input(var)->var
+	delay(Num)
+clock()->Num(ms)
 
 //comment
 /*

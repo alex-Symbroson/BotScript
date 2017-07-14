@@ -47,7 +47,7 @@ var_lst readFile(const char* path) {
 
 		//character from file
 	uint8_t c;
-	string content;
+	var_lst content;
 
 	while( (c = fgetc(f)) != 255 ) { // 255: eof
 
