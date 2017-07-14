@@ -2,10 +2,60 @@
 //botscript//
 /////////////
 
-keywords: import, loop, not, and, or, return, var, break, continue
-symbs: , ; [ ] > < = == != <= >= + - * / % (mod) += -= ++ -- ** ? : " '
-datatypes: int,str,bool,float,scope,list,object
-builtins: print(value:*,nobreak:bool), input(value:*,nobreak:bool), delay(ms)
+keywords: import, loop, while, label, not, and, or, return, var, break, continue
+symbs: , ; [ ] > < = == != <= >= + - * / % += -= ++ -- ** ? : " '
+
+Datatypes
+//simple datatypes:
+	Bool    =
+		reverse()
+	Int     + - * / % += -= *= /= %= ++ -- **
+		string->Str
+		isInt()->Bool
+	Float   //equal Int
+		...
+	String  + * += *=
+		find(Str)->int
+		insert(Str)
+		replace(Str,Str)->Str
+		split(Str)->Lst
+//complex datatypes:
+	List    + +=     //first item has index 1
+		find(var)->Int
+		insert(var)
+		pop(Int=List.length-1)->var
+		push(var)
+	Object  + +=
+		keys->Lst
+		pop(key)->var
+		values->Lst
+	Function
+		arguments->Lst
+		content->Str
+		jump(simple_type) //jumps to label in function
+	Pin
+		operator=(Int) // set Pin
+		setInput()
+		Read()->Int
+		setOutput()
+		Write(Int)
+		Stop()
+		...
+
+Namespaces
+	Math
+		...
+	Thread
+		create(function, var) -> Int
+		join(Int)->var
+		cancel(Int)
+
+
+Builtins
+	print(var)
+	input(var)->var
+	delay(Int)
+	clock()->Int
 
 //comment
 /*
@@ -18,50 +68,37 @@ input(message) //input (as string)
 import "a" //import file
 
 var a = 8 //declare new variable
-//declare functions
-var foo(arg1,arg2,..) = (scope) //local var args
-foo(args) //call function
-//if a scope wasnt assigned to a variable it will be executed automatically
+var foo = {print("hi")} //declare function
+var foo = (arg1, ...){/*function*/} //function parameters
 
-//use 'return' or 'return v' to jump out of a scope
-//otherwise a scope returns its last unused value
-(true) //returns true
-(a=5,a) //returns 5
+//use 'return' or 'return v' to jump out of a function
 
-main = (scope) //called (if existant) when global part loaded and not called before)
+//priority block
+//was executed first and returns its last value
+(5<8) -> true
+(a=5,a) -> a
+
+main = {/*function*/} //called (if existant) when global part loaded and not called before)
 
 a,b //comma -> a and b will be done
-a;b //semikolon equal next line (not needed)
+a;b //semikolon equal next line (not required)
 
 //if implementation
-(cond)?(/*true*/):(cond)?(/*true*/):(/*false*/)
-a = (cond)?(scope):(scope)
+(cond)?{/*true*/}:{cond}?(/*true*/):{/*false*/}
+a = (cond)?{/*true*/}:{/*false*/}
 
 //loops
-loop (scope) //use break to cancel
+loop {/*function*/}
 
-{k:v, k:v,} //object
-{v,v,} //list -> special object
+[String:value, ...] //object
+[value, ...] //list -> special object
 list[index]
 
 //case implementation
-	{
-		a:(scope)
-		b:(scope)
-		c:(scope)
-	}(b) //jump to b, other ignored
-
-//type conversion
-datatype(value)
-
-	bool(0) //-> false
-	bool(3) //-> true
-	bool(-3) //-> ?
-	scope('(print("hi"))') //-> (print("hi"))
-	str((print("hi"))) //-> '(print("hi"))'
-	object({a,b,c}) //-> {0:a, 1:b, 2:c}
-	list({0:a, 1:b, 2:c}) //-> {a,b,c}
-
-obj = {"Key":value}
-obj.key //-> value
-obj["key"] //-> value
+Int a = 2
+{
+	label 1:{}
+	label 2:{}
+	label 3:{}
+}.jump(a) //jump to b, other ignored
+//just simple datatypes are accepted as label
