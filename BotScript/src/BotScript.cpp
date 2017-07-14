@@ -16,18 +16,6 @@ const int num_builtins = 4;
 	//list of defined variables
 vector<variable> variables;
 
-	//returns variable by name based on a list of indices of available variables
-variable getVar(vector<uint16_t> vec, string name) {
-	if(vec.size()) {
-		vector<uint16_t>::iterator i(vec.begin()), end(vec.end());
-		do
-			if(variables[*i].name == name)
-				return variables[*i];
-		while(++i < end);
-	}
-	return variable("", "", "");
-}
-
 	//returns builtin index (0 = not found)
 uint16_t builtin(string s) {
 	uint8_t i(0);
@@ -39,37 +27,30 @@ uint16_t builtin(string s) {
  }
 
 	//handle builtin call by index
-variable callBuiltin(uint8_t index, variable *var) {
-	variable ret("", "", "");
-	switch(index) {
-		case 1: //print
-			cout << var->value;
-		break;
+var callBuiltin(uint8_t index, var param) {
+	if(index==1) //print
+		cout << "in progress"; //TODO param->value;
 
-		case 2: //input
-			cout << var->value;
-			ret.type = "string";
-			cin >> ret.value;
-			format(&ret.value);
-		break;
-
-		case 3: //delay
-			delay(strtof(var->value));
-		break;
-
-			//clock
-		case 4:
-			ret.type = "integer";
-			char buffer[16];
-			snprintf(buffer, sizeof(buffer), "%i", (int)(clock()/1));
-			ret.value = buffer;
-		break;
+	else if(index==2) { //input
+		cout << "in progress"; //TODO param->value;
+		string inp;
+		cin >> inp;
+		format(&inp);
+		return new variable(inp);
 	}
-	return ret;
+	else if(index==3) //delay
+		delay(*param->getInt());
+
+	else if(index == 4) { //clock
+		char buffer[16];
+		snprintf(buffer, sizeof(buffer), "%i", (int)(clock()/1));
+		return new variable((int)(strtof(string(buffer))));
+	}
+	return new variable((int*)0);
 }
 
 	//scope interpreter
-void* handleScope(Scope *scope) {
+void* handleScope(var_lst *scope) {
 
 }
 
@@ -85,7 +66,7 @@ int main(int argc, char *argv[]) {
 	cout << fixed; //prevent scientific notation (e+00)
 
 		//create code scope of content from default or argument file path
-	Scope code = readFile(argc > 1 ? argv[1] : "code.bsc");
+	var_lst code = readFile(argc > 1 ? argv[1] : "code.bsc");
 
 		//execute code
 	handleScope(&code);

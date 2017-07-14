@@ -8,7 +8,7 @@
 
 
 #include "extern.h"
-#include <vector>    //alternative array based list container
+#include "variables.cpp"
 
 
 #ifndef _BSINC_CPP_
@@ -38,55 +38,20 @@ void format(string *s) {
 	replace(s, "\\\\", "\\"); //must be last!!
 }
 
-string readFile(const char* path) {
+var_lst readFile(const char* path) {
 		//file buffer
 	FILE *f = fopen(path, "r");
 
 		//file may not exist
-	if(!f) error("error reading \"%s\"", path);
+	if(!f) Error::error("error reading \"%s\"", path);
 
 		//character from file
 	uint8_t c;
 	string content;
 
 	while( (c = fgetc(f)) != 255 ) { // 255: eof
-		if(c == '"') {
-			content += c;
-			while((c = fgetc(f)), c != '"') content += c;
-		}
 
-			//ignore whitespace
-		if(whitespace.find(c) < 3) {
-			if(c == '\n') c = ';';
-			continue;
-		}
-
-			//ignore comments
-		if(c == '/') {
-			switch(c = fgetc(f)) {
-				case '/': //comment line
-					while((c = fgetc(f)), c != 255 && c != '\n');
-				break;
-
-				case '*': //comment block
-					bool brk;
-					while((c = fgetc(f)) != 255) {
-						if(brk && c == '/') break;
-						brk = (c == '*');
-					}
-				break;
-			}
-			continue;
-		}
-
-		content += c;
 	}
-	fclose(f);
-
-		//file may be dir (or empty)
-	if(content == "") error("error reading empty \"%s\"", path);
-	cout << content << "\n\n";
-	return content;
 }
 
 #endif

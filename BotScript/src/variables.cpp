@@ -7,16 +7,15 @@
 #endif
 
 
-#include <vector>         //alternative list container
 #include <forward_list>   //alternative linked list container
 #include <unordered_map>  //k:v object container
 #include "extern.h"
 
 class variable;
 
-#define var       variable*
-#define var_lst   vector<var>
-#define var_obj   unordered_map<string,var>
+typedef variable* var;
+typedef vector<var> var_lst;
+typedef unordered_map<string,var> var_obj;
 
 namespace Variables {
 

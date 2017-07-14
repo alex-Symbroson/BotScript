@@ -9,6 +9,7 @@
 	#include <stdint.h>  //uintN_t types
 	#include <iostream>  //cout, string
 	#include <string>    //+string non-members
+	#include <vector>    //alternative array based list container
 	#include <cmath>     //pow10
 
 	using namespace std;
