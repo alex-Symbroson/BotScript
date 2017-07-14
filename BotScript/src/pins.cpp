@@ -18,7 +18,7 @@ extern "C" {
 }
 
 void setup() {
-	if(wiringPiSetup() == -1) error("setup wiringPi failed !");
+	if(wiringPiSetup() == - 1) error("setup wiringPi failed !");
 }
 
 
@@ -28,9 +28,9 @@ int main() {
 	setup();
 
 	int ledRed = 0;
-	softPwmCreate(ledRed,  0, 255);
+	softPwmCreate(ledRed, 0, 255);
 
-	for(int i=0;i<3;i++) {
+	for(int i = 0; i<3; i++) {
 		softPwmWrite(ledRed, 255);
 		delay(1000);
 		softPwmWrite(ledRed, 0);
