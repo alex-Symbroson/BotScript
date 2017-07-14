@@ -2,15 +2,15 @@
 #ifndef _BS_EXT_H_
 #define _BS_EXT_H_
 
-	#include<time.h>//clock
-	#include<stdio.h>//fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
-	#include<stdarg.h>//va_start
-	#include<stdlib.h>//exit, free
-	#include<stdint.h>//uintN_t types
-	#include<iostream>//cout, string
-	#include<string>//+ string non - members
-	#include<vector>//alternative array based list container
-	#include<cmath>//pow10
+	#include <time.h>//clock
+	#include <stdio.h>//fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
+	#include <stdarg.h>//va_start
+	#include <stdlib.h>//exit, free
+	#include <stdint.h>//uintN_t types
+	#include <iostream>//cout, string
+	#include <string>//+ string non - members
+	#include <vector>//alternative array based list container
+	#include <cmath>//pow10
 
 	using namespace std;
 

@@ -22,12 +22,12 @@ const string whitespace(" \t\n");
 
 
 	//replace string
-void replace(string *str, const string &src, const string &ovr) {
+void replace(string *str, const string *src, const string *ovr) {
 	long int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
 		start += ovr.length(); //case 'ovr' is substring of 'src'
-}
+	}
 }
 
 	//replace some \ placeholders
@@ -50,7 +50,7 @@ var_lst readFile(const char* path) {
 	var_lst content;
 
 	while( (c = fgetc(f)) != 255 ) {//255: eof
-		
+
 	}
 }
 
