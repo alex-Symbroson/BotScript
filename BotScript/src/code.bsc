@@ -3,6 +3,8 @@ print("\n")
 print(clock())
 print("\n")
 delay("1000")
+
+
 print(clock())
 print("\n")
 delay("1000")

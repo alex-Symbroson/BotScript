@@ -14,51 +14,6 @@
 
 	using namespace std;
 
-	#ifndef delay
-			//delay in milliseonds
-		void delay(uint32_t time) {
-			time = clock() + time*1000;
-			while(clock() < time);
-		}
-	#endif
-/*
-		//convert string to double precision float (16 digits)
-	double strtof(string s) {
-		double ret(0);
-
-			//"0." -> "0.0"
-		if(*(s.end() - 1) == '.') s += "0";
-
-			//c: one digit before first digit, end = last digit
-		string::reverse_iterator c(s.begin()), end(s.end());
-
-			//find float position, +1 because then 0 -> int
-		uint32_t f = s.find('.') + 1;
-
-		if(!f) f = s.length(); //integer float position is last digit
-		else f--; //subtract previous added 1
-
-			//start calculating from first digit
-		while(--c>= end) {
-			if(*c == '.' || *c == '-')--c; //jump over non - digits
-			ret += pow10(--f) * (*c - 48); //add digit*10^pos to result
-		}
-
-			//if first digit is '-' return negative, else positive result
-		return *s.begin() == '-'? - ret:ret;
-	}*/
-
-		//copied (and modified) from stackoverflow, "ausercomment"
-	double stod(string s, uint16_t radix) {
-		double n = 0;
-		uint16_t x = s.size(), y = 0;
-		while(x)
-			if(!(s[--x]^'.')) n /= pow(radix, s.size()-1-x), y += s.size()-x;
-			else n += ((s[x] - (s[x] <= '9'?'0':'7')) * pow(radix, s.size()-1-x-y));
-		return n;
-	}
-
-
 	namespace Error {
 
 		void error(const char* format, ...) {
@@ -86,5 +41,4 @@
 		}
 
 	};
-
 #endif

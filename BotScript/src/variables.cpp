@@ -12,12 +12,13 @@
 #include "extern.h"
 
 #define NIL 0
-#define INT 1
-#define STR 2
-#define LST 3
-#define OBJ 4
-#define PIN 5
-#define FNC 6
+#define VAR 1
+#define INT 2
+#define STR 3
+#define LST 4
+#define OBJ 5
+#define PIN 6
+#define FNC 7
 
 class variable;
 
@@ -32,6 +33,7 @@ namespace Variables {
 	const char* getType(int t) {
 		switch(t) {
 			case NIL: return "undefined";
+// 			case VAR: return "name";
 			case INT: return "integer";
 			case STR: return "string";
 			case LST: return "list";
@@ -84,6 +86,9 @@ namespace Variables {
 		objects.push_front(*v);
 		return &objects.front();
 	}
+
+	vector<var> variables;
+	void free();
 };
 
 class variable {
@@ -102,13 +107,22 @@ public:
 
 		//constuctor
 	variable(void* v, int type) {
-		if(this->type = type, !type) return; //?
+		if(!(this->type = type)) return;
 		switch(type) {
 			case INT: case PIN: value = Variables::addInt((var_int*)v); return;
-			case STR:           value = Variables::addStr((var_str*)v); return;
+			case STR: case VAR: value = Variables::addStr((var_str*)v); return;
 			case LST: case FNC: value = Variables::addLst((var_lst*)v); return;
 			case OBJ:           value = Variables::addObj((var_obj*)v); return;
 		}
+	}
+
+		//destructor
+	~variable() {
+		vector<var>::iterator it = Variables::variables.begin();
+		while(*it != this) it++;
+		//cout << "removed " << *it << endl;
+		Variables::variables.erase(it);
+		cout << "deleted " << this << " " << Variables::stringify(this) << endl;
 	}
 
 	var_int* getInt() {return (var_int*)value;}
@@ -162,12 +176,13 @@ public:
 	void operator += (var v) {
 		switch(type) {
 			case NIL: Error::iop("undefined", "+=");
-			case INT: if(v->type == INT) *(var_int*)value += *(var_int*)v->value; return;
-			case STR: if(v->type == STR) *(var_str*)value += *(var_str*)v->value; return;
-			case LST: if(v->type == LST) ((var_lst*)value)->insert(((var_lst*)value)->end(), ((var_lst*)v)->begin(), ((var_lst*)v)->end()); return;
-			case OBJ: if(v->type == OBJ) ((var_obj*)value)->insert(((var_obj*)v)->begin(), ((var_obj*)v)->end()); return;
-			default: Error::ict(Variables::getType(type), Variables::getType(v->type));
+			case INT: if(v->type == INT) *(var_int*)value += *(var_int*)v->value; else break; return;
+			case STR: if(v->type == STR) *(var_str*)value += *(var_str*)v->value; else break; return;
+			case LST: if(v->type == LST) ((var_lst*)value)->insert(((var_lst*)value)->end(), v->getLst()->begin(), v->getLst()->end()); else break; return;
+			case OBJ: if(v->type == OBJ) ((var_obj*)value)->insert(v->getObj()->begin(), v->getObj()->end()); else break; return;
+			default: Error::iop(Variables::getType(type), "+=");
 		}
+		Error::ict(Variables::getType(type), Variables::getType(v->type));
 	}
 
 	void operator -= (var v) {
@@ -180,26 +195,32 @@ public:
 
 	//define in Variables declared create functions
 	//using Variables::create(*ptr, int) is better than Variables::create(val) (*.out file smaller)
-var Variables::create(void*   value, int type) {return new variable( value, type);}
-var Variables::create(var_int value, int type) {return new variable(&value, type);}
-var Variables::create(var_str value, int type) {return new variable(&value, type);}
-var Variables::create(var_lst value, int type) {return new variable(&value, type);}
-var Variables::create(var_obj value, int type) {return new variable(&value, type);}
-
+var  Variables::create(void*   value, int type) {variables.push_back(new variable( value, type)); return variables.back();}
+var  Variables::create(var_int value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_str value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_lst value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_obj value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
+void Variables::free() {while(variables.size()) delete variables.front();}
 void Variables::_stringify(var value, string* str) {
 	switch(value->type) {
-		case INT: case PIN: *str += to_string(*value->getInt()); break;
-		case STR:
-			*str += "\"";
-			*str += *value->getStr() + "\"";
+		case PIN: case INT:
+			if(value->type == PIN) *str+="Pin(";
+			*str += to_string(*value->getInt());
+			if(value->type == PIN) *str += ")";
+		break;
+		case STR: case VAR:
+			if(value->type == STR) *str += "\"";
+			*str += *value->getStr();
+			if(value->type == STR) *str += "\"";
 		break;
 		case LST: case FNC:
-			*str += "[";
+			*str += value->type == LST? "[" : "{";
 			for(var val : *value->getLst()) {
-				if(str->operator[](str->length()-1)!='[') *str += ",";
+				string::reverse_iterator end(str->end());
+				if(*end != '[' && *end != '{') *str += ",";
 				_stringify(val, str);
 			}
-			*str += "]";
+			*str += value->type == LST? "]" : "}";
 		break;
 		case OBJ:
 			*str += "[";
@@ -217,16 +238,19 @@ void Variables::_stringify(var value, string* str) {
 #if MAIN == 5
 
 int main() {
+
 	var a = Variables::create(5);
 	cout << *a->getInt() << endl;
-
 
 	var list = Variables::create(var_lst( {
 		Variables::create("Hello "),
 		Variables::create("World! "),
 		Variables::create(123)
 	} ));
+
 	cout << *list->at(0)->getStr() << *list->at(1)->getStr() << *list->at(2)->getInt() << endl;
+
+	*list += list; //list->getLst()->insert(list->getLst()->end(), list->getLst()->begin(), list->getLst()->end());
 
 	*list->at(2) = a; //reference
 	int temp = 15;
@@ -241,13 +265,13 @@ int main() {
 	var_obj obj = {{"a", Variables::create(254)}, {"b", Variables::create("eof") }};
 	obj["f"] = Variables::create("reference");
 	var vobj = Variables::create(&obj, OBJ);
-	string temp2 = "finished";
-	vobj->at("f")->set(&temp2);
-	(*vobj->getObj())["list"] = list;
-	cout << *vobj->at("f")->getStr() << endl;
+	(*vobj->getObj())["list"] = list->copy();
 
 	cout << Variables::stringify(vobj) << endl;
+
+	Variables::free();
 	return 0;
 }
 
 #endif
+//35.548

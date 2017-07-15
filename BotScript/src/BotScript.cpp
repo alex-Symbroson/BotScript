@@ -36,17 +36,16 @@ var callBuiltin(uint8_t index, var param) {
 		string inp;
 		cin >> inp;
 		format(&inp);
-		return new variable(inp);
+		return new variable(&inp, STR);
 	}
 	else if(index == 3) //delay
 		delay(*param->getInt());
 
 	else if(index == 4) {//clock
-		char buffer[16];
-		snprintf(buffer, sizeof(buffer), "%i", (int)(clock() / 1000));
-		return new variable((int)(strtof(string(buffer))));
+		uint32_t time = (int)(clock() / 1000);
+		return new variable(&time, INT);
 	}
-	return new variable((int*)0);
+	return new variable(nullptr, NIL);
 }
 
 	//scope interpreter
@@ -63,14 +62,21 @@ int main(int argc, char *argv[]) {
 
 		//cout settings
 	cout.precision(15); //float digits
-	//cout << fixed; //prevent scientific notation (e + 00)
+	cout << fixed; //prevent scientific notation (e + 00)
+
+	const char* path = argc > 1? argv[1] : "code.bsc";
+	string code = readFile("code.bsc", true);
+	if(code == "") Error::error("file \"%s\" is empty", path);
 
 		//create code scope of content from default or argument file path
-	var_lst code = readFile(argc > 1? argv[1] : "code.bsc");
+	var_lst main = toCode(&code);
+
+	cout << Variables::stringify(new variable(&main, LST)) << endl;
 
 		//execute code
-	handleScope( &code);
+	handleScope(&main);
 
+	Variables::free();
 	printf("\n");
 }
 #endif
