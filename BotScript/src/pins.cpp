@@ -1,14 +1,16 @@
 
 //c++ -std=c++11 -O3 -lwiringPi -o pins.out pins.cpp;./pins.out
 
-#ifndef MAIN
-	#define MAIN 3
-	int main();
-#endif
-
-
 #include <wiringPi.h> //-
 #include "extern.h"
+
+#ifndef _PINS_CPP_
+#define _PINS_CPP_
+
+#ifndef MAIN
+	#define MAIN 5
+	int main();
+#endif
 
 extern "C" {
 	//<softPwm.h>
@@ -22,7 +24,7 @@ void setup() {
 }
 
 
-#if MAIN == 3
+#if MAIN == 5
 
 int main() {
 	setup();
@@ -42,4 +44,6 @@ int main() {
 	return 0;
 }
 
-#endif
+#endif //MAIN == 5
+
+#endif //_PINS_CPP_

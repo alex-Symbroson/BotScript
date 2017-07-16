@@ -1,14 +1,17 @@
 
+
 //c++ -std=c++11 -O3 -pthread -o threads.out threads.cpp;./threads.out
+
+#ifndef _THREADS_CPP_
+#define _THREADS_CPP_
+
+#include <pthread.h> //pthread_t, pthread_create, pthread_join, pthread_cancel
+#include "extern.h"
 
 #ifndef MAIN
 	#define MAIN 4
 	int main();
 #endif
-
-
-#include <pthread.h> //pthread_t, pthread_create, pthread_join, pthread_cancel
-#include "extern.h"
 
 namespace Thread {
 
@@ -59,7 +62,6 @@ namespace Thread {
 /* example: comparison of filling large array *\
 	0: with standard for-loop
 		~ 2.0 sec
-
 	1: with pthreads
 		THD=001: ~ 2.0 sec
 		THD=002: ~ 1.4 sec
@@ -113,6 +115,8 @@ int arr[NUM];
 		printf("all right!\n");
 		return 0;
 	}
-#endif
+#endif //STATE == 0
 
-#endif
+#endif //MAIN == 4
+
+#endif //_THREADS_CPP_

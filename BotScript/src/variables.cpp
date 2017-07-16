@@ -1,16 +1,19 @@
 
 //c ++- std = c ++ 11 - O3 - o variables.out variables.cpp;./variables.out
 
-#ifndef MAIN
-	#define MAIN 5
-	int main();
-#endif
-
+#ifndef _VARIABLES_CPP_
+#define _VARIABLES_CPP_
 
 #include <forward_list>  //alternative linked list container
 #include <unordered_map> //k:v object container
 #include "extern.h"
 
+#ifndef MAIN
+	#define MAIN 3
+	int main();
+#endif
+
+	//type id's
 #define NIL 0
 #define VAR 1
 #define INT 2
@@ -18,7 +21,8 @@
 #define LST 4
 #define OBJ 5
 #define PIN 6
-#define FNC 7
+#define TRM 7
+#define FNC 8
 
 class variable;
 
@@ -30,15 +34,16 @@ typedef unordered_map<string, var> var_obj;
 
 namespace Variables {
 
-	const char* getType(int t) {
+	const char* getType(uint8_t t) {
 		switch(t) {
 			case NIL: return "undefined";
-// 			case VAR: return "name";
+			case VAR: return "name";
 			case INT: return "integer";
 			case STR: return "string";
 			case LST: return "list";
 			case OBJ: return "object";
 			case PIN: return "pin";
+			case TRM: return "term";
 			case FNC: return "function";
 			default : return "unknown";
 		}
@@ -51,13 +56,17 @@ namespace Variables {
 		_stringify(value, &str);
 		return str;
 	}
+/*
+	var parse(string str) {
+		return _parse(&str);
+	}*/
 
-	var create(void* value, int type = 0);
+	var create(void* value, uint8_t type = 0);
 
 		//integers
 	forward_list<var_int> integers;
 	//return new variable((var_str*)value, STR);
- 	var create(var_int value, int type = 1);
+ 	var create(var_int value, uint8_t type = 1);
 	var_int* addInt(var_int* v) {
 		integers.push_front(*v);
 		return &integers.front();
@@ -65,7 +74,7 @@ namespace Variables {
 
 		//strings
 	forward_list<var_str> strings;
-	var create(var_str value, int type = 2);
+	var create(var_str value, uint8_t type = 2);
 	var_str* addStr(var_str* v) {
 		strings.push_front(*v);
 		return &strings.front();
@@ -73,7 +82,7 @@ namespace Variables {
 
 		//lists
 	forward_list<var_lst> lists;
-	var create(var_lst value, int type = 3);
+	var create(var_lst value, uint8_t type = 3);
 	var_lst* addLst(var_lst* v) {
 		lists.push_front(*v);
 		return &lists.front();
@@ -81,7 +90,7 @@ namespace Variables {
 
 		//objects
 	forward_list<var_obj> objects;
-	var create(var_obj value, int type = 4);
+	var create(var_obj value, uint8_t type = 4);
 	var_obj* addObj(var_obj* v) {
 		objects.push_front(*v);
 		return &objects.front();
@@ -93,26 +102,33 @@ namespace Variables {
 
 class variable {
 public:
-	int type; //0:null, 1:int, 2:str, 3:lst, 4:obj
+	uint8_t type;
 	void* value;
 
 	void set(void* v) {
 		switch(type) {
-			case INT: case PIN: *(var_int*)value = *(var_int*)v; return;
-			case STR:           *(var_str*)value = *(var_str*)v; return;
-			case LST: case FNC: *(var_lst*)value = *(var_lst*)v; return;
-			case OBJ:           *(var_obj*)value = *(var_obj*)v; return;
+			case INT:
+			case PIN: *(var_int*)value = *(var_int*)v; return;
+			case STR: *(var_str*)value = *(var_str*)v; return;
+			case LST:
+			case TRM:
+			case FNC: *(var_lst*)value = *(var_lst*)v; return;
+			case OBJ: *(var_obj*)value = *(var_obj*)v; return;
 		}
 	}
 
 		//constuctor
-	variable(void* v, int type) {
+	variable(void* v, uint8_t type) {
 		if(!(this->type = type)) return;
 		switch(type) {
-			case INT: case PIN: value = Variables::addInt((var_int*)v); return;
-			case STR: case VAR: value = Variables::addStr((var_str*)v); return;
-			case LST: case FNC: value = Variables::addLst((var_lst*)v); return;
-			case OBJ:           value = Variables::addObj((var_obj*)v); return;
+			case INT:
+			case PIN: value = Variables::addInt((var_int*)v); return;
+			case STR:
+			case VAR: value = Variables::addStr((var_str*)v); return;
+			case LST:
+			case TRM:
+			case FNC: value = Variables::addLst((var_lst*)v); return;
+			case OBJ: value = Variables::addObj((var_obj*)v); return;
 		}
 	}
 
@@ -195,11 +211,11 @@ public:
 
 	//define in Variables declared create functions
 	//using Variables::create(*ptr, int) is better than Variables::create(val) (*.out file smaller)
-var  Variables::create(void*   value, int type) {variables.push_back(new variable( value, type)); return variables.back();}
-var  Variables::create(var_int value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_str value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_lst value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_obj value, int type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(void*   value, uint8_t type) {variables.push_back(new variable( value, type)); return variables.back();}
+var  Variables::create(var_int value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_str value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_lst value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
+var  Variables::create(var_obj value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
 void Variables::free() {while(variables.size()) delete variables.front();}
 void Variables::_stringify(var value, string* str) {
 	switch(value->type) {
@@ -213,14 +229,22 @@ void Variables::_stringify(var value, string* str) {
 			*str += *value->getStr();
 			if(value->type == STR) *str += "\"";
 		break;
-		case LST: case FNC:
-			*str += value->type == LST? "[" : "{";
+		case LST: case TRM: case FNC:
+			switch(value->type) {
+				case LST: *str += "["; break;
+				case TRM: *str += "("; break;
+				case FNC: *str += "{"; break;
+			}
 			for(var val : *value->getLst()) {
 				string::reverse_iterator end(str->end());
-				if(*end != '[' && *end != '{') *str += ",";
+				if(*end != '[' && *end != '{' && *end != '(') *str += ",";
 				_stringify(val, str);
 			}
-			*str += value->type == LST? "]" : "}";
+			switch(value->type) {
+				case LST: *str += "]"; break;
+				case TRM: *str += ")"; break;
+				case FNC: *str += "}"; break;
+			}
 		break;
 		case OBJ:
 			*str += "[";
@@ -234,6 +258,7 @@ void Variables::_stringify(var value, string* str) {
 		break;
 	}
 }
+//void Variables::_parse(...) {}
 
 #if MAIN == 5
 
@@ -273,5 +298,6 @@ int main() {
 	return 0;
 }
 
-#endif
-//35.548
+#endif //MAIN == 3
+
+#endif //_VARIABLES_CPP_

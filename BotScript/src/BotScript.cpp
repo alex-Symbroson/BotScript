@@ -1,13 +1,15 @@
 
 //c++ -std=c++11 -O3 -o BotScript.out BotScript.cpp;./BotScript.out
 
-#ifndef MAIN
-	#define MAIN 1
-	int main(int argc, char *argv[]);
-#endif
-
+#ifndef _BOTSCRIPT_CPP_
+#define _BOTSCRIPT_CPP_
 
 #include "include.cpp" //includes basic libraries, functions and classes
+
+#ifndef MAIN
+	#define MAIN 1
+	int main(uint16_t argc, char *argv[]);
+#endif
 
 	//list of builtin functions
 const char* builtins[] = {"print", "input", "delay", "clock"};
@@ -57,7 +59,7 @@ void* handleScope(var_lst *scope) {
 #if MAIN == 1
 
 	//initialisation
-int main(int argc, char *argv[]) {
+int main(uint16_t argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
 
 		//cout settings
@@ -79,4 +81,7 @@ int main(int argc, char *argv[]) {
 	Variables::free();
 	printf("\n");
 }
-#endif
+
+#endif //MAIN == 1
+
+#endif //_BOTSCRIPT_CPP_

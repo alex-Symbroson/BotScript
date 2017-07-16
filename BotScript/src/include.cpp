@@ -1,16 +1,16 @@
 
 //c++ -std=c++11 -O3 -o include.out include.cpp;./include.cpp
 
-#ifndef MAIN
-	#define MAIN 2
-	int main();
-#endif
+#ifndef _BSINC_CPP_
+#define _BSINC_CPP_
 
 #include "extern.h"
 #include "variables.cpp"
 
-#ifndef _BSINC_CPP_
-#define _BSINC_CPP_
+#ifndef MAIN
+	#define MAIN 2
+	int main();
+#endif
 
 	//characters interpreted as symbols
 const string symbols(" \n\t!\"%'()* + , - / :;<=>?[]");
@@ -19,9 +19,9 @@ const string symbols(" \n\t!\"%'()* + , - / :;<=>?[]");
 const string whitespace(" \t\n");
 
 	//copied (and modified) from stackoverflow, "ausercomment"
-double stod(string s, uint16_t radix) {
+double stod(string s, uint8_t radix) {
 	double n = 0;
-	uint16_t x = s.size(), y = 0;
+	uint8_t x = s.size(), y = 0;
 	while(x)
 		if(!(s[--x]^'.')) n /= pow(radix, s.size()-1-x), y += s.size()-x;
 		else n += ((s[x] - (s[x] <= '9'?'0':'7')) * pow(radix, s.size()-1-x-y));
@@ -36,7 +36,7 @@ string dtos(double d) {
 
 	//replace all in string
 void replace(string* str, string src, string ovr) {
-	long int start = 0;
+	int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
 		start += ovr.length(); //case 'ovr' is substring of 'src'
@@ -69,18 +69,20 @@ var_lst toFunction(string::iterator* c) {
 				block.push_back(new variable(&word, STR));
 			}
 			break;
-			case '{': case '(': {
+			case '(': case '{': {
 				var_lst scope;
+				uint8_t type = **c == '('? TRM : FNC;
 				++*c;
 				scope = toFunction(c);
-				block.push_back(new variable(&scope, LST));
+				block.push_back(new variable(&scope, type));
 			}
 			break;
 			default:
 				string word;
 				if(symbols.find(**c) + 1)
-					 do word += **c; while(  symbols.find(*++*c) + 1);
-				else do word += **c; while(!(symbols.find(*++*c) + 1));
+					do word += **c; while(symbols.find(*++*c) + 1);
+				else
+					do word += **c; while(!(symbols.find(*++*c) + 1));
 				block.push_back(new variable(&word, VAR));
 			continue;
 		}
@@ -135,8 +137,6 @@ string readFile(const char* path, bool ignore) {
 	return content;
 }
 
-#endif
-
 
 #if MAIN == 2
 
@@ -146,9 +146,11 @@ int main() {
 	string code = readFile("code.bsc", true);
 	if(code == "") Error::error("file \"code.bsc\" is empty");
 	var_lst main = toCode(&code);
-	cout << Variables::stringify(new variable(&main, LST)) << endl;
+	cout << Variables::stringify(new variable(&main, FNC)) << endl;
 	Variables::free();
 	return 0;
 };
 
-#endif
+#endif //MAIN == 2
+
+#endif //_BSINC_CPP_
