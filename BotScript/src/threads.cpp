@@ -3,13 +3,13 @@
 //c++ -std=c++11 -O3 -pthread -o threads.out threads.cpp;./threads.out
 
 #ifndef _THREADS_CPP_
-#define _THREADS_CPP_
+#define _THREADS_CPP_ 21935
 
 #include <pthread.h> //pthread_t, pthread_create, pthread_join, pthread_cancel
 #include "extern.h"
 
 #ifndef MAIN
-	#define MAIN 4
+	#define MAIN _THREADS_CPP_
 	int main();
 #endif
 
@@ -57,7 +57,7 @@ namespace Thread {
 };
 
 
-#if MAIN == 4
+#if MAIN == _THREADS_CPP_
 
 /* example: comparison of filling large array *\
 	0: with standard for-loop
@@ -117,6 +117,6 @@ int arr[NUM];
 	}
 #endif //STATE == 0
 
-#endif //MAIN == 4
+#endif //MAIN == _THREADS_CPP_
 
 #endif //_THREADS_CPP_

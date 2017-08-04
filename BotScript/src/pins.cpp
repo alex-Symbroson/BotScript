@@ -5,10 +5,10 @@
 #include "extern.h"
 
 #ifndef _PINS_CPP_
-#define _PINS_CPP_
+#define _PINS_CPP_ 21934
 
 #ifndef MAIN
-	#define MAIN 5
+	#define MAIN _PINS_CPP_
 	int main();
 #endif
 
@@ -20,11 +20,11 @@ extern "C" {
 }
 
 void setup() {
-	if(wiringPiSetup() == - 1) error("setup wiringPi failed !");
+	if(wiringPiSetup() == - 1) Error::error("setup wiringPi failed !");
 }
 
 
-#if MAIN == 5
+#if MAIN == _PINS_CPP_
 
 int main() {
 	setup();
@@ -44,6 +44,6 @@ int main() {
 	return 0;
 }
 
-#endif //MAIN == 5
+#endif //MAIN == _PINS_CPP_
 
 #endif //_PINS_CPP_

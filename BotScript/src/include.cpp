@@ -2,15 +2,15 @@
 //c++ -std=c++11 -O3 -o include.out include.cpp;./include.cpp
 
 #ifndef _BSINC_CPP_
-#define _BSINC_CPP_
+#define _BSINC_CPP_ 21932
+
+#ifndef MAIN
+	#define MAIN _BSINC_CPP_
+	int main();
+#endif
 
 #include "extern.h"
 #include "variables.cpp"
-
-#ifndef MAIN
-	#define MAIN 2
-	int main();
-#endif
 
 	//characters interpreted as symbols
 const string symbols(" \n\t!\"%'()* + , - / :;<=>?[]");
@@ -138,7 +138,7 @@ string readFile(const char* path, bool ignore) {
 }
 
 
-#if MAIN == 2
+#if MAIN == _BSINC_CPP_
 
 int main() {
 	cout.precision(20);
@@ -151,6 +151,6 @@ int main() {
 	return 0;
 };
 
-#endif //MAIN == 2
+#endif //MAIN == _BSINC_CPP_
 
 #endif //_BSINC_CPP_

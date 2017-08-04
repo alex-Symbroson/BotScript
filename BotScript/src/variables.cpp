@@ -1,15 +1,15 @@
 
-//c ++- std = c ++ 11 - O3 - o variables.out variables.cpp;./variables.out
+//c++ -std=c++11 -O3 -o variables.out variables.cpp;./variables.out
 
 #ifndef _VARIABLES_CPP_
-#define _VARIABLES_CPP_
+#define _VARIABLES_CPP_ 21933
 
 #include <forward_list>  //alternative linked list container
 #include <unordered_map> //k:v object container
 #include "extern.h"
 
 #ifndef MAIN
-	#define MAIN 3
+	#define MAIN _VARIABLES_CPP_
 	int main();
 #endif
 
@@ -61,12 +61,12 @@ namespace Variables {
 		return _parse(&str);
 	}*/
 
-	var create(void* value, uint8_t type = 0);
+	var create(void* value, uint8_t type = NIL);
 
 		//integers
 	forward_list<var_int> integers;
 	//return new variable((var_str*)value, STR);
- 	var create(var_int value, uint8_t type = 1);
+ 	var create(var_int value, uint8_t type = INT);
 	var_int* addInt(var_int* v) {
 		integers.push_front(*v);
 		return &integers.front();
@@ -74,7 +74,7 @@ namespace Variables {
 
 		//strings
 	forward_list<var_str> strings;
-	var create(var_str value, uint8_t type = 2);
+	var create(var_str value, uint8_t type = STR);
 	var_str* addStr(var_str* v) {
 		strings.push_front(*v);
 		return &strings.front();
@@ -82,7 +82,7 @@ namespace Variables {
 
 		//lists
 	forward_list<var_lst> lists;
-	var create(var_lst value, uint8_t type = 3);
+	var create(var_lst value, uint8_t type = LST);
 	var_lst* addLst(var_lst* v) {
 		lists.push_front(*v);
 		return &lists.front();
@@ -90,7 +90,7 @@ namespace Variables {
 
 		//objects
 	forward_list<var_obj> objects;
-	var create(var_obj value, uint8_t type = 4);
+	var create(var_obj value, uint8_t type = OBJ);
 	var_obj* addObj(var_obj* v) {
 		objects.push_front(*v);
 		return &objects.front();
@@ -105,21 +105,10 @@ public:
 	uint8_t type;
 	void* value;
 
-	void set(void* v) {
-		switch(type) {
-			case INT:
-			case PIN: *(var_int*)value = *(var_int*)v; return;
-			case STR: *(var_str*)value = *(var_str*)v; return;
-			case LST:
-			case TRM:
-			case FNC: *(var_lst*)value = *(var_lst*)v; return;
-			case OBJ: *(var_obj*)value = *(var_obj*)v; return;
-		}
-	}
-
 		//constuctor
 	variable(void* v, uint8_t type) {
-		if(!(this->type = type)) return;
+		if(!type) return;
+		this->type = type;
 		switch(type) {
 			case INT:
 			case PIN: value = Variables::addInt((var_int*)v); return;
@@ -136,15 +125,31 @@ public:
 	~variable() {
 		vector<var>::iterator it = Variables::variables.begin();
 		while(*it != this) it++;
-		//cout << "removed " << *it << endl;
 		Variables::variables.erase(it);
-		cout << "deleted " << this << " " << Variables::stringify(this) << endl;
+		//cout << "deleted " << this << " " << Variables::stringify(this) << endl;
 	}
 
 	var_int* getInt() {return (var_int*)value;}
 	var_str* getStr() {return (var_str*)value;}
 	var_lst* getLst() {return (var_lst*)value;}
 	var_obj* getObj() {return (var_obj*)value;}
+
+	void set(void* v, uint8_t type = 0) {
+		if(!type) type = this->type;
+		if(this->type && this->type != type)
+			Error::ict(Variables::getType(this->type), Variables::getType(type));
+
+		switch(type) {
+			case NIL: variable(v, type); return;
+			case INT:
+			case PIN: *(var_int*)value = *(var_int*)v; return;
+			case STR: *(var_str*)value = *(var_str*)v; return;
+			case LST:
+			case TRM:
+			case FNC: *(var_lst*)value = *(var_lst*)v; return;
+			case OBJ: *(var_obj*)value = *(var_obj*)v; return;
+		}
+	}
 /*
 	var keys() {
 		if(type == OBJ) {
@@ -260,7 +265,7 @@ void Variables::_stringify(var value, string* str) {
 }
 //void Variables::_parse(...) {}
 
-#if MAIN == 5
+#if MAIN == _VARIABLES_CPP_
 
 int main() {
 
@@ -272,9 +277,7 @@ int main() {
 		Variables::create("World! "),
 		Variables::create(123)
 	} ));
-
 	cout << *list->at(0)->getStr() << *list->at(1)->getStr() << *list->at(2)->getInt() << endl;
-
 	*list += list; //list->getLst()->insert(list->getLst()->end(), list->getLst()->begin(), list->getLst()->end());
 
 	*list->at(2) = a; //reference
@@ -298,6 +301,6 @@ int main() {
 	return 0;
 }
 
-#endif //MAIN == 3
+#endif //MAIN == _VARIABLES_CPP_
 
 #endif //_VARIABLES_CPP_

@@ -2,14 +2,14 @@
 //c++ -std=c++11 -O3 -o BotScript.out BotScript.cpp;./BotScript.out
 
 #ifndef _BOTSCRIPT_CPP_
-#define _BOTSCRIPT_CPP_
-
-#include "include.cpp" //includes basic libraries, functions and classes
+#define _BOTSCRIPT_CPP_ 21931
 
 #ifndef MAIN
-	#define MAIN 1
-	int main(uint16_t argc, char *argv[]);
+	#define MAIN _BOTSCRIPT_CPP_
+	int main(int argc, char *argv[]);
 #endif
+
+#include "include.cpp" //includes basic libraries, functions and classes
 
 	//list of builtin functions
 const char* builtins[] = {"print", "input", "delay", "clock"};
@@ -30,22 +30,24 @@ uint16_t builtin(string s) {
 
 	//handle builtin call by index
 var callBuiltin(uint8_t index, var param) {
-	if(index == 1) //print
-		cout << "in progress"; //TODO param->value;
-
-	else if(index == 2) {//input
-		cout << "in progress"; //TODO param->value;
-		string inp;
-		cin >> inp;
-		format(&inp);
-		return new variable(&inp, STR);
-	}
-	else if(index == 3) //delay
-		delay(*param->getInt());
-
-	else if(index == 4) {//clock
-		uint32_t time = (int)(clock() / 1000);
-		return new variable(&time, INT);
+	switch(index) {
+		case 1: //print
+			cout << "in progress"; //TODO param->value;
+		break;
+		case 2: { //input
+			cout << "in progress"; //TODO param->value;
+			string inp;
+			cin >> inp;
+			format(&inp);
+			return new variable(&inp, STR);
+		}
+		case 3: //delay
+			delay(*param->getInt());
+		break;
+		case 4: { //clock
+			uint32_t time = (int)(clock() / 1000);
+			return new variable(&time, INT);
+		}
 	}
 	return new variable(nullptr, NIL);
 }
@@ -56,10 +58,10 @@ void* handleScope(var_lst *scope) {
 }
 
 
-#if MAIN == 1
+#if MAIN == _BOTSCRIPT_CPP_
 
 	//initialisation
-int main(uint16_t argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
 
 		//cout settings
@@ -82,6 +84,6 @@ int main(uint16_t argc, char *argv[]) {
 	printf("\n");
 }
 
-#endif //MAIN == 1
+#endif //MAIN == _BOTSCRIPT_CPP_
 
 #endif //_BOTSCRIPT_CPP_
