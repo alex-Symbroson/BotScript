@@ -1,16 +1,7 @@
 
 #ifndef _BS_EXT_HPP_
 #define _BS_EXT_HPP_
-/*
-	#include <time.h>	//clock
-	#include <stdio.h>	//fopen, fclose, fgetc, printf, vprintf, sprintf, snprintf
-	#include <stdlib.h>	//exit, free
-	#include <stdint.h>	//uintN_t types
-	#include <iostream>	//cout, string
-	#include <string>	//+ string non - members
-	#include <vector>	//alternative array based list container
-	#include <cmath>	//pow10
-*/
+
 	#include <stdio.h>
 
 		//macros for error mesages
