@@ -96,10 +96,10 @@ string readFile(const char* path, bool ignore) {
 	if(!f) error("file \"%s\" does not exist!", path);
 
 		//character from file
-	uint8_t c;
+	int c;
 	string content = "";
 
-	while( (c = fgetc(f)) != 255 ) { //255: eof
+	while( (c = fgetc(f)) != EOF ) {
 		if(ignore) {
 				//whitespace
 			if(whitespace.find(c) < 3) {
@@ -114,11 +114,11 @@ string readFile(const char* path, bool ignore) {
 					//line
 				if(c == '/')
 					do c = fgetc(f);
-					while(c != 255 && c != '\n');
+					while(c != EOF && c != '\n');
 					//block
 				else if(c == '*') {
 					bool brk;
-					while((c = fgetc(f)) != 255) {
+					while((c = fgetc(f)) != EOF) {
 						if(brk && c == '/') break;
 						brk = (c == '*');
 					}
