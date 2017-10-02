@@ -99,7 +99,7 @@ string readFile(const char* path, bool ignore) {
 	uint8_t c;
 	string content;
 
-	while( (c = fgetc(f)) != 255 ) {//255: eof
+	while( (c = fgetc(f)) != 255 ) { //255: eof
 		if(ignore) {
 				//whitespace
 			if(whitespace.find(c) < 3) {
@@ -112,7 +112,9 @@ string readFile(const char* path, bool ignore) {
 			if(c == '/') {
 				c = fgetc(f);
 					//line
-				if(c == '/') while((c = fgetc(f)), c != 255 && c != '\n');
+				if(c == '/')
+					do c = fgetc(f);
+					while(c != 255 && c != '\n');
 					//block
 				else if(c == '*') {
 					bool brk;

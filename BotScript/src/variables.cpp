@@ -168,7 +168,12 @@ variable::variable(void* v, uint8_t type, bool builtin) {
 		case T_VAR: value = Variables::addStr((var_str*)v); return;
 		case T_LST:
 		case T_TRM:
-		case T_FNC: value = Variables::addLst((var_lst*)v); return;
+		case T_FNC:
+			printf("list: [\n");
+			for(var n : *(var_lst*)v)
+				printf("\t%s\n", Variables::stringify(n).c_str());
+			printf("]\n");
+			value = Variables::addLst((var_lst*)v); return;
 		case T_OBJ: value = Variables::addObj((var_obj*)v); return;
 	}
 }
