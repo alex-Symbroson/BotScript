@@ -17,7 +17,7 @@ Dependencies:
    - stdio.h
    - softPwm.h  (part of wiringPi)
    - pthread.h
-   - wiringPi.h  https://github.com/WiringPi/WiringPi
+   - wiringPi.h    ( -> https://github.com/WiringPi/WiringPi )
 - c++:
    - string
    - vector
