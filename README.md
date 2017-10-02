@@ -6,16 +6,19 @@ planned syntax: Syntax.txt
 
 linux shell commands:
 - switch directory:
-  - cd ~/home/pi/Downloads/BotScript/BotScript-master/BotScript
+  - cd ~/Downloads/BotScript/BotScript-master/BotScript
 - compile:
-  - c++ -O3 BotScript.cpp
-- give execute permission:
-  - chmod +x a.out
-- run:
-  - ./a.out
+  - make
 
+Dependencies:
+- math.h
+- stdio.h
+- softPwm.h
+- pthread.h
+- wiringPi.h
 
-execute config.sh to
-- create 'botsc' alias for shell terminal
-- create 'compile' alias for shell terminal
-- create default 'code.bsc' file
+- string
+- vector
+- iostream
+- forward_list
+- unordered_map
