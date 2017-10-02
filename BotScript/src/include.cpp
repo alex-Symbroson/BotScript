@@ -9,6 +9,7 @@
 
 	//copied (and modified) from stackoverflow, "ausercomment"
 double stod(string s, uint8_t radix) {
+	debug("stod %s", s.c_str());
 	double n = 0;
 	uint8_t x = s.size(), y = 0;
 	while(x)
@@ -18,6 +19,7 @@ double stod(string s, uint8_t radix) {
 }
 
 string dtos(double d) {
+	debug("dtos %f", d);
 	char buffer[20];
 	snprintf(buffer, sizeof(buffer), "%.15f", d);
 	return string(buffer);
@@ -25,6 +27,7 @@ string dtos(double d) {
 
 	//replace all in string
 void replace(string* str, string src, string ovr) {
+	debug("replace");
 	int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
@@ -42,6 +45,7 @@ void delay(int time) {
 
 	//replace some \ placeholders
 void format(string *s) {
+	debug("format");
 	replace(s, "\\n", "\n");
 	replace(s, "\\t", "\t");
 	replace(s, "\\033", "\033");
@@ -50,17 +54,20 @@ void format(string *s) {
 
 	//converts scope string to term
 var_lst toFunction(string::iterator* c) {
+	debug("toFunction");
 	var_lst block = {};
 	while(**c != ')' && **c != '}' && **c != 255) {
 		switch(**c) {
 			case '"': {
+				debug("toFunction case '\"'");
 				string word = "";
 				while(*++*c != '"') word += **c;
 				block.push_back(new variable(&word, T_STR));
 			}
 			break;
 			case '(': case '{': {
-				var_lst scope = {};
+				debug("toFunction case '(' or '{'");
+				var_lst scope;
 				uint8_t type = **c == '('? T_TRM : T_FNC;
 				++*c;
 				scope = toFunction(c);
@@ -68,6 +75,7 @@ var_lst toFunction(string::iterator* c) {
 			}
 			break;
 			default:
+				debug("toFunction case default");
 				string word = "";
 				if(symbols.find(**c) + 1)
 					do word += **c; while(symbols.find(*++*c) + 1);
@@ -90,6 +98,7 @@ var_lst toCode(string* code) {
 
 	//ignore == true -> ignore useless whitespace
 string readFile(const char* path, bool ignore) {
+	debug("reading file %s", path);
 		//file buffer
 	FILE *f = fopen(path, "r");
 
@@ -129,5 +138,6 @@ string readFile(const char* path, bool ignore) {
 		content += c;
 	}
 	content += c;
+	debug("got %s\n", content);
 	return content;
 }

@@ -157,6 +157,7 @@ namespace Variables {
  * * * * * * * * * */
 
 variable::variable(void* v, uint8_t type, bool builtin) {
+	debug("variable::constructor %i %s", type, Variables::getType(type));
 	if(!type) return;
 	this->type = type;
 	this->builtin = builtin;
@@ -169,10 +170,10 @@ variable::variable(void* v, uint8_t type, bool builtin) {
 		case T_LST:
 		case T_TRM:
 		case T_FNC:
-			printf("list: [\n");
+			debug("list: [");
 			for(var n : *(var_lst*)v)
-				printf("\t%s\n", Variables::stringify(n).c_str());
-			printf("]\n");
+				debug("\t%s", Variables::stringify(n).c_str());
+			debug("]");
 			value = Variables::addLst((var_lst*)v); return;
 		case T_OBJ: value = Variables::addObj((var_obj*)v); return;
 	}
@@ -180,6 +181,7 @@ variable::variable(void* v, uint8_t type, bool builtin) {
 
 	//destructor: search variable value in variables and erase it
 variable::~variable() {
+	debug("toFunction");
 	vector<var>::iterator it = Variables::variables.begin();
 	while(*it != this) it++;
 	Variables::variables.erase(it);
