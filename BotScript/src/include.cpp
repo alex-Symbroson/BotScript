@@ -50,11 +50,11 @@ void format(string *s) {
 
 	//converts scope string to term
 var_lst toFunction(string::iterator* c) {
-	var_lst block;
+	var_lst block = {};
 	while(**c != ')' && **c != '}' && **c != 255) {
 		switch(**c) {
 			case '"': {
-				string word;
+				string word = "";
 				while(*++*c != '"') word += **c;
 				block.push_back(new variable(&word, T_STR));
 			}
@@ -68,7 +68,7 @@ var_lst toFunction(string::iterator* c) {
 			}
 			break;
 			default:
-				string word;
+				string word = "";
 				if(symbols.find(**c) + 1)
 					do word += **c; while(symbols.find(*++*c) + 1);
 				else
@@ -97,7 +97,7 @@ string readFile(const char* path, bool ignore) {
 
 		//character from file
 	uint8_t c;
-	string content;
+	string content = "";
 
 	while( (c = fgetc(f)) != 255 ) { //255: eof
 		if(ignore) {
