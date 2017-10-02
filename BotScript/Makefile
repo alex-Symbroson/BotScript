@@ -57,4 +57,5 @@ $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR)
 clean:
 	@echo
 	@echo "####" cleaning project \"make clean\"
-	-rm -f -R $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file))
+	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file))
+	rm -f $(OUTPUT).out
