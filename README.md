@@ -4,13 +4,9 @@ script language with optimized PIN access features
 
 **Info:**
 	detected allocation error on intel structure (works on arm structure)
-	error line: BotScript/src/Variables.cpp/line 176
+	error when dereferenciating a var_lst pointer (var_lst*)
 		during executing toFunction()
 	-> added output of 'v' content in variable::variable
-
-	analysis:
-		some vector seem to have negative size
-		maybe because of no default value?
 
 **linux shell commands:**
 - switch directory:

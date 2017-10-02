@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
 
 	const char* path = argc > 1? argv[1] : "res/code.bsc";
-	debug("reading...")
+	debug("reading...");
 	string code = readFile(path, true);
 	if(code == "") error("file \"%s\" is empty", path);
 

@@ -81,7 +81,9 @@ var_lst toFunction(string::iterator* c) {
 					do word += **c; while(symbols.find(*++*c) + 1);
 				else
 					do word += **c; while(!(symbols.find(*++*c) + 1));
-				if(Builtins::find(word)) block.push_back(new variable(&word, T_FNC));
+				debug("create variable %s", word.c_str());
+				debug("builtin index: %i", Builtins::find(word));
+				if(Builtins::find(word)) block.push_back(new variable(&word, T_STR, true)); //!!!
 				else block.push_back(new variable(&word, T_VAR));
 			continue;
 		}
@@ -101,7 +103,7 @@ string readFile(const char* path, bool ignore) {
 	debug("reading file %s", path);
 		//file buffer
 	FILE *f = fopen(path, "r");
-	debug("file: %i", f);
+	debug("file: %i", *f);
 
 	if(!f) error("file \"%s\" does not exist!", path);
 

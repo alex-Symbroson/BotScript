@@ -28,6 +28,12 @@ namespace Variables {
 
 		//convert variable to string equivalent
 	void _stringify(var value, string* str) {
+		if(value->builtin) {
+			//printf("tried to stringify builtin");
+			*str += "builtin";
+			return;
+		}
+
 		switch(value->type) {
 			case T_PIN: case T_INT: case T_FLT:
 				if(value->type == T_PIN) *str += "Pin(";
@@ -173,12 +179,12 @@ variable::variable(void* v, uint8_t type, bool builtin) {
 			int i = 0;
 			debug("derefenciate");
 			var_lst lst = *(var_lst*)v;
-			debug("list: [");
-			for(var n : *(var_lst*)v) {
-				debug("loop %i", i++);
-				debug("\t%s", Variables::stringify(n).c_str());
-			}
-			debug("]");
+			debug("list: [...]");
+			//for(var n : *(var_lst*)v) {
+				//debug("loop %i", i++);
+				//debug("\t%s", Variables::stringify(n).c_str());
+			//}
+			//debug("]");
 			value = Variables::addLst((var_lst*)v); return;
 		}
 		case T_OBJ: value = Variables::addObj((var_obj*)v); return;
