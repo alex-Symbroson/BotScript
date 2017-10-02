@@ -101,6 +101,7 @@ string readFile(const char* path, bool ignore) {
 	debug("reading file %s", path);
 		//file buffer
 	FILE *f = fopen(path, "r");
+	debug("file: %i", f);
 
 	if(!f) error("file \"%s\" does not exist!", path);
 
@@ -138,6 +139,6 @@ string readFile(const char* path, bool ignore) {
 		content += c;
 	}
 	content += c;
-	debug("got %s\n", content);
+	debug("got \"%s\n\"", content.c_str());
 	return content;
 }
