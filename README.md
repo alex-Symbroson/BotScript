@@ -4,6 +4,8 @@ script language with optimized PIN access features
 
 planned syntax: Syntax.txt
 
+NOTE: preset is the latest branch
+
 linux shell commands:
 - switch directory:
   - cd ~/home/pi/Downloads/BotScript/BotScript-master/BotScript
