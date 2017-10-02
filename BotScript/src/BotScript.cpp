@@ -1,10 +1,8 @@
 
 //$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o pins.o threads.o builtins.o
 
-#include "include.hpp" //includes basic libraries, functions and classes
+#include "include.hpp" //includes special functions
 #include "error.hpp"
-
-#include <iostream>
 
 using namespace std;
 
@@ -12,17 +10,14 @@ using namespace std;
 vector<variable> variables;
 
 	//scope interpreter
-void* handleScope(var_lst *scope) {
+var handleScope(var_lst *scope) {
 
+	return V_NULL;
 }
 
 	//initialisation
 int main(int argc, char *argv[]) {
 	//argv[0] -> command which executed a.out (path)
-
-		//cout settings
-	cout.precision(15); //float digits
-	cout << fixed; //prevent scientific notation (e + 00)
 
 	const char* path = argc > 1? argv[1] : "res/code.bsc";
 	string code = readFile(path, true);
@@ -31,7 +26,7 @@ int main(int argc, char *argv[]) {
 		//create code scope of content from default or argument file path
 	var_lst main = toCode(&code);
 
-	cout << Variables::stringify(new variable(&main, T_TRM)) << endl;
+	printf("%s\n", Variables::stringify(new variable(&main, T_TRM)).c_str());
 
 		//execute code
 	handleScope(&main);

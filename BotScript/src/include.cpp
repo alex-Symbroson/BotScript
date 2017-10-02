@@ -19,7 +19,7 @@ double stod(string s, uint8_t radix) {
 
 string dtos(double d) {
 	char buffer[20];
-	snprintf(buffer, sizeof(buffer), "%ld", d);
+	snprintf(buffer, sizeof(buffer), "%.15f", d);
 	return string(buffer);
 }
 
@@ -34,7 +34,7 @@ void replace(string* str, string src, string ovr) {
 
 #ifndef delay //can be imported with wiringpi.h
 	//delay in milliseonds
-void delay(uint32_t time) {
+void delay(int time) {
 	time = clock() + time*1000;
 	while(clock() < time);
 }
@@ -117,7 +117,7 @@ string readFile(const char* path, bool ignore) {
 					while(c != EOF && c != '\n');
 					//block
 				else if(c == '*') {
-					bool brk;
+					bool brk = false;
 					while((c = fgetc(f)) != EOF) {
 						if(brk && c == '/') break;
 						brk = (c == '*');

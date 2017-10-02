@@ -42,6 +42,8 @@
 #define getObjP(var) ((var_obj*)var->value)
 #define getObj(var) (*(var_obj*)var->value)
 
+#define V_NULL new variable(nullptr, T_NIL, false)
+
 using namespace std;
 
 	//link variable class so that the Variables namespace knows it

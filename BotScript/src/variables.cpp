@@ -234,12 +234,14 @@ var variable::at(int i) {
 		return Variables::create(string(&c));
 	}
 	error("%ss don't support random access", Variables::getType(type));
+	return V_NULL;
 }
 
 	//random access for objects
 var variable::at(string key) {
 	if(type == T_OBJ) return (*(var_obj*)value)[key];
 	error("%s don't support random access", Variables::getType(type));
+	return V_NULL;
 }
 
 	//creates a new variable instance

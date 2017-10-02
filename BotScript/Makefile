@@ -33,29 +33,23 @@ OBJ = $(patsubst $(DIR_SRC)%,$(DIR_BUILD)%,$(foreach source, \
 .PHONY: all all_init clean run
 
 all: all_init $(OUTPUT).out
-	@echo
-	@echo Compilation done - No Errors.
+	@printf "\nCompilation done - No Errors.\n"
 
 all_init:
-	@echo
-	@echo "#### compiling project"
+	@printf "\n#### compiling project\n"
 	mkdir -p $(DIR_BUILD)
 
 %.out: $(OBJ)
-	@echo
-	@echo "#### linking project"
+	@printf "\n#### linking project\n"
 	g++ $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@
 
 $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR)
-	@echo
-	@echo "#### compiling \"$@\" based on \"$^\""
+	@printf "\n#### compiling \"$@\" based on \"$^\"\n"
 	g++ -o $@ -c $(CFLAGS) -I "$(dir $*)/" $<
 
 run: all
-	@echo
-	@echo "#### executing $(OUTPUT).out"
+	@printf "\n#### executing $(OUTPUT).out\n"
 	./$(OUTPUT).out
 clean:
-	@echo
-	@echo "#### cleaning project"
+	@printf "\n#### cleaning project\n"
 	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file)) $(OUTPUT).out
