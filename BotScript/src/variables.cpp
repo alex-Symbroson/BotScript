@@ -169,12 +169,18 @@ variable::variable(void* v, uint8_t type, bool builtin) {
 		case T_VAR: value = Variables::addStr((var_str*)v); return;
 		case T_LST:
 		case T_TRM:
-		case T_FNC:
+		case T_FNC: {
+			int i = 0;
+			debug("derefenciate");
+			var_lst lst = *(var_lst*)v;
 			debug("list: [");
-			for(var n : *(var_lst*)v)
+			for(var n : *(var_lst*)v) {
+				debug("loop %i", i++);
 				debug("\t%s", Variables::stringify(n).c_str());
+			}
 			debug("]");
 			value = Variables::addLst((var_lst*)v); return;
+		}
 		case T_OBJ: value = Variables::addObj((var_obj*)v); return;
 	}
 }

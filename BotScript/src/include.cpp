@@ -138,7 +138,6 @@ string readFile(const char* path, bool ignore) {
 		}
 		content += c;
 	}
-	content += c;
 	debug("got \"%s\"\n", content.c_str());
 	return content;
 }
