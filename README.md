@@ -11,14 +11,15 @@ linux shell commands:
   - make
 
 Dependencies:
-- math.h
-- stdio.h
-- softPwm.h
-- pthread.h
-- wiringPi.h
-
-- string
-- vector
-- iostream
-- forward_list
-- unordered_map
+- c:
+   - math.h
+   - stdio.h
+   - softPwm.h
+   - pthread.h
+   - wiringPi.h
+- c++:
+   - string
+   - vector
+   - iostream
+   - forward_list
+   - unordered_map
