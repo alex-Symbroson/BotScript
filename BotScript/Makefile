@@ -11,7 +11,7 @@ CFLAGS  = -I inc -Wall -std=c++11 -O3
 LDFLAGS  = -pthread -lwiringPi
 
 	# clean extensions
-FILES_CLEAN = *.o *.out
+FILES_CLEAN = *.o
 
 	# output file name
 OUTPUT = main
@@ -30,7 +30,7 @@ OBJ = $(patsubst $(DIR_SRC)%,$(DIR_BUILD)%,$(foreach source, \
 .SECONDARY: $(OBJECTS_NORMAL)
 
 	# define phony targets for make commands
-.PHONY: all all_init clean
+.PHONY: all all_init clean run
 
 all: all_init $(OUTPUT).out
 	@echo
@@ -38,24 +38,24 @@ all: all_init $(OUTPUT).out
 
 all_init:
 	@echo
-	@echo "#### compiling project \"make all\""
-	@echo
+	@echo "#### compiling project"
 	mkdir -p $(DIR_BUILD)
 
 %.out: $(OBJ)
 	@echo
-	@mkdir -p $(@D)
 	@echo "#### linking project"
 	g++ $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@
 
 $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR)
 	@echo
-	@mkdir -p $(@D)
 	@echo "#### compiling \"$@\" based on \"$^\""
 	g++ -o $@ -c $(CFLAGS) -I "$(dir $*)/" $<
 
+run: all
+	@echo
+	@echo "#### executing $(OUTPUT).out"
+	./$(OUTPUT).out
 clean:
 	@echo
-	@echo "####" cleaning project \"make clean\"
-	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file))
-	rm -f $(OUTPUT).out
+	@echo "#### cleaning project"
+	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file)) $(OUTPUT).out
