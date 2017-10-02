@@ -2,7 +2,7 @@
 # BotScript
 script language with optimized PIN access features
 
-*Info:*
+_*Info:*_
 	detected allocation error on intel structure (works on arm structure)
 	error line: BotScript/src/Variables.cpp/line 176
 		during executing toFunction()
@@ -12,13 +12,13 @@ script language with optimized PIN access features
 		some vector seem to have negative size
 		maybe because of no default value?
 
-linux shell commands:
+_*linux shell commands:*_
 - switch directory:
 	- cd ~/Downloads/BotScript/BotScript-master/BotScript
 - compile:
 	- make
 
-Dependencies:
+_*Dependencies:*_
 - c:
 	- math.h
 	- time.h
