@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
 	cout.precision(15); //float digits
 	cout << fixed; //prevent scientific notation (e + 00)
 
-	const char* path = argc > 1? argv[1] : "code.bsc";
-	string code = readFile("code.bsc", true);
+	const char* path = argc > 1? argv[1] : "res/code.bsc";
+	string code = readFile(path, true);
 	if(code == "") error("file \"%s\" is empty", path);
 
 		//create code scope of content from default or argument file path
