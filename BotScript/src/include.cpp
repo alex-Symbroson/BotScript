@@ -60,7 +60,7 @@ var_lst toFunction(string::iterator* c) {
 			}
 			break;
 			case '(': case '{': {
-				var_lst scope;
+				var_lst scope = {};
 				uint8_t type = **c == '('? T_TRM : T_FNC;
 				++*c;
 				scope = toFunction(c);
