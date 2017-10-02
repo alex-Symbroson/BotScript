@@ -13,10 +13,11 @@ linux shell commands:
 Dependencies:
 - c:
    - math.h
+   - time.h
    - stdio.h
-   - softPwm.h
+   - softPwm.h  (part of wiringPi)
    - pthread.h
-   - wiringPi.h
+   - wiringPi.h  https://github.com/WiringPi/WiringPi
 - c++:
    - string
    - vector
