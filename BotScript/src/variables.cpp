@@ -1,80 +1,124 @@
 
-//c++ -std=c++11 -O3 -o variables.out variables.cpp;./variables.out
+//$ g++ -std=c++11 -O3 -c variables.cpp
 
-#ifndef _VARIABLES_CPP_
-#define _VARIABLES_CPP_ 21933
-
-#include <forward_list>  //alternative linked list container
-#include <unordered_map> //k:v object container
-#include "extern.h"
-
-#ifndef MAIN
-	#define MAIN _VARIABLES_CPP_
-	int main();
-#endif
-
-	//type id's
-#define NIL 0
-#define VAR 1
-#define INT 2
-#define STR 3
-#define LST 4
-#define OBJ 5
-#define PIN 6
-#define TRM 7
-#define FNC 8
-
-class variable;
-
-typedef variable* var;
-typedef int var_int;
-typedef string var_str;
-typedef vector<var> var_lst;
-typedef unordered_map<string, var> var_obj;
+#include "variables.hpp"
+#include "error.hpp"
 
 namespace Variables {
 
+		//list of instances of all created variables
+	vector<var> variables;
+
+		//returns the name of the type of a variable
 	const char* getType(uint8_t t) {
 		switch(t) {
-			case NIL: return "undefined";
-			case VAR: return "name";
-			case INT: return "integer";
-			case STR: return "string";
-			case LST: return "list";
-			case OBJ: return "object";
-			case PIN: return "pin";
-			case TRM: return "term";
-			case FNC: return "function";
-			default : return "unknown";
+			case T_NIL: return "undefined";
+			case T_VAR: return "name";
+			case T_INT: return "integer";
+			case T_FLT: return "float";
+			case T_STR: return "string";
+			case T_LST: return "list";
+			case T_OBJ: return "object";
+			case T_PIN: return "pin";
+			case T_TRM: return "term";
+			case T_FNC: return "function";
+			default   : return "unknown";
 		}
 	}
 
-	void _stringify(var value, string* str);
+		//convert variable to string equivalent
+	void _stringify(var value, string* str) {
+		switch(value->type) {
+			case T_PIN: case T_INT: case T_FLT:
+				if(value->type == T_PIN) *str += "Pin(";
+					/**/else if(value->type == T_INT) *str += "T_INT ";
+					/**/else *str += "T_FLT ";
+				*str += to_string(getInt(value));
+				if(value->type == T_PIN) *str += ")";
+			break;
+			case T_STR: case T_VAR:
+				if(value->type == T_STR) *str += "\"";
+					/**/else *str += "T_VAR ";
+				*str += getStr(value);
+				if(value->type == T_STR) *str += "\"";
+			break;
+			case T_LST: case T_TRM: case T_FNC:
+				switch(value->type) {
+					case T_LST: *str += "["; break;
+					case T_TRM: *str += "("; break;
+					case T_FNC: *str += "{"; break;
+				}
+				for(var val : getLst(value)) {
+					string::reverse_iterator end(str->end());
+					if(*end != '[' && *end != '{' && *end != '(') *str += ",";
+					_stringify(val, str);
+				}
+				switch(value->type) {
+					case T_LST: *str += "]"; break;
+					case T_TRM: *str += ")"; break;
+					case T_FNC: *str += "}"; break;
+				}
+			break;
+			case T_OBJ:
+				*str += "[";
+				for(pair<string,var> kvp : getObj(value)) {
+					if(str->operator[](str->length()-1)!='[') *str += ",";
+					*str += "\"";
+					*str += kvp.first + "\":";
+					_stringify(kvp.second, str);
+				}
+				*str += "]";
+			break;
+		}
+	}
 
+		//direct stringify function
 	string stringify(var value) {
 		string str = "";
 		_stringify(value, &str);
 		return str;
 	}
-/*
+	/*
 	var parse(string str) {
 		return _parse(&str);
 	}*/
 
-	var create(void* value, uint8_t type = NIL);
+	//note: when using create(*ptr, int) instead of
+	//create(val) the .out file will be smaller
+		//undefined / null
+	var create(void* value, uint8_t type, bool builtin) {
+		variables.push_back(new variable( value, type));
+		return variables.back();
+	}
 
 		//integers
 	forward_list<var_int> integers;
-	//return new variable((var_str*)value, STR);
- 	var create(var_int value, uint8_t type = INT);
+	var create(var_int value, uint8_t type, bool builtin) {
+		variables.push_back(new variable(&value, type));
+		return variables.back();
+	}
 	var_int* addInt(var_int* v) {
 		integers.push_front(*v);
 		return &integers.front();
 	}
 
+		//floating points
+	forward_list<var_flt> floats;
+	var create(var_flt value, uint8_t type, bool builtin) {
+		variables.push_back(new variable(&value, type));
+		return variables.back();
+	}
+	var_flt* addFlt(var_flt* v) {
+		floats.push_front(*v);
+		return &floats.front();
+	}
+
 		//strings
 	forward_list<var_str> strings;
-	var create(var_str value, uint8_t type = STR);
+	var create(var_str value, uint8_t type, bool builtin) {
+		variables.push_back(new variable(&value, type));
+		return variables.back();
+	}
 	var_str* addStr(var_str* v) {
 		strings.push_front(*v);
 		return &strings.front();
@@ -82,7 +126,10 @@ namespace Variables {
 
 		//lists
 	forward_list<var_lst> lists;
-	var create(var_lst value, uint8_t type = LST);
+	var create(var_lst value, uint8_t type, bool builtin) {
+		variables.push_back(new variable(&value, type));
+		return variables.back();
+	}
 	var_lst* addLst(var_lst* v) {
 		lists.push_front(*v);
 		return &lists.front();
@@ -90,217 +137,137 @@ namespace Variables {
 
 		//objects
 	forward_list<var_obj> objects;
-	var create(var_obj value, uint8_t type = OBJ);
+	var create(var_obj value, uint8_t type, bool builtin) {
+		variables.push_back(new variable(&value, type));
+		return variables.back();
+	}
 	var_obj* addObj(var_obj* v) {
 		objects.push_front(*v);
 		return &objects.front();
 	}
 
-	vector<var> variables;
-	void free();
-};
-
-class variable {
-public:
-	uint8_t type;
-	void* value;
-
-		//constuctor
-	variable(void* v, uint8_t type) {
-		if(!type) return;
-		this->type = type;
-		switch(type) {
-			case INT:
-			case PIN: value = Variables::addInt((var_int*)v); return;
-			case STR:
-			case VAR: value = Variables::addStr((var_str*)v); return;
-			case LST:
-			case TRM:
-			case FNC: value = Variables::addLst((var_lst*)v); return;
-			case OBJ: value = Variables::addObj((var_obj*)v); return;
-		}
+		//free space -> deletes ALL variables
+	void free() {
+		while(variables.size()) delete variables.front();
 	}
+}
 
-		//destructor
-	~variable() {
-		vector<var>::iterator it = Variables::variables.begin();
-		while(*it != this) it++;
-		Variables::variables.erase(it);
-		//cout << "deleted " << this << " " << Variables::stringify(this) << endl;
+/* * * * * * * * * *
+ * class variable  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * */
+
+variable::variable(void* v, uint8_t type, bool builtin) {
+	if(!type) return;
+	this->type = type;
+	this->builtin = builtin;
+	switch(type) {
+		case T_INT:
+		case T_PIN: value = Variables::addInt((var_int*)v); return;
+		case T_FLT: value = Variables::addFlt((var_flt*)v); return;
+		case T_STR:
+		case T_VAR: value = Variables::addStr((var_str*)v); return;
+		case T_LST:
+		case T_TRM:
+		case T_FNC: value = Variables::addLst((var_lst*)v); return;
+		case T_OBJ: value = Variables::addObj((var_obj*)v); return;
 	}
+}
 
-	var_int* getInt() {return (var_int*)value;}
-	var_str* getStr() {return (var_str*)value;}
-	var_lst* getLst() {return (var_lst*)value;}
-	var_obj* getObj() {return (var_obj*)value;}
+	//destructor: search variable value in variables and erase it
+variable::~variable() {
+	vector<var>::iterator it = Variables::variables.begin();
+	while(*it != this) it++;
+	Variables::variables.erase(it);
+	//cout << "deleted " << this << " " << stringify(this) << endl;
+}
 
-	void set(void* v, uint8_t type = 0) {
-		if(!type) type = this->type;
-		if(this->type && this->type != type)
-			Error::ict(Variables::getType(this->type), Variables::getType(type));
+	//assign value v to the variable
+void variable::set(void* v, uint8_t type) {
+	if(!type) type = this->type;
 
-		switch(type) {
-			case NIL: variable(v, type); return;
-			case INT:
-			case PIN: *(var_int*)value = *(var_int*)v; return;
-			case STR: *(var_str*)value = *(var_str*)v; return;
-			case LST:
-			case TRM:
-			case FNC: *(var_lst*)value = *(var_lst*)v; return;
-			case OBJ: *(var_obj*)value = *(var_obj*)v; return;
-		}
+		//variable and v has different types -> incompatible types error
+	if(this->type && this->type != type)
+		err_ict(Variables::getType(this->type), Variables::getType(type));
+
+		//assign v to variable
+	switch(type) {
+		case T_NIL: variable(v, type); return;
+		case T_INT:
+		case T_PIN: *(var_int*)value = *(var_int*)v; return;
+		case T_FLT: *(var_flt*)value = *(var_flt*)v; return;
+		case T_STR: *(var_str*)value = *(var_str*)v; return;
+		case T_LST:
+		case T_TRM: *(var_lst*)value = *(var_lst*)v; return;
+		case T_OBJ:
+		case T_FNC: *(var_obj*)value = *(var_obj*)v; return;
 	}
+}
 /*
-	var keys() {
-		if(type == OBJ) {
-			var_lst keys;
-			for(pair<string, var> kvp : *getObj()) keys.push_back(new variable(kvp.first));
-			return new variable(keys);
-		}
-		Error::imu(Variables::getType(type), "keys");
+var variable::keys() {
+	if(type == T_OBJ) {
+		var_lst keys;
+		for(pair<string, var> kvp : *getObj()) keys.push_back(new variable(kvp.first));
+		return new variable(keys);
 	}
-
-	var values() {
-		if(type == OBJ) {
-			var_lst vals;
-			for(pair<string,var> kvp : *getObj()) vals.push_back(kvp.second);
-			return new variable(vals);
-		}
-		Error::imu(Variables::getType(type), "values");
-	}*/
-
-		//random access for strings and lists
-	var at(int i) {
-		if(type == LST) return (*(var_lst*)value)[i];
-		else if(type == STR) {
-			char c = ((var_str*)value)->at(i);
-			return Variables::create(string(&c));
-		}
-		Error::error("%ss don't support random access", Variables::getType(type));
-	}
-
-		//random access for objects
-	var at(string key) {
-		if(type == OBJ) return (*(var_obj*)value)[key];
-		Error::error("%s don't support random access", Variables::getType(type));
-	}
-
-	var copy() {
-		return Variables::create(value, type);
-	}
-
-	void operator = (var v) {
-		if(type == v->type) value = v->value;
-		else Error::ict(Variables::getType(type), Variables::getType(v->type));
-	}
-
-	void operator += (var v) {
-		switch(type) {
-			case NIL: Error::iop("undefined", "+=");
-			case INT: if(v->type == INT) *(var_int*)value += *(var_int*)v->value; else break; return;
-			case STR: if(v->type == STR) *(var_str*)value += *(var_str*)v->value; else break; return;
-			case LST: if(v->type == LST) ((var_lst*)value)->insert(((var_lst*)value)->end(), v->getLst()->begin(), v->getLst()->end()); else break; return;
-			case OBJ: if(v->type == OBJ) ((var_obj*)value)->insert(v->getObj()->begin(), v->getObj()->end()); else break; return;
-			default: Error::iop(Variables::getType(type), "+=");
-		}
-		Error::ict(Variables::getType(type), Variables::getType(v->type));
-	}
-
-	void operator -= (var v) {
-		if(type == INT)
-			if(v->type == INT) *(var_int*)value += *(var_int*)v->value;
-			else Error::ict("integer", Variables::getType(v->type));
-		else Error::iop(Variables::getType(type), "-=");
-	}
-};
-
-	//define in Variables declared create functions
-	//using Variables::create(*ptr, int) is better than Variables::create(val) (*.out file smaller)
-var  Variables::create(void*   value, uint8_t type) {variables.push_back(new variable( value, type)); return variables.back();}
-var  Variables::create(var_int value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_str value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_lst value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
-var  Variables::create(var_obj value, uint8_t type) {variables.push_back(new variable(&value, type)); return variables.back();}
-void Variables::free() {while(variables.size()) delete variables.front();}
-void Variables::_stringify(var value, string* str) {
-	switch(value->type) {
-		case PIN: case INT:
-			if(value->type == PIN) *str+="Pin(";
-			*str += to_string(*value->getInt());
-			if(value->type == PIN) *str += ")";
-		break;
-		case STR: case VAR:
-			if(value->type == STR) *str += "\"";
-			*str += *value->getStr();
-			if(value->type == STR) *str += "\"";
-		break;
-		case LST: case TRM: case FNC:
-			switch(value->type) {
-				case LST: *str += "["; break;
-				case TRM: *str += "("; break;
-				case FNC: *str += "{"; break;
-			}
-			for(var val : *value->getLst()) {
-				string::reverse_iterator end(str->end());
-				if(*end != '[' && *end != '{' && *end != '(') *str += ",";
-				_stringify(val, str);
-			}
-			switch(value->type) {
-				case LST: *str += "]"; break;
-				case TRM: *str += ")"; break;
-				case FNC: *str += "}"; break;
-			}
-		break;
-		case OBJ:
-			*str += "[";
-			for(pair<string,var> kvp : *value->getObj()) {
-				if(str->operator[](str->length()-1)!='[') *str += ",";
-				*str += "\"";
-				*str += kvp.first + "\":";
-				_stringify(kvp.second, str);
-			}
-			*str += "]";
-		break;
-	}
-}
-//void Variables::_parse(...) {}
-
-#if MAIN == _VARIABLES_CPP_
-
-int main() {
-
-	var a = Variables::create(5);
-	cout << *a->getInt() << endl;
-
-	var list = Variables::create(var_lst( {
-		Variables::create("Hello "),
-		Variables::create("World! "),
-		Variables::create(123)
-	} ));
-	cout << *list->at(0)->getStr() << *list->at(1)->getStr() << *list->at(2)->getInt() << endl;
-	*list += list; //list->getLst()->insert(list->getLst()->end(), list->getLst()->begin(), list->getLst()->end());
-
-	*list->at(2) = a; //reference
-	int temp = 15;
-	a->set(&temp);
-	cout << *list->at(2)->getInt() << endl;
-
-	temp = 20;
-	*list->at(2) = a->copy(); //real copy
-	a->set(&temp);
-	cout << *list->at(2)->getInt() << endl;
-
-	var_obj obj = {{"a", Variables::create(254)}, {"b", Variables::create("eof") }};
-	obj["f"] = Variables::create("reference");
-	var vobj = Variables::create(&obj, OBJ);
-	(*vobj->getObj())["list"] = list->copy();
-
-	cout << Variables::stringify(vobj) << endl;
-
-	Variables::free();
-	return 0;
+	err_imu(getType(type), "keys");
 }
 
-#endif //MAIN == _VARIABLES_CPP_
+var variable::values() {
+	if(type == T_OBJ) {
+		var_lst vals;
+		for(pair<string,var> kvp : *getObj()) vals.push_back(kvp.second);
+		return new variable(vals);
+	}
+	err_imu(getType(type), "values");
+}*/
 
-#endif //_VARIABLES_CPP_
+	//random access for strings and lists
+var variable::at(int i) {
+	if(type == T_LST) return (*(var_lst*)value)[i];
+	else if(type == T_FLT) {
+		char c = ((var_str*)value)->at(i);
+		return Variables::create(string(&c));
+	}
+	error("%ss don't support random access", Variables::getType(type));
+}
+
+	//random access for objects
+var variable::at(string key) {
+	if(type == T_OBJ) return (*(var_obj*)value)[key];
+	error("%s don't support random access", Variables::getType(type));
+}
+
+	//creates a new variable instance
+var variable::copy() {
+	return Variables::create(value, type);
+}
+
+	//assign variable instance to variable
+void variable::operator = (var v) {
+	if(type == v->type) value = v->value;
+	else err_ict(Variables::getType(type), Variables::getType(v->type));
+}
+
+	//add variable instance to variable
+void variable::operator += (var v) {
+	switch(type) {
+		case T_NIL: err_iop("undefined", "+="); //can't add smth to null -> invalid operator
+		case T_INT: if(v->type == T_INT) *(var_int*)value += *(var_int*)v->value; else break; return;
+		case T_FLT: if(v->type == T_FLT) *(var_flt*)value += *(var_flt*)v->value; else break; return;
+		case T_STR: if(v->type == T_STR) *(var_str*)value += *(var_str*)v->value; else break; return;
+		case T_LST: if(v->type == T_LST) ((var_lst*)value)->insert(((var_lst*)value)->end(), getLst(v).begin(), getLst(v).end()); else break; return;
+		case T_OBJ: if(v->type == T_OBJ) ((var_obj*)value)->insert(getObj(v).begin(), getObj(v).end()); else break; return;
+		default: err_iop(Variables::getType(type), "+=");
+	}
+	err_ict(Variables::getType(type), Variables::getType(v->type));
+}
+
+	//substract variable instance from integer variable
+void variable::operator -= (var v) {
+	if(type == T_INT) {
+		if(v->type == T_INT) *(var_int*)value += *(var_int*)v->value;
+		else err_ict("integer", Variables::getType(v->type));
+	} else err_iop(Variables::getType(type), "-=");
+}
+
+//void _parse(...) {}

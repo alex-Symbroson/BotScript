@@ -1,49 +1,18 @@
 
-//c++ -std=c++11 -O3 -lwiringPi -o pins.out pins.cpp;./pins.out
+//$ g++ -std=c++11 -O3 -c pins.cpp
 
-#include <wiringPi.h> //-
-#include "extern.h"
+#include "pins.hpp"
+#include "error.hpp"
 
-#ifndef _PINS_CPP_
-#define _PINS_CPP_ 21934
+#include <wiringPi.h>
+#include <softPwm.h>
 
-#ifndef MAIN
-	#define MAIN _PINS_CPP_
-	int main();
-#endif
-
-extern "C" {
-	//<softPwm.h>
+/* softPwm.h
 	extern int  softPwmCreate (int pin, int value, int range);
 	extern void softPwmWrite  (int pin, int value);
 	extern void softPwmStop   (int pin);
+*/
+
+void Pins::setup() {
+	if(wiringPiSetup() == -1) error("setup wiringPi failed !");
 }
-
-void setup() {
-	if(wiringPiSetup() == - 1) Error::error("setup wiringPi failed !");
-}
-
-
-#if MAIN == _PINS_CPP_
-
-int main() {
-	setup();
-
-	int ledRed = 0;
-	softPwmCreate(ledRed, 0, 255);
-
-	for(int i = 0; i<3; i++) {
-		softPwmWrite(ledRed, 255);
-		delay(1000);
-		softPwmWrite(ledRed, 0);
-		delay(1000);
-	}
-
-	softPwmStop(ledRed);
-
-	return 0;
-}
-
-#endif //MAIN == _PINS_CPP_
-
-#endif //_PINS_CPP_
