@@ -26,34 +26,7 @@ namespace Variables {
 			default   : return "unknown";
 		}
 	}
-/*
-		//convert Variable to string equivalent
-	void _stringify(var value, string* str) {
-		if(value->builtin) {
-			*str += "[builtin]";
-			return;
-		}
 
-		switch(value->type) {
-			case T_PIN: case T_INT: case T_FLT:
-				switch(value->type) {
-					case T_INT: *str += "Int "; break;
-					case T_PIN: *str += "Pin "; break;
-					case T_FLT: *str += "Flt "; break;
-				}
-				*str += stringify(getInt(value));
-			break;
-			case T_STR: case T_VAR: *str += getStr(value); break;
-			case T_LST: case T_TRM: case T_FNC:
-				switch(value->type) {
-					case T_LST: *str += stringify(getLst(value), "[]"); return;
-					case T_TRM: *str += stringify(getLst(value), "()"); return;
-					case T_FNC: *str += stringify(getLst(value), "{}"); return;
-				}
-			case T_OBJ: *str += stringify(getObj(value)); break;
-		}
-	}
-*/
 		//convert variable to string equivalent
 	void _stringify(var value, string* str, bool mark) {
 		//debug("Variables::_stringify(var, string* \"%s\", bool %s)", str->c_str(), mark?"true":"false");
