@@ -7,19 +7,23 @@
 #define uint16_t unsigned short int
 
 namespace Builtins {
-	var print(var param);
-/*
-	var input(var param);
+	var b_print(var param);
 
-	var delay(var param);
+	var b_input(var param);
 
-	var clock(var param);
-*/
+	var b_delay(var param);
+
+	var b_clock(var param);
+
 
 			//returns builtin index (0 = not found)
-	uint16_t find(string s);
+	bool exists(string s);
 
-	var add(const char* name, const char* params[], var& content);
+	void add(string name, vector<const char*> params[], var content);
+
+	var get(string name);
+
+	var call(string name, var arg);
 
 	void create();
 }

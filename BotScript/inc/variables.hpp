@@ -22,7 +22,7 @@
 #define T_FNC 9
 
 	//types
-#define var variable*
+#define var Variable*
 #define var_int long
 #define var_flt double
 #define var_str string
@@ -42,33 +42,40 @@
 #define getObjP(var) ((var_obj*)var->value)
 #define getObj(var) (*(var_obj*)var->value)
 
-#define V_NULL new variable(nullptr, T_NIL, false)
+#define V_NULL new Variable(nullptr, T_NIL, false)
 
 using namespace std;
 
-	//link variable class so that the Variables namespace knows it
-class variable;
+	//link Variable class so that the Variables namespace knows it
+class Variable;
 
 namespace Variables {
 
-		//returns the name of the type of a variable
+		//returns the name of the type of a Variable
 	const char* getType(uint8_t t);
 
 		//recursive _stringify
-	void _stringify(var value, string* str);
+	void _stringify(var value, string* str, bool mark = true);
 
-		//returns stringified variable
-	string stringify(var value);
+		//returns stringified Variable
+	string stringify(var value, bool mark = true);
+	string stringify(char** list, uint len);
+	string stringify(int value);
+	string stringify(int* value, uint len);
+	string stringify(var_lst value, const char brackets[] = "[]");
+	string stringify(var_obj value);
+	#define sstringify(...) stringify(__VA_ARGS__).c_str()
+
 
 //	var parse(string str);
 
 /*
- * forward_list<type> saves the variable values
+ * forward_list<type> saves the Variable values
  * overloaded create functions for different types
- * the add<Type> function pushes variables into the specific forward_list
- *  -> returns the variable instance
+ * the add<Type> function pushes Variables into the specific forward_list
+ *  -> returns the Variable instance
  */
-		//undefined / null variables
+		//undefined / null Variables
 	var create(void* value, uint8_t type = T_NIL, bool builtin = false);
 
 		//integers
@@ -95,22 +102,22 @@ namespace Variables {
 	void free();
 };
 
-	//variable object
-class variable {
+	//Variable object
+class Variable {
 public:
 	uint8_t type; //type id
 	//uint8_t spec; //special information (not used yet)
 	bool builtin;
-	void* value;  //pointer to variable value
+	void* value;  //pointer to Variable value
 
 		//constructor: add v to value list in Variables::
 		//and define the pointer to value
-	variable(void* v, uint8_t type, bool builtin = false);
+	Variable(void* v, uint8_t type, bool builtin = false);
 
-		//destructor: search variable value in Variables::variables and erase it
-	~variable();
+		//destructor: search Variable value in Variables::Variables and erase it
+	~Variable();
 
-		//assign value v to the variable
+		//assign value v to the Variable
 	void set(void* v, uint8_t type = 0);
 /*
 	var keys();
@@ -123,16 +130,16 @@ public:
 		//random access for objects
 	var at(string key);
 
-		//creates a new variable instance
+		//creates a new Variable instance
 	var copy();
 
-		//assign variable instance to variable
+		//assign Variable instance to Variable
 	void operator = (var v);
 
-		//add variable instance to variable
+		//add Variable instance to Variable
 	void operator += (var v);
 
-		//substract variable instance from integer variable
+		//substract Variable instance from integer Variable
 	void operator -= (var v);
 };
 
@@ -164,7 +171,10 @@ int main() {
 	a->set(&temp);
 	cout << *list->at(2)->getInt() << endl;
 
-	var_obj obj = {{"a", Variables::create(254)}, {"b", Variables::create("eof") }};
+	var_obj obj = {
+		{"a", Variables::create(254)},
+		{"b", Variables::create("eof") }
+	};
 	obj["f"] = Variables::create("reference");
 	var vobj = Variables::create(&obj, T_OBJ);
 	(*vobj->getObj())["list"] = list->copy();

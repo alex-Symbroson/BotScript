@@ -2,42 +2,49 @@
 //$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o pins.o threads.o builtins.o
 
 #include "include.hpp" //includes special functions
+#include "builtins.hpp"
 #include "error.hpp"
+
+#include <iostream>
 
 using namespace std;
 
 	//list of defined variables
-vector<variable> variables;
+vector<Variable> variables;
 
 	//scope interpreter
-var handleScope(var_lst *scope) {
-
+var handleScope(var_lst* scope) {
+	debug("handleScope(var_lst*)");
 	return V_NULL;
 }
 
 	//initialisation
-int main(int argc, char *argv[]) {
-	debug("started");
+int main(int argc, char* argv[]) {
+	info("start");
 	//argv[0] -> command which executed a.out (path)
 
+	info("init builtins");
+	Builtins::create();
+
 	const char* path = argc > 1? argv[1] : "res/code.bsc";
-	debug("reading...");
 	string code = readFile(path, true);
+	info("file input: \"%s\"", code.c_str());
 	if(code == "") error("file \"%s\" is empty", path);
 
+	printf("press enter to continue\n");
+	wait_enter();
+
 		//create code scope of content from default or argument file path
-	debug("converting...\n");
+	info("formatting code");
 	var_lst main = toCode(&code);
 
-	debug("print stringified");
-	printf("%s\n", Variables::stringify(new variable(&main, T_TRM)).c_str());
+	printf("main: %s\n", Variables::sstringify(main));
 
 		//execute code
-	debug("execute");
 	handleScope(&main);
 
-	debug("free space");
+	info("freeing");
 	Variables::free();
 	printf("\n");
-	debug("exit");
+	info("end.");
 }

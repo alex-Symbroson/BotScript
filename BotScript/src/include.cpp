@@ -9,7 +9,7 @@
 
 	//copied (and modified) from stackoverflow, "ausercomment"
 double stod(string s, uint8_t radix) {
-	debug("stod %s", s.c_str());
+	debug("stod(%s,%i)", s.c_str(), radix);
 	double n = 0;
 	uint8_t x = s.size(), y = 0;
 	while(x)
@@ -18,16 +18,9 @@ double stod(string s, uint8_t radix) {
 	return n;
 }
 
-string dtos(double d) {
-	debug("dtos %f", d);
-	char buffer[20];
-	snprintf(buffer, sizeof(buffer), "%.15f", d);
-	return string(buffer);
-}
-
 	//replace all in string
 void replace(string* str, string src, string ovr) {
-	debug("replace");
+	debug("replace(string*, string, string)");
 	int start = 0;
 	while((start = str->find(src, start)) + 1) {
 		str->replace(start, src.length(), ovr);
@@ -35,16 +28,16 @@ void replace(string* str, string src, string ovr) {
 	}
 }
 
-#ifndef delay //can be imported with wiringpi.h
 	//delay in milliseonds
 void delay(int time) {
+	debug("delay(%i)", time);
 	time = clock() + time*1000;
 	while(clock() < time);
 }
-#endif
 
 	//replace some \ placeholders
-void format(string *s) {
+void format(string* s) {
+	debug("formamt(string*)");
 	debug("format");
 	replace(s, "\\n", "\n");
 	replace(s, "\\t", "\t");
@@ -53,49 +46,52 @@ void format(string *s) {
 }
 
 	//converts scope string to term
-var_lst toFunction(string::iterator* c) {
-	debug("toFunction");
-	var_lst block = {};
-	while(**c != ')' && **c != '}' && **c != 255) {
+var_lst toFunction(string::iterator* c, string::iterator end) {
+	debug("toFunction(string::iterator)");
+	var_lst block(0);
+	while(**c != ')' && **c != '}' && *c < end) {
 		switch(**c) {
 			case '"': {
-				debug("toFunction case '\"'");
+				info("tof \"");
 				string word = "";
-				while(*++*c != '"') word += **c;
-				block.push_back(new variable(&word, T_STR));
+				while(*++*c != '"' && *c < end) word += **c;
+				info("read %s", word.c_str());
+				block.push_back(new Variable(&word, T_STR));
 			}
 			break;
 			case '(': case '{': {
-				debug("toFunction case '(' or '{'");
+				info("tof %c", **c);
 				var_lst scope;
 				uint8_t type = **c == '('? T_TRM : T_FNC;
 				++*c;
-				scope = toFunction(c);
-				block.push_back(new variable(&scope, type));
+				scope = toFunction(c, end);
+				info("got %s", Variables::sstringify(scope));
+				block.push_back(new Variable(&scope, type));
 			}
 			break;
 			default:
-				debug("toFunction case default");
+				info("tof def");
 				string word = "";
 				if(symbols.find(**c) + 1)
-					do word += **c; while(symbols.find(*++*c) + 1);
+					do word += **c; while(symbols.find(*++*c) + 1 && *c < end);
 				else
-					do word += **c; while(!(symbols.find(*++*c) + 1));
-				debug("create variable %s", word.c_str());
-				debug("builtin index: %i", Builtins::find(word));
-				if(Builtins::find(word)) block.push_back(new variable(&word, T_STR, true)); //!!!
-				else block.push_back(new variable(&word, T_VAR));
+					do word += **c; while(!(symbols.find(*++*c) + 1) && *c < end);
+				info("read %s", word.c_str());
+				if(Builtins::exists(word)) block.push_back(Builtins::get(word));
+				else block.push_back(new Variable(&word, T_VAR));
 			continue;
 		}
 		++*c;
 	}
+	info("returning %s", Variables::sstringify(block));
 	return block;
 }
 
 	//start recursive conversation from string to term
 var_lst toCode(string* code) {
+	debug("toCode(string*)");
 	string::iterator c = code->begin();
-	return toFunction(&c);
+	return toFunction(&c, code->end());
 }
 
 	//ignore == true -> ignore useless whitespace
@@ -103,7 +99,6 @@ string readFile(const char* path, bool ignore) {
 	debug("reading file %s", path);
 		//file buffer
 	FILE *f = fopen(path, "r");
-	debug("file: %i", *f);
 
 	if(!f) error("file \"%s\" does not exist!", path);
 
@@ -140,6 +135,5 @@ string readFile(const char* path, bool ignore) {
 		}
 		content += c;
 	}
-	debug("got \"%s\"\n", content.c_str());
 	return content;
 }
