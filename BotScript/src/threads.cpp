@@ -2,7 +2,7 @@
 //$ g++ -std=c++11 -O3 -c threads.cpp
 
 #include "threads.hpp"
-#include "error.hpp"
+#include "macros.hpp"
 
 	//creates new thread and return thread-id
 uint8_t Thread::create(void *(*foo) (void *), void* arg) {

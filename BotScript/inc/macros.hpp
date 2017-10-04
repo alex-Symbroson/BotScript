@@ -4,7 +4,8 @@
 
 	#include <stdio.h>
 
-	#define DEBUG 0
+	#define DEBUG 1
+	#define TEST_BUILTINS 1
 
 		//macros for error mesages
 	#define err_ict(a,b) printf("\033[1;31mincompatible types %s and %s\033[0;37m\n", a, b)
@@ -12,7 +13,7 @@
 	#define err_imu(a,b) printf("\033[1;31m%ss have no '%s' member\033[0;37m\n", a, b)
 	#define error(a,...) printf("\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
 
-	#define wait_enter() getchar();getchar();
+	#define wait_enter() stdin = freopen(NULL, "r", stdin); getchar();
 
 		//yellow coloured debug macro
 	#if DEBUG

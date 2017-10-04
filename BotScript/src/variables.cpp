@@ -2,7 +2,7 @@
 //$ g++ -std=c++11 -O3 -c Variables.cpp
 
 #include "variables.hpp"
-#include "error.hpp"
+#include "macros.hpp"
 
 namespace Variables {
 

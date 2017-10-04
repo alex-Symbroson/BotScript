@@ -3,9 +3,7 @@
 
 #include "include.hpp" //includes special functions
 #include "builtins.hpp"
-#include "error.hpp"
-
-#include <iostream>
+#include "macros.hpp"
 
 using namespace std;
 

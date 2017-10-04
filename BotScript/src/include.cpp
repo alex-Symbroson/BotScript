@@ -2,8 +2,8 @@
 //$ g++ -std=c++11 -O3 -c include.cpp
 
 #include "include.hpp"
-#include "error.hpp"
 #include "builtins.hpp"
+#include "macros.hpp"
 
 #include <math.h>        //pow
 

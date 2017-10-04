@@ -3,7 +3,7 @@
 
 #include "builtins.hpp"
 #include "include.hpp"
-#include "error.hpp"
+#include "macros.hpp"
 
 #include <time.h>
 #include <stdlib.h>
@@ -77,36 +77,38 @@ namespace Builtins {
 	void create() {
 		debug("Builtins::create()");
 		vector<cstr> args;
-		var a;
 
 		args = {"string"};
 		add("print", args, (var)b_print);
+
+		args = {};
+		add("clock", args, (var)b_clock);
+
+		args = {"milliseconds"};
+		add("delay", args, (var)b_delay);
+
+		args = {"message"};
+		add("input", args, (var)b_input);
+
+#if TEST_BUILTINS == 1
+		var a;
 
 		info("testing print:");
 		a = Variables::create("hallo\ndu\n", T_STR);
 		call("print", a);
 		info("success!");
 
-		args = {};
-		add("clock", args, (var)b_clock);
-
 		info("testing clock:");
 		a = Variables::create(nullptr, T_NIL);
 		a = call("clock", a);
-		debug(" -> %s", Variables::sstringify(a));
+		info(" -> %s", Variables::sstringify(a));
 		info("success!");
-
-		args = {"message"};
-		add("input", args, (var)b_input);
 
 		info("testing input:");
 		a = Variables::create("type smth: ", T_STR);
 		a = call("input", a);
-		debug(" -> \"%s\"", Variables::sstringify(a));
+		info(" -> %s", Variables::sstringify(a));
 		info("success!");
-
-		args = {"milliseconds"};
-		add("delay", args, (var)b_delay);
 
 		info("testing delay 2 seconds:");
 		a = Variables::create((var_int)2000, T_INT);
@@ -116,5 +118,6 @@ namespace Builtins {
 		end = clock();
 		info("  needed %.3f ms", (end-start)/1000.);
 		info("success!");
+#endif
 	}
 }
