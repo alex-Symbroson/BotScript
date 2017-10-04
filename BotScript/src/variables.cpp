@@ -286,7 +286,8 @@ Variable::Variable(void* v, uint8_t type, bool builtin) {
 
 	//destructor: search Variable value in Variables and erase it
 Variable::~Variable() {
-	//debug("Variable::destructor() var: %i (%s) = %s", this->type, Variables::getType(this->type), Variables::sstringify(this));
+	debug("Variable::destructor() var: %i (%s) = %s", this->type,
+		  Variables::getType(this->type), Variables::sstringify(this));
 	vector<var>::iterator it = Variables::all.begin();
 	while(*it != this) it++;
 	Variables::all.erase(it);
