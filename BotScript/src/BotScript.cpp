@@ -29,8 +29,10 @@ int main(int argc, char* argv[]) {
 	info("file input: \"%s\"", code.c_str());
 	if(code == "") error("file \"%s\" is empty", path);
 
+#if DEBUG == 1
 	printf("press enter to continue\n");
 	wait_enter();
+#endif
 
 		//create code scope of content from default or argument file path
 	info("formatting code");
