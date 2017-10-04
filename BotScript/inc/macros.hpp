@@ -4,8 +4,8 @@
 
 	#include <stdio.h>
 
-	#define DEBUG 1
-	#define TEST_BUILTINS 1
+	#define DEBUG 0
+	#define TEST_BUILTINS 0
 
 		//macros for error mesages
 	#define err_ict(a,b) printf("\033[1;31mincompatible types %s and %s\033[0;37m\n", a, b)
