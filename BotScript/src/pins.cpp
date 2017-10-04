@@ -14,5 +14,6 @@
 */
 
 void Pins::setup() {
+	debug("Pins::setup()");
 	if(wiringPiSetup() == -1) error("setup wiringPi failed !");
 }

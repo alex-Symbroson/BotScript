@@ -21,16 +21,14 @@ string dtos(double d);
 	//replace all in string
 void replace(string* str, string src, string ovr);
 
-#ifndef delay //can be imported with wiringpi.h
 	//delay in milliseonds
-void delay(uint32_t time);
-#endif
+void delay(int time);
 
 	//replace some \ placeholders
 void format(string *s);
 
 	//converts scope string to term
-var_lst toFunction(string::iterator* c);
+var_lst toFunction(string::iterator* c, string::iterator end);
 
 	//start recursive conversation from string to term
 var_lst toCode(string* code);

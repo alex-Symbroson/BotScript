@@ -6,10 +6,12 @@
 
 	//creates new thread and return thread-id
 uint8_t Thread::create(void *(*foo) (void *), void* arg) {
-	uint8_t id(0), state;
+	debug("Thread::create(void*(*))(void*), void*)");
+	uint8_t id = 0, state;
 
 		//find inactive thread
 	while(active[id]) id++;
+	debug("  -> id = %i", id);
 
 		//create thread
 	state = pthread_create(&thread[id], NULL, foo, arg);
@@ -24,6 +26,7 @@ uint8_t Thread::create(void *(*foo) (void *), void* arg) {
 
 	//return void-pointer of thread result
 void* Thread::result(uint8_t id) {
+	debug("Thread::result(%i)", id);
 	void* result;
 
 		//"call" thread
@@ -32,6 +35,7 @@ void* Thread::result(uint8_t id) {
 }
 
 void Thread::cancel(uint8_t id) {
+	debug("Thread::cancel(%i)", id);
 		//cancel thread
 	pthread_cancel(thread[id]);
 
