@@ -3,53 +3,61 @@
 
 #include "builtins.hpp"
 #include "include.hpp"
+
+#define CUSTOM_BEGIN
 #include "macros.hpp"
 
 #include <time.h>
 #include <stdlib.h>
-#include <iostream>
 
 #define cstr const char*
+
+#define BEGIN(...) BEGIN_1("Builtins",__VA_ARGS__)
+#define END(...) END_1("Builtins",__VA_ARGS__)
 
 namespace Builtins {
 		//list of builtin functions
 	unordered_map<string, var> map;
 
 	var b_print(var param) {
-		debug("Builtins::print(%s)", Variables::sstringify(param));
+		BEGIN("var param=\"%s\"", Variables::sstringify(param));
 		printf("%s", Variables::sstringify(param, false));
+		END();
 		return V_NULL;
 	}
 
 	var b_input(var param) {
-		debug("Builtins::input(%s)", Variables::sstringify(param));
+		BEGIN("var param=\"%s\"", Variables::sstringify(param));
 		printf("%s", Variables::sstringify(param, false));
 		string inp;
 		cin >> inp;
+		END();
 		return Variables::create(&inp, T_STR);
 	}
 
 	var b_delay(var param) {
-		debug("Builtins::delay(%s)", Variables::sstringify(param));
+		BEGIN("var param=\"%s\"", Variables::sstringify(param));
 		delay(getInt(param));
+		END();
 		return V_NULL;
 	}
 
 	var b_clock(var param) {
-		debug("Builtins::clock()");
+		BEGIN("");
 		uint32_t time = (int)(clock() / 1000);
+		END();
 		return Variables::create(&time, T_INT);
 	}
 
 
 			//returns builtin index (0 = not found)
 	bool exists(string s) {
-		debug("Builtins::exists(%s)", s.c_str());
+		BEGIN("string s=%s", s.c_str()); END();
 		return map.find(s) != map.end();
 	}
 
 	void add(string name, vector<cstr> params, var content) {
-		debug("Builtins::add(%s, cstr[], var)", name.c_str());
+		BEGIN("string name=%s,vector<cstr>params,var content)", name.c_str());
 
 		uint i = params.size();
 		var_lst vps(i);
@@ -61,63 +69,59 @@ namespace Builtins {
 		};
 
 		map[name] = Variables::create(&obj, T_FNC, true);
+		END();
 	}
 
 	var get(string name) {
-		debug("Builtins::get(\"%s\")", name.c_str());
+		BEGIN("string name=\"%s\"", name.c_str()); END();
 		return map[name];
 	}
 
 	var call(string name, var arg) {
-		debug("Builtins::call(\"%s\", %s)", name.c_str(), Variables::sstringify(arg));
+		BEGIN("string name=\"%s\",var arg=%s)", name.c_str(), Variables::sstringify(arg));
 		var_obj fnc = getObj(map[name]);
+		END();
 		return ((var(*)(var))fnc["content"])(arg);
 	}
 
 	void create() {
-		debug("Builtins::create()");
-		vector<cstr> args;
+		BEGIN("");
+		vector<cstr> noparams = {};
 
-		args = {"string"};
-		add("print", args, (var)b_print);
-
-		args = {};
-		add("clock", args, (var)b_clock);
-
-		args = {"milliseconds"};
-		add("delay", args, (var)b_delay);
-
-		args = {"message"};
-		add("input", args, (var)b_input);
+		add("print", {"string"}, (var)b_print);
+		add("clock", noparams, (var)b_clock);
+		add("delay", {"milliseconds"}, (var)b_delay);
+		add("input", {"message"}, (var)b_input);
 
 #if TEST_BUILTINS == 1
 		var a;
 
-		info("testing print:");
+		DEBUG("testing print:");
 		a = Variables::create("hallo\ndu\n", T_STR);
 		call("print", a);
-		info("success!");
+		DEBUG("success!");
 
-		info("testing clock:");
+		DEBUG("testing clock:");
 		a = Variables::create(nullptr, T_NIL);
 		a = call("clock", a);
-		info(" -> %s", Variables::sstringify(a));
-		info("success!");
+		DEBUG(" -> %s", Variables::sstringify(a));
+		DEBUG("success!");
 
-		info("testing input:");
+		DEBUG("testing input:");
 		a = Variables::create("type smth: ", T_STR);
 		a = call("input", a);
-		info(" -> %s", Variables::sstringify(a));
-		info("success!");
+		DEBUG(" -> %s", Variables::sstringify(a));
+		DEBUG("success!");
 
-		info("testing delay 2 seconds:");
+		DEBUG("testing delay 2 seconds:");
 		a = Variables::create((var_int)2000, T_INT);
 		int start, end;
 		start = clock();
 		call("delay", a);
 		end = clock();
-		info("  needed %.3f ms", (end-start)/1000.);
-		info("success!");
+		DEBUG("  needed %.3f ms", (end-start)/1000.);
+		DEBUG("success!");
 #endif
+		END();
 	}
 }

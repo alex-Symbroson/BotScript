@@ -12,21 +12,24 @@ vector<Variable> variables;
 
 	//scope interpreter
 var handleScope(var_lst* scope) {
-	debug("handleScope(var_lst*)");
+	BEGIN("var_lst*scope");
+
+	END();
 	return V_NULL;
 }
 
 	//initialisation
 int main(int argc, char* argv[]) {
-	info("start");
+	BEGIN("int argc=%i,char**argv",argc);
+	PRINT_STATUS();
 	//argv[0] -> command which executed a.out (path)
 
-	info("init builtins");
+	INFO("init builtins");
 	Builtins::create();
 
 	const char* path = argc > 1? argv[1] : "res/code.bsc";
 	string code = readFile(path, true);
-	info("file input: \"%s\"", code.c_str());
+	INFO("file input: \"%s\"", code.c_str());
 	if(code == "") error("file \"%s\" is empty", path);
 
 #if DEBUG == 1
@@ -35,16 +38,21 @@ int main(int argc, char* argv[]) {
 #endif
 
 		//create code scope of content from default or argument file path
-	info("formatting code");
+	INFO("formatting code");
 	var_lst main = toCode(&code);
 
 	printf("main: %s\n", Variables::sstringify(main));
 
 		//execute code
-	handleScope(&main);
+	INFO("executing code");
+	printf("returned: %s\n", Variables::sstringify(handleScope(&main)));
 
-	info("freeing");
+		//free all allocated variables
+	INFO("freeing...");
 	Variables::free();
 	printf("\n");
-	info("end.");
+
+	INFO("end.");
+	END();
+	return 0;
 }

@@ -41,6 +41,7 @@ Datatypes
 		Write(Int)
 		Stop()
 		...
+	Thread
 
 Namespaces
 	Math

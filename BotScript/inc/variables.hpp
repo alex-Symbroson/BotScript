@@ -2,11 +2,7 @@
 #ifndef _VARIABLES_HPP_
 #define _VARIABLES_HPP_
 
-#include <string>
-#include <vector>        //alternative array based list container
-#include <forward_list>  //alternative linked list container
-#include <unordered_map> //k:v object container
-
+#include "headers.hpp"
 #define uint8_t unsigned char
 
 	//type id's
@@ -55,10 +51,10 @@ namespace Variables {
 	const char* getType(uint8_t t);
 
 		//recursive _stringify
-	void _stringify(var value, string* str, bool mark = true);
+	void _stringify(var value, string* str, bool mark = true, bool expand_func = false);
 
 		//returns stringified Variable
-	string stringify(var value, bool mark = true);
+	string stringify(var value, bool mark = true, bool expand_func = true);
 	string stringify(char** list, uint len);
 	string stringify(int value);
 	string stringify(int* value, uint len);

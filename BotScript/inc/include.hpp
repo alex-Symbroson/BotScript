@@ -2,7 +2,7 @@
 #ifndef _BSINC_HPP_
 #define _BSINC_HPP_
 
-#include <string>
+#include "headers.hpp"
 #include "variables.hpp"
 
 using namespace std;

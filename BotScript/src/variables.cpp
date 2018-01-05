@@ -2,7 +2,12 @@
 //$ g++ -std=c++11 -O3 -c Variables.cpp
 
 #include "variables.hpp"
+
+#define CUSTOM_BEGIN
 #include "macros.hpp"
+
+#define BEGIN(...) BEGIN_1("Variables",__VA_ARGS__)
+#define END(...) END_1("Variables",__VA_ARGS__)
 
 namespace Variables {
 
@@ -11,9 +16,10 @@ namespace Variables {
 
 		//returns the name of the type of a Variable
 	const char* getType(uint8_t t) {
-		debug("Variables::getType(%i);", t);
+		BEGIN("uint8_t t=%i", t);
+		END();
 		switch(t) {
-			case T_NIL: return "undefined";
+			case T_NIL: return "null";
 			case T_VAR: return "name";
 			case T_INT: return "integer";
 			case T_FLT: return "float";
@@ -28,8 +34,8 @@ namespace Variables {
 	}
 
 		//convert variable to string equivalent
-	void _stringify(var value, string* str, bool mark) {
-		//debug("Variables::_stringify(var, string* \"%s\", bool %s)", str->c_str(), mark?"true":"false");
+	void _stringify(var value, string* str, bool mark, bool expand_func) {
+// 		BEGIN("var value,string*str=\"%s\",bool mark=%s", str->c_str(), mark?"true":"false");
 		if(value->builtin) {
 			//printf("tried to stringify builtin");
 			*str += " [builtin] ";
@@ -37,20 +43,26 @@ namespace Variables {
 		}
 
 		switch(value->type) {
-			case T_PIN: case T_INT: case T_FLT:
-				//debug("Variables::_stringify case INT");
+			case T_PIN:
+			case T_INT:
+			case T_FLT:
+				// BEGIN("_stringify case INT");
 				if(value->type == T_PIN) *str += "Pin ";
 				*str += to_string(getInt(value));
 			break;
-			case T_STR: case T_VAR:
-				//debug("Variables::_stringify case STR");
+
+			case T_STR:
+			case T_VAR:
+				// BEGIN("_stringify case STR");
 				if(value->type == T_VAR) *str += "Var ";
 
 				if(mark) *str += "\"" + getStr(value) + "\"";
 				else *str += getStr(value);
 			break;
-			case T_LST: case T_TRM: {
-				//debug("Variables::_stringify case LST");
+
+			case T_LST:
+			case T_TRM: {
+				// BEGIN("_stringify case LST");
 				if(mark) {
 					if(value->type == T_LST) *str += "[";
 					else *str += "(";
@@ -59,7 +71,7 @@ namespace Variables {
 				var_lst::iterator first(getLst(value).begin());
 				for(var val : getLst(value)) {
 					if(val != *first) *str += ",";
-					_stringify(val, str, mark);
+					_stringify(val, str, mark, false);
 				}
 
 				if(mark) {
@@ -67,14 +79,18 @@ namespace Variables {
 					else *str += ")";
 				}
 			} break;
+
 			case T_FNC: {
-				//debug("Variables::_stringify case FNC");
-				var_obj fnc = getObj(value);
-				*str += getStr(fnc["name"]) + "(" + stringify(fnc["args"], false)
-					+ ")" + "{" + stringify(fnc["content"]) + "}";
+				// BEGIN("_stringify case FNC");
+				if(expand_func) {
+					var_obj fnc = getObj(value);
+					*str += getStr(fnc["name"]) + "(" + stringify(fnc["args"])
+						+ ")" + "{" + stringify(fnc["content"]) + "}";
+				} else *str += getStr(getObj(value)["name"]);
 			} break;
+
 			case T_OBJ: {
-				//debug("Variables::_stringify case OBJ");
+				// BEGIN("_stringify case OBJ");
 				*str += "[";
 				var_obj::iterator first = getObj(value).begin();
 				for(pair<string,var> kvp : getObj(value)) {
@@ -84,58 +100,71 @@ namespace Variables {
 				}
 				*str += "]";
 			} break;
+
+			case T_NIL:
+				*str += "null";
+			break;
+			
 			default: //T_NIL
-				//debug("Variables::_stringify case NIL");
+				// BEGIN("_stringify case NIL");
 				*str += "undefined";
 		}
+// 		END()
 	}
 
 		//direct stringify function
-	string stringify(var value, bool mark) {
-		debug("Variables::stringify(var)");
+	string stringify(var value, bool mark, bool expand_func) {
+		// BEGIN("var value,bool mark");
 
 		string s = "";
-		_stringify(value, &s, mark);
+		_stringify(value, &s, mark, expand_func);
+
+		// END();
 		return s;
 	}
 
 	string stringify(char** list, uint len) {
-		debug("Variables::stringify(char**, uint)");
+		// BEGIN("char**list,uint len=%u",len);
 		string s = "";
 		while(len--)
 			if(len) s = string(", ") + list[len] + s;
 			else s = list[len] + s;
+		// END();
 		return s;
 	}
 
 	string stringify(int value) {
-		debug("Variables::stringify(int)");
+		// BEGIN("int");
+		// END();
 		return to_string(value);
 	}
 
 	string stringify(int* value, uint len) {
-		debug("Variables::stringify(int**, int)");
+		// BEGIN("int*, uint");
 		string s = "[";
 		for(uint i = 0; i < len; i++)
 			if(len) s += value[i];
 			else s += value[i] + ", ";
+		// END();
 		return (s + ']');
 	}
 
 	string stringify(var_lst value, const char brackets[]) {
-		debug("Variables::stringify(var_lst)");
+		// BEGIN("var_lst");
 		string s = "";
 		for(var v : value)
-			s += stringify(v) + ", ";
+			s += stringify(v, false) + ", ";
+		// END();
 		return brackets[0] + s + brackets[1];
 	}
 
 	string stringify(var_obj value) {
-		debug("Variables::stringify(var_obj)");
+		// BEGIN("var_obj value");
 		string s = "[";
 		for(pair<string, var> v : value)
-			s += "\"" + v.first + "\":" + stringify(v.second) + ", ";
+			s += "\"" + v.first + "\":" + stringify(v.second, false) + ", ";
 		s += ']';
+		// END();
 		return s;
 	}
 	/*
@@ -147,129 +176,132 @@ namespace Variables {
 	//create(val) the .out file will be smaller
 		//undefined / null
 	var create(void* value, uint8_t type, bool builtin) {
-		debug("Variables::create(void*, %i (%s), %i)", type, Variables::getType(type), builtin);
-
+		BEGIN("void*,uint8 type=%i(%s),bool %i", type, Variables::getType(type), builtin);
 		all.push_back(new Variable(value, type));
+		END();
 		return all.back();
 	}
 
 		//integers
 	forward_list<var_int> integers;
 	var create(var_int value, uint8_t type, bool builtin) {
-		debug("Variables::create(var_int %li, %i (%s), %i)", value, type, Variables::getType(type), builtin);
-
+		BEGIN("var_int %li,uint8 type=%i(%s),bool builtin=%i", value, type, Variables::getType(type), builtin);
 		all.push_back(new Variable(&value, type));
+		END();
 		return all.back();
 	}
 	var_int* addInt(var_int* v) {
-		debug("Variables::addInt(var_int* %li)", *v);
-
+		BEGIN("var_int* %li", *v);
 		integers.push_front(*v);
+		END();
 		return &integers.front();
 	}
 
 		//floating points
 	forward_list<var_flt> floats;
 	var create(var_flt value, uint8_t type, bool builtin) {
-		debug("Variables::create(flt, %.15f %i (%s), %i)", value, type, Variables::getType(type), builtin);
-
+		BEGIN("flt value=%.15f,uint8 type=%i(%s),bool builtin=%i", value, type, Variables::getType(type), builtin);
 		all.push_back(new Variable(&value, type));
+		END();
 		return all.back();
 	}
 	var_flt* addFlt(var_flt* v) {
-		debug("Variables::addInt(var_flt* %.15f)", *v);
-
+		BEGIN("var_flt* %.15f", *v);
 		floats.push_front(*v);
+		END();
 		return &floats.front();
 	}
 
 		//strings
 	forward_list<var_str> strings;
 	var create(var_str value, uint8_t type, bool builtin) {
-		debug("Variables::create(var_str %s, %i (%s), %i)", value.c_str(), type, Variables::getType(type), builtin);
-
+		BEGIN("var_str %s, uint8_t type=%i(%s),bool builtin=%i", value.c_str(), type, Variables::getType(type), builtin);
 		all.push_back(new Variable(&value, type));
+		END();
 		return all.back();
 	}
 	var_str* addStr(var_str* v) {
-		debug("Variables::addStr(var_str* %s)", v->c_str());
-
+		BEGIN("var_str* %s", v->c_str());
 		strings.push_front(*v);
+		END();
 		return &strings.front();
 	}
 
 		//lists
 	forward_list<var_lst> lists;
 	var create(var_lst value, uint8_t type, bool builtin) {
-		debug("Variables::create(var_lst, %i (%s), %i)", type, Variables::getType(type), builtin);
-
+		BEGIN("var_lst value,uint8 type=%i(%s),bool builtin=%i", type, Variables::getType(type), builtin);
 		all.push_back(new Variable(&value, type));
+		END();
 		return all.back();
 	}
 	var_lst* addLst(var_lst* v) {
-		debug("Variables::addLst(var_lst*)");
-
+		BEGIN("var_lst*");
 		lists.push_front(*v);
+		END();
 		return &lists.front();
 	}
 
 		//objects
 	forward_list<var_obj> objects;
 	var create(var_obj value, uint8_t type, bool builtin) {
-		debug("Variables::create(var_obj, %i (%s), %i)", type, Variables::getType(type), builtin);
-
+		BEGIN("var_obj value,uint8 type=%i(%s),bool bultin=%i", type, Variables::getType(type), builtin);
 		all.push_back(new Variable(&value, type));
+		END();
 		return all.back();
 	}
 	var_obj* addObj(var_obj* v) {
-		debug("Variables::addObj(var_obj*)");
-
+		BEGIN("var_obj*");
 		objects.push_front(*v);
+		END();
 		return &objects.front();
 	}
 
 		//free space -> deletes ALL Variables
 	void free() {
-		debug("Variables::free()");
+		BEGIN("");
 		while(all.size()) delete all.front();
+		END();
 	}
 }
 
 /* * * * * * * * * *
- * class Variable  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * class Variable  *
  * * * * * * * * * */
 
 Variable::Variable(void* v, uint8_t type, bool builtin) {
-	debug("Variable::constructor %i %s", type, Variables::getType(type));
-	if(!type) return;
+	BEGIN("void* v,uint8 type=%i(%s),bool builtin=%i", type, Variables::getType(type), builtin);
 	this->type = type;
 	this->builtin = builtin;
+	if(!type) return;
+
 	switch(type) {
 		case T_INT:
-		case T_PIN: value = Variables::addInt((var_int*)v); return;
-		case T_FLT: value = Variables::addFlt((var_flt*)v); return;
+		case T_PIN: value = Variables::addInt((var_int*)v); break;
+		case T_FLT: value = Variables::addFlt((var_flt*)v); break;
 		case T_STR:
-		case T_VAR: value = Variables::addStr((var_str*)v); return;
+		case T_VAR: value = Variables::addStr((var_str*)v); break;
 		case T_LST:
-		case T_TRM: value = Variables::addLst((var_lst*)v); return;
+		case T_TRM: value = Variables::addLst((var_lst*)v); break;
 		case T_OBJ:
-		case T_FNC: value = Variables::addObj((var_obj*)v); return;
+		case T_FNC: value = Variables::addObj((var_obj*)v); break;
 	}
+	END();
 }
 
 	//destructor: search Variable value in Variables and erase it
 Variable::~Variable() {
-	debug("Variable::destructor() var: %i (%s) = %s", this->type,
-		  Variables::getType(this->type), Variables::sstringify(this));
+	BEGIN("");
 	vector<var>::iterator it = Variables::all.begin();
 	while(*it != this) it++;
 	Variables::all.erase(it);
 	//cout << "deleted " << this << " " << stringify(this) << endl;
+	END();
 }
 
 	//assign value v to the Variable
 void Variable::set(void* v, uint8_t type) {
-	debug("Variables::set(void, %i (%s))", type, Variables::getType(type));
+	BEGIN("void*v,uint8 type=%i(%s)", type, Variables::getType(type));
 
 	if(!type) type = this->type;
 
@@ -279,39 +311,44 @@ void Variable::set(void* v, uint8_t type) {
 
 		//assign v to Variable
 	switch(type) {
-		case T_NIL: Variable(v, type); return;
+		case T_NIL: Variable(v, type); break;
 		case T_INT:
-		case T_PIN: *(var_int*)value = *(var_int*)v; return;
-		case T_FLT: *(var_flt*)value = *(var_flt*)v; return;
-		case T_STR: *(var_str*)value = *(var_str*)v; return;
+		case T_PIN: *(var_int*)value = *(var_int*)v; break;
+		case T_FLT: *(var_flt*)value = *(var_flt*)v; break;
+		case T_STR: *(var_str*)value = *(var_str*)v; break;
 		case T_LST:
-		case T_TRM: *(var_lst*)value = *(var_lst*)v; return;
+		case T_TRM: *(var_lst*)value = *(var_lst*)v; break;
 		case T_OBJ:
-		case T_FNC: *(var_obj*)value = *(var_obj*)v; return;
+		case T_FNC: *(var_obj*)value = *(var_obj*)v; break;
 	}
+	END();
 }
 /*
 var Variable::keys() {
+	BEGIN("");
 	if(type == T_OBJ) {
 		var_lst keys;
 		for(pair<string, var> kvp : *getObj()) keys.push_back(new Variable(kvp.first));
 		return new Variable(keys);
 	}
 	err_imu(getType(type), "keys");
+	END();
 }
 
 var Variable::values() {
+	BEGIN();
 	if(type == T_OBJ) {
 		var_lst vals;
 		for(pair<string,var> kvp : *getObj()) vals.push_back(kvp.second);
 		return new Variable(vals);
 	}
 	err_imu(getType(type), "values");
+	END();
 }*/
 
 	//random access for strings and lists
 var Variable::at(int i) {
-	debug("Variable::at(int %i)", i);
+	BEGIN("int i=%i", i);
 
 	if(type == T_LST) return (*(var_lst*)value)[i];
 	else if(type == T_FLT) {
@@ -319,53 +356,85 @@ var Variable::at(int i) {
 		return Variables::create(string(&c));
 	}
 	error("%ss don't support random access", Variables::getType(type));
+	END();
 	return V_NULL;
 }
 
 	//random access for objects
 var Variable::at(string key) {
-	debug("Variable::at(\"%s\")", key.c_str());
+	BEGIN("\"%s\"", key.c_str());
 
 	if(type == T_OBJ) return (*(var_obj*)value)[key];
 	error("%s don't support random access", Variables::getType(type));
+	END();
 	return V_NULL;
 }
 
 	//creates a new Variable instance
 var Variable::copy() {
-	debug("Variable::copy()");
+	BEGIN(); END();
 	return Variables::create(value, type);
 }
 
 	//assign Variable instance to Variable
 void Variable::operator = (var v) {
-	debug("Variable::op=()");
+	BEGIN("var v");
 	if(type == v->type) value = v->value;
 	else err_ict(Variables::getType(type), Variables::getType(v->type));
+	END();
 }
 
 	//add Variable instance to Variable
 void Variable::operator += (var v) {
-	debug("Variable::op+=()");
+	BEGIN("var v");
 	switch(type) {
 		case T_NIL: err_iop("undefined", "+="); //can't add smth to null -> invalid operator
-		case T_INT: if(v->type == T_INT) *(var_int*)value += *(var_int*)v->value; else break; return;
-		case T_FLT: if(v->type == T_FLT) *(var_flt*)value += *(var_flt*)v->value; else break; return;
-		case T_STR: if(v->type == T_STR) *(var_str*)value += *(var_str*)v->value; else break; return;
-		case T_LST: if(v->type == T_LST) ((var_lst*)value)->insert(((var_lst*)value)->end(), getLst(v).begin(), getLst(v).end()); else break; return;
-		case T_OBJ: if(v->type == T_OBJ) ((var_obj*)value)->insert(getObj(v).begin(), getObj(v).end()); else break; return;
+		case T_INT:
+			if(v->type == T_INT)
+				*(var_int*)value += *(var_int*)v->value;
+			else goto err;
+		break;
+
+		case T_FLT:
+			if(v->type == T_FLT)
+				*(var_flt*)value += *(var_flt*)v->value;
+			else goto err;
+		break;
+
+		case T_STR:
+			if(v->type == T_STR)
+				*(var_str*)value += *(var_str*)v->value;
+			else goto err;
+		break;
+
+		case T_LST:
+			if(v->type == T_LST)
+				((var_lst*)value)->insert(((var_lst*)value)->end(), getLst(v).begin(), getLst(v).end());
+			else goto err;
+		break;
+
+		case T_OBJ:
+			if(v->type == T_OBJ)
+				((var_obj*)value)->insert(getObj(v).begin(), getObj(v).end());
+			else goto err;
+		break;
+
 		default: err_iop(Variables::getType(type), "+=");
 	}
-	err_ict(Variables::getType(type), Variables::getType(v->type));
+	END();
+	return;
+	err: err_ict(Variables::getType(type), Variables::getType(v->type));
 }
 
 	//substract Variable instance from integer Variable
 void Variable::operator -= (var v) {
-	debug("Variable::op-=()");
+	BEGIN("");
 	if(type == T_INT) {
-		if(v->type == T_INT) *(var_int*)value += *(var_int*)v->value;
+		if(v->type == T_INT)
+			*(var_int*)value += *(var_int*)v->value;
 		else err_ict("integer", Variables::getType(v->type));
 	} else err_iop(Variables::getType(type), "-=");
+	END();
 }
 
 //void _parse(...) {}

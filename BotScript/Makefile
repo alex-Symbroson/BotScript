@@ -1,11 +1,12 @@
 
-	# build, source, include directories
+	# build, source, include directories, precompiled header
 DIR_BUILD = build/
 DIR_SRC   = src/
 DIR_INC   = inc/
+PCH       = headers.hpp
 
 	# compiler flags
-CFLAGS  = -I inc -Wall -std=c++11 -O3
+CFLAGS  = -I $(DIR_INC) -Wall -std=c++11 -O3
 
 	# linker flags
 LDFLAGS  = -pthread -lwiringPi
@@ -32,7 +33,7 @@ OBJ = $(patsubst $(DIR_SRC)%,$(DIR_BUILD)%,$(foreach source, \
 	# define phony targets for make commands
 .PHONY: all all_init clean run
 
-all: all_init $(OUTPUT).out
+all: all_init $(DIR_INC)$(PCH).gch $(OUTPUT).out
 	@printf "\nCompilation done - No Errors.\n"
 
 all_init:
@@ -43,13 +44,17 @@ all_init:
 	@printf "\n#### linking project\n"
 	g++ $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@
 
+$(DIR_INC)%.gch: $(DIR_INC)$(PCH)
+	@echo "\n#### compiling precompiled header"
+	g++ -o $@ $(CFLAGS) $(PHC) $<
+
 $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR)
 	@printf "\n#### compiling \"$@\" based on \"$^\"\n"
-	g++ -o $@ -c $(CFLAGS) -I "$(dir $*)/" $<
+	g++ -o $@ -c $(CFLAGS) $<
 
 run: all
 	@printf "\n#### executing $(OUTPUT).out\n"
 	./$(OUTPUT).out
 clean:
 	@printf "\n#### cleaning project\n"
-	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file)) $(OUTPUT).out
+	rm -f $(foreach file,$(FILES_CLEAN),$(DIR_BUILD)$(file) $(DIR_INC)$(PCH).gch) $(OUTPUT).out
