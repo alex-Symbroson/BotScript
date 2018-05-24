@@ -10,7 +10,7 @@ using namespace std;
 	//list of defined variables
 vector<Variable> variables;
 
-	//scope interpreter
+	// scope interpreter
 var handleScope(var_lst* scope) {
 	BEGIN("var_lst*scope");
 

@@ -8,10 +8,10 @@
 using namespace std;
 
 	//characters interpreted as symbols
-const string symbols(" \n\t!\"%'()* + , - / :;<=>?[]");
+const string symbols(" \n\t/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-…");
 
 	//whitespace characters
-const string whitespace(" \t\n");
+const string whitespace(" \t\r\n");
 
 	//copied (and modified) from stackoverflow, "ausercomment"
 double stod(string s, uint8_t radix);

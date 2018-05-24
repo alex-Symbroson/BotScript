@@ -20,6 +20,8 @@
 
 void Pins::setup() {
 	BEGIN();
+    #if ISPI
 	if(wiringPiSetup() == -1) error("setup wiringPi failed !");
+    #endif
 	END();
 }
