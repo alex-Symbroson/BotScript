@@ -7,33 +7,33 @@
 
 using namespace std;
 
-	//characters interpreted as symbols
+// characters interpreted as symbols
 const string symbols(" \n\t/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-…");
 
-	//whitespace characters
+// whitespace characters
 const string whitespace(" \t\r\n");
 
-	//copied (and modified) from stackoverflow, "ausercomment"
+// copied (and modified) from stackoverflow, "ausercomment"
 double stod(string s, uint8_t radix);
 
 string dtos(double d);
 
-	//replace all in string
+// replace all in string
 void replace(string* str, string src, string ovr);
 
-	//delay in milliseonds
+// delay in milliseonds
 void delay(int time);
 
-	//replace some \ placeholders
-void format(string *s);
+// replace some \ placeholders
+void format(string* s);
 
-	//converts scope string to term
+// converts scope string to term
 var_lst toFunction(string::iterator* c, string::iterator end);
 
-	//start recursive conversation from string to term
+// start recursive conversation from string to term
 var_lst toCode(string* code);
 
-	//ignore == true -> ignore useless whitespace
+// ignore == true -> ignore useless whitespace
 string readFile(const char* path, bool ignore);
 
 #endif //_BSINC_CPP_
