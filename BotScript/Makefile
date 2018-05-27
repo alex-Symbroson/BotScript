@@ -5,19 +5,24 @@ DIR_SRC   = src/
 DIR_INC   = inc/
 PCH       = headers.hpp
 
+	# check for pi
+ISPI = $(shell cat ispi)
+
 	# compiler flags
 CFLAGS  = -I $(DIR_INC) -Wall -std=c++11 -O3
 
 	# linker flags
-LDFLAGS  = -pthread -lwiringPi
+LDFLAGS  = -pthread
+
+ifeq (ISPI,true)
+	LDFLAGS = $(LDFLAGS) -lwiringPi
+endif
 
 	# clean extensions
 FILES_CLEAN = *.o
 
 	# output file name
 OUTPUT = main
-
-ISPI = $(shell cat ispi)
 
 	# list of source files
 SRC = $(wildcard $(DIR_SRC)*.cpp)

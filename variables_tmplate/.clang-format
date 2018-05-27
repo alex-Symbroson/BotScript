@@ -1,0 +1,48 @@
+---
+# We'll use defaults from the LLVM style, but with 4 columns indentation.
+BasedOnStyle: LLVM
+---
+Language: Cpp
+# Force pointers to the type for C++.
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveAssignments: true
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: false
+BreakBeforeBraces: Attach
+ColumnLimit: 85
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '"".*\.h'
+    Priority:        1
+  - Regex:           '"".*\.hpp'
+    Priority:        2
+  - Regex:           '"".*.*_.*'
+    Priority:        3
+  - Regex:           '".*'
+    Priority:        4
+  - Regex:           '<.*\.h'
+    Priority:        5
+  - Regex:           '<.*\.hpp'
+    Priority:        6
+  - Regex:           '<.*_'
+    Priority:        7
+  - Regex:           '<.*'
+    Priority:        8
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+NamespaceIndentation: All
+PointerAlignment: Left
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
