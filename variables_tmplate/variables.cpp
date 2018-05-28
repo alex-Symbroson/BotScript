@@ -16,10 +16,10 @@ IVar::~IVar() {}
     template <tmpl> const uint8_t TVar<Type>::type = TypeID;                \
                                                                             \
     template <tmpl> TVar<Type>::TVar(Type v) {                              \
-        printf("TVar<%i>::TVar(%s)\n", this->type, this->toStr().c_str());  \
         value = v;                                                          \
         ptype = &type;                                                      \
         pop   = op;                                                         \
+        printf("TVar<%i>::TVar(%s)\n", this->type, this->toStr().c_str());  \
     }                                                                       \
                                                                             \
     template <tmpl> TVar<Type>::~TVar() {                                   \
@@ -57,7 +57,10 @@ TypeClassOp(
 
 TypeClassOp(str, {{"add", [](PVar v[2]) {
                        printf("str.add\n");
-                       printf("(%i,)\n", getType(v[1]));
+                       printf(" (%i,%i)\n", getType(v[0]), getType(v[1]));
+                       printf(
+                           " (%s,%s)\n", getStr(v[0]).c_str(), getStr(v[1]).c_str());
+
                        getStr(v[0]) += getStr(v[1]);
                        printf("~str.add\n");
                    }}});

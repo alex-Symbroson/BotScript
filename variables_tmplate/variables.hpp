@@ -92,7 +92,6 @@ template <typename T> void* TVar<T>::getPtr() {
 }
 
 template <typename T> inline PVar TVar<T>::getVar() {
-    printf("getVar T\n");
     return dynamic_cast<PVar>(this);
 }
 /*
@@ -119,7 +118,7 @@ template <> inline string TVar<var_str>::toStr() {
 
 template <> inline string TVar<var_lst>::toStr() {
     string result = "[";
-    var_lst::iterator it, end = value.end() - 1;
+    var_lst::iterator it, end = value.end();
 
     for (it = value.begin(); it != end; it++) {
         result += (*it)->toStr() + ",";
@@ -129,13 +128,15 @@ template <> inline string TVar<var_lst>::toStr() {
 };
 
 template <> inline string TVar<var_obj>::toStr() {
-    string result = "[";
+    string result = "]";
     var_obj::iterator it, end = value.end();
 
+    // builds string reversed because every new unordered_map
+    // element is inserted at the front
     for (it = value.begin(); it != end; it++) {
-        result += it->first + ": " + it->second->toStr() + ",";
+        result = ",\"" + it->first + "\":" + it->second->toStr() + result;
     }
-    result[result.size() - 1] = ']';
+    result[0] = '[';
     return result;
 };
 

@@ -3,42 +3,58 @@
 
 int main() {
 
+    // test TInt
     TInt v1(8);
-    TFlt v2(4.5);
-    TStr v3("hello");
-    PVar pv = TStr(" World").getVar();
-
-    printf("1\n");
-    PVar s = v3.getVar();
-    printf("2\n");
-    callP(s, "add", s, pv);
-    printf("3\n");
-
     printf("v: %i = %ld\n", v1.type, v1.value);
+
+    // test TFlt
+    TFlt v2(4.5);
     printf("v: %i = %lf\n", v2.type, v2.value);
+
+    // test TStr
+    TStr v3("hello");
     printf("v: %i = %s\n", v3.type, v3.value.c_str());
 
-    //
-    // PVar i         = v.getVar();
-    // uint32_t start = clock();
-    //
-    // for (uint64_t n = 0; n < 10000000; n++) {
-    //     call(i, "add", i, TInt(1).getVar());
-    // }
-    //
-    // uint32_t end = clock();
-    // printf("i: %i = %ld\n", getType(i), getInt(i));
-    // printf(
-    //     "time: %ius %ims %is\n", (end - start), (end - start) / 1000,
-    //     (end - start) / 1000000);
-    //
-    // PVar str  = TStr("Hello").getVar();
-    // PVar str2 = TStr(" World!").getVar();
-    // TStr str3 = TStr("hi");
-    // getStr(str) += getStr(str2);
-    // // call(str, "add", str, str /**/);
-    // printf("%s\n", getStr(str).c_str());
+    // test TLst
+    TLst v6({v1.getVar(), v2.getVar(), v3.getVar()});
+    printf("%s\n", v6.toStr().c_str());
 
+    // test TObj
+    TObj v7({{"v1", v1.getVar()}, {"v2", v2.getVar()}, {"v3", v3.getVar()}});
+    printf("%s\n", v7.toStr().c_str());
+
+    // test getVar
+    PVar s = v3.getVar();
+
+    // test direct Pvar creation - may cause problems.
+    // either use new and delete or create the T<type> first
+    PVar pv = TStr(" World").getVar();
+
+    // test subfunction "add" for strings
+    callP(s, "add", s, pv);
+    printf("v: %i = %s\n", getType(s), getStr(s).c_str());
+
+    // test velocity of addition
+    PVar i = v1.getVar();
+    PVar a = TInt(1).getVar();
+
+    // measure
+    uint32_t start = clock();
+    for (uint64_t n = 0; n < 10000000; n++) {
+        callP(i, "add", i, a);
+    }
+    uint32_t end = clock();
+
+    // result value
+    printf("i = %ld\n", getInt(i));
+
+    // result time
+    uint32_t d = end - start;
+    printf("time: %i = %ius ", d, d % 1000);
+    printf("%ims ", (d /= 1000) % 1000);
+    printf("%is\n", (d /= 1000) % 1000);
+
+    // free subfunctin maps
     FreeVariables();
     printf("press enter to exit\n");
     getchar();
