@@ -1,6 +1,7 @@
 
 //$ g++ -std=c++11 -O3 -c builtins.cpp
 
+/*
 #include "builtins.hpp"
 #include "include.hpp"
 
@@ -17,17 +18,17 @@
 
 namespace Builtins {
     // list of builtin functions
-    unordered_map<string, var> map;
+    unordered_map<string, PVar> map;
 
-    var b_print(var param) {
-        BEGIN("var param=\"%s\"", Variables::sstringify(param));
+    PVar b_print(PVar param) {
+        BEGIN("PVar param=\"%s\"", Variables::sstringify(param));
         printf("%s", Variables::sstringify(param, false));
         END();
         return V_NULL;
     }
 
-    var b_input(var param) {
-        BEGIN("var param=\"%s\"", Variables::sstringify(param));
+    PVar b_input(PVar param) {
+        BEGIN("PVar param=\"%s\"", Variables::sstringify(param));
         printf("%s", Variables::sstringify(param, false));
         string inp;
         cin >> inp;
@@ -35,14 +36,14 @@ namespace Builtins {
         return Variables::create(&inp, T_STR);
     }
 
-    var b_delay(var param) {
-        BEGIN("var param=\"%s\"", Variables::sstringify(param));
+    PVar b_delay(PVar param) {
+        BEGIN("PVar param=\"%s\"", Variables::sstringify(param));
         delay(getInt(param));
         END();
         return V_NULL;
     }
 
-    var b_clock(var param) {
+    PVar b_clock(PVar param) {
         BEGIN("");
         uint32_t time = (int)(clock() / 1000);
         END();
@@ -56,8 +57,8 @@ namespace Builtins {
         return map.find(s) != map.end();
     }
 
-    void add(string name, vector<cstr> params, var content) {
-        BEGIN("string name=%s,vector<cstr>params,var content)", name.c_str());
+    void add(string name, vector<cstr> params, PVar content) {
+        BEGIN("string name=%s,vector<cstr>params,PVar content)", name.c_str());
 
         uint i = params.size();
         var_lst vps(i);
@@ -70,32 +71,32 @@ namespace Builtins {
         END();
     }
 
-    var get(string name) {
+    PVar get(string name) {
         BEGIN("string name=\"%s\"", name.c_str());
         END();
         return map[name];
     }
 
-    var call(string name, var arg) {
+    PVar call(string name, PVar arg) {
         BEGIN(
-            "string name=\"%s\",var arg=%s)", name.c_str(),
+            "string name=\"%s\",PVar arg=%s)", name.c_str(),
             Variables::sstringify(arg));
         var_obj fnc = getObj(map[name]);
         END();
-        return ((var(*)(var))fnc["content"])(arg);
+        return ((PVar(*)(PVar))fnc["content"])(arg);
     }
 
     void create() {
         BEGIN("");
         vector<cstr> noparams = {};
 
-        add("print", {"string"}, (var)b_print);
-        add("clock", noparams, (var)b_clock);
-        add("delay", {"milliseconds"}, (var)b_delay);
-        add("input", {"message"}, (var)b_input);
+        add("print", {"string"}, (PVar)b_print);
+        add("clock", noparams, (PVar)b_clock);
+        add("delay", {"milliseconds"}, (PVar)b_delay);
+        add("input", {"message"}, (PVar)b_input);
 
 #if TEST_BUILTINS == 1
-        var a;
+        PVar a;
 
         DEBUG("testing print:");
         a = Variables::create("hallo\ndu\n", T_STR);
@@ -126,3 +127,5 @@ namespace Builtins {
         END();
     }
 } // namespace Builtins
+
+*/

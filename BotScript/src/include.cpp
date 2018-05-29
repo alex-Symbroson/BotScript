@@ -64,7 +64,7 @@ var_lst toFunction(string::iterator* c, string::iterator end) {
             case '"': {
                 string word = "";
                 while (*++*c != '"' && *c < end) word += **c;
-                block.push_back(new Variable(&word, T_STR));
+                printf("%s: %s\n", word.c_str(), typeName(T_STR));
             } break;
             case '(':
             case '{': {
@@ -72,7 +72,7 @@ var_lst toFunction(string::iterator* c, string::iterator end) {
                 uint8_t type = **c == '(' ? T_TRM : T_FNC;
                 ++*c;
                 scope = toFunction(c, end);
-                block.push_back(new Variable(&scope, type));
+                printf("%s: %s\n", TLst(scope).toStr().c_str(), typeName(type));
             } break;
             default:
                 string word = "";
@@ -83,15 +83,17 @@ var_lst toFunction(string::iterator* c, string::iterator end) {
                     do
                         word += **c;
                     while (!(symbols.find(*++*c) + 1) && *c < end);
+                /*
                 if (Builtins::exists(word))
-                    block.push_back(Builtins::get(word));
+                    printf("%s: %s\n", word.c_str(), "builtin");
                 else
-                    block.push_back(new Variable(&word, T_VAR));
+                */
+                printf("%s: %s\n", word.c_str(), typeName(T_VAR));
                 continue;
         }
         ++*c;
     }
-    END("%s", Variables::sstringify(block));
+    // END("%s", Variables::sstringify(block));
     return block;
 }
 

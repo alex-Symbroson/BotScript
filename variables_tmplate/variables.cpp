@@ -9,21 +9,51 @@
 #define BEGIN(...) BEGIN_1("Variables", __VA_ARGS__)
 #define END(...) END_1("Variables", __VA_ARGS__)
 
-IVar::IVar() {}
-IVar::~IVar() {}
+// returns the name of the type of a Variable
+const char* typeName(uint8_t t) {
+    switch (t) {
+        case T_NIL: return "null";
+        case T_VAR: return "var";
+        case T_INT: return "integer";
+        case T_FLT: return "float";
+        case T_STR: return "string";
+        case T_LST: return "list";
+        case T_OBJ: return "object";
+        case T_PIN: return "pin";
+        case T_TRM: return "term";
+        case T_FNC: return "function";
+        default: return "undefined";
+    }
+}
 
-#define TypeClassDef(tmpl, Type, TypeID)                                    \
-    template <tmpl> const uint8_t TVar<Type>::type = TypeID;                \
-                                                                            \
-    template <tmpl> TVar<Type>::TVar(Type v) {                              \
-        value = v;                                                          \
-        ptype = &type;                                                      \
-        pop   = op;                                                         \
-        printf("TVar<%i>::TVar(%s)\n", this->type, this->toStr().c_str());  \
-    }                                                                       \
-                                                                            \
-    template <tmpl> TVar<Type>::~TVar() {                                   \
-        printf("~TVar<%i>::TVar(%s)\n", this->type, this->toStr().c_str()); \
+forward_list<PVar> IVar::collector = {};
+
+IVar::IVar() {
+    printf("%p IVar<>::IVar()\n", this);
+}
+
+IVar::~IVar() {
+    printf("%p ~IVar<%s>::IVar()\n", this, typeName(getType(this)));
+}
+
+#define TypeClassDef(tmpl, Type, TypeID)                            \
+    template <tmpl> const uint8_t TVar<Type>::type = TypeID;        \
+                                                                    \
+    template <tmpl> TVar<Type>::TVar(Type v) {                      \
+        value = v;                                                  \
+        ptype = &type;                                              \
+        pop   = op;                                                 \
+        printf(                                                     \
+            "%p TVar<%s>::TVar(%s)\n", this, typeName(this->type),  \
+            this->toStr().c_str());                                 \
+    }                                                               \
+                                                                    \
+    template <tmpl> TVar<Type>::~TVar() {                           \
+        printf(                                                     \
+            "%p ~TVar<%s>::TVar(%s)\n", this, typeName(this->type), \
+            this->toStr().c_str());                                 \
+                                                                    \
+        collector.remove(this);                                     \
     }
 
 TypeClassDef(typename T, T, T_NIL);
@@ -74,10 +104,14 @@ TypeClassOp(obj, {});
     delete TVar<var_##tBas>::op
 
 void FreeVariables() {
+    printf("freeing variable operations\n");
     ReleaseTypeClassOp(int);
     ReleaseTypeClassOp(flt);
     ReleaseTypeClassOp(str);
     ReleaseTypeClassOp(lst);
     ReleaseTypeClassOp(obj);
     // ReleaseTypeClassOp(pin);
+
+    printf("freeing garbage\n");
+    while (!IVar::collector.empty()) delete IVar::collector.front();
 }

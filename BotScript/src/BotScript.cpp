@@ -2,21 +2,20 @@
 //$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o
 // pins.o threads.o builtins.o
 
-#include "builtins.hpp"
+//#include "builtins.hpp"
 #include "include.hpp" //includes special functions
 #include "macros.hpp"
 
 using namespace std;
 
 // list of defined variables
-vector<Variable> variables;
+var_lst variables;
 
 // scope interpreter
-var handleScope(var_lst* scope) {
+PVar handleScope(var_lst* scope) {
     BEGIN("var_lst*scope");
-
     END();
-    return V_NULL;
+    return (new TInt(0))->getVar();
 }
 
 // initialisation
@@ -25,12 +24,12 @@ int main(int argc, char* argv[]) {
     PRINT_STATUS();
     // argv[0] -> command which executed a.out (path)
 
-    INFO("init builtins");
-    Builtins::create();
+    // INFO("init builtins");
+    // Builtins::create();
 
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
     string code      = readFile(path, true);
-    INFO("file input: \"%s\"", code.c_str());
+    INFO("file input:\n%s", code.c_str());
     if (code == "") error("file \"%s\" is empty", path);
 
 #if DEBUG == 1
@@ -42,15 +41,15 @@ int main(int argc, char* argv[]) {
     INFO("formatting code");
     var_lst main = toCode(&code);
 
-    printf("main: %s\n", Variables::sstringify(main));
+    printf("main: %s\n", TLst(main).toStr().c_str());
 
     // execute code
     INFO("executing code");
-    printf("returned: %s\n", Variables::sstringify(handleScope(&main)));
+    printf("returned: %s\n", handleScope(&main)->toStr().c_str());
 
     // free all allocated variables
     INFO("freeing...");
-    Variables::free();
+    FreeVariables();
     printf("\n");
 
     INFO("end.");

@@ -33,3 +33,6 @@
 
 # Code format style
 .clang-format
+
+# Memory lack check
+*/nvwa/*

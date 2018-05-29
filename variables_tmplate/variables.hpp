@@ -39,28 +39,32 @@ typedef TVar<var_obj> TObj;
 // macros for getting var instance values
 //-> prevents bigger code by defining functions
 #define callP(v, n, ...) \
-    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*v->pop)[n](_args_##v);)
+    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*(v)->pop)[n](_args_##v);)
 #define callT(v, n, ...) \
-    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*v.op)[n](_args_##v);)
-#define getType(var) (*var->ptype)
-#define getIntP(var) ((var_int*)var->getPtr())
-#define getInt(var) (*(var_int*)var->getPtr())
-#define getFltP(var) ((var_flt*)var->getPtr())
-#define getFlt(var) (*(var_flt*)var->getPtr())
-#define getStrP(var) ((var_str*)var->getPtr())
-#define getStr(var) (*(var_str*)var->getPtr())
-#define getLstP(var) ((var_lst*)var->getPtr())
-#define getLst(var) (*(var_lst*)var->getPtr())
-#define getObjP(var) ((var_obj*)var->getPtr())
-#define getObj(var) (*(var_obj*)var->getPtr())
+    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*(v).op)[n](_args_##v);)
+#define getType(var) (*(var)->ptype)
+#define getIntP(var) ((var_int*)(var)->getPtr())
+#define getInt(var) (*(var_int*)(var)->getPtr())
+#define getFltP(var) ((var_flt*)(var)->getPtr())
+#define getFlt(var) (*(var_flt*)(var)->getPtr())
+#define getStrP(var) ((var_str*)(var)->getPtr())
+#define getStr(var) (*(var_str*)(var)->getPtr())
+#define getLstP(var) ((var_lst*)(var)->getPtr())
+#define getLst(var) (*(var_lst*)(var)->getPtr())
+#define getObjP(var) ((var_obj*)(var)->getPtr())
+#define getObj(var) (*(var_obj*)(var)->getPtr())
+
+const char* typeName(uint8_t t);
 
 class IVar {
   public:
     const uint8_t* ptype;
     unordered_map<string, function<void(PVar[])>>* pop;
 
+    static forward_list<PVar> collector; // garbage collector
+
     IVar();
-    ~IVar();
+    virtual ~IVar();
 
     virtual void* getPtr() {
         return NULL;
@@ -80,12 +84,26 @@ template <typename T> class TVar : public IVar {
 
     TVar(T);
     ~TVar();
+    void* operator new(size_t size);
+    void operator delete(void* p);
 
     PVar getVar();
 
     void* getPtr();
     string toStr();
 };
+
+template <typename T> void* TVar<T>::operator new(size_t size) {
+    TVar<T>* p = (TVar<T>*)malloc(size);
+    printf("%p TVar<>::op new()\n", p);
+    IVar::collector.push_front(p->getVar());
+    return p;
+}
+
+template <typename T> void TVar<T>::operator delete(void* p) {
+    printf("%p TVar<>::op delete()\n", p);
+    free(p);
+}
 
 template <typename T> void* TVar<T>::getPtr() {
     return (void*)&value;
@@ -123,7 +141,11 @@ template <> inline string TVar<var_lst>::toStr() {
     for (it = value.begin(); it != end; it++) {
         result += (*it)->toStr() + ",";
     }
-    result[result.size() - 1] = ']';
+
+    if (value.size())
+        result[result.size() - 1] = ']';
+    else
+        result += "]";
     return result;
 };
 
@@ -136,7 +158,11 @@ template <> inline string TVar<var_obj>::toStr() {
     for (it = value.begin(); it != end; it++) {
         result = ",\"" + it->first + "\":" + it->second->toStr() + result;
     }
-    result[0] = '[';
+
+    if (value.size())
+        result[0] = '[';
+    else
+        result += "]";
     return result;
 };
 

@@ -26,17 +26,18 @@ int main() {
     // test getVar
     PVar s = v3.getVar();
 
-    // test direct Pvar creation - may cause problems.
-    // either use new and delete or create the T<type> first
-    PVar pv = TStr(" World").getVar();
+    // test direct Pvar creation
+    //! attention: TStr(" World").getVar() causes instant destruction
+    PVar pv = (new TStr(" World"))->getVar();
 
     // test subfunction "add" for strings
     callP(s, "add", s, pv);
     printf("v: %i = %s\n", getType(s), getStr(s).c_str());
+    delete pv;
 
     // test velocity of addition
     PVar i = v1.getVar();
-    PVar a = TInt(1).getVar();
+    PVar a = (new TInt(1))->getVar();
 
     // measure
     uint32_t start = clock();

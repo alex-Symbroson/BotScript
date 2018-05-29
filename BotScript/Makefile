@@ -15,7 +15,11 @@ CFLAGS  = -I $(DIR_INC) -Wall -std=c++11 -O3
 LDFLAGS  = -pthread
 
 ifeq (ISPI,true)
-	LDFLAGS = $(LDFLAGS) -lwiringPi
+	LDFLAGS += -lwiringPi
+endif
+
+ifeq ($(debug),true)
+	LDFLAGS += -I nvwa nvwa/debug_new.cpp
 endif
 
 	# clean extensions
