@@ -71,8 +71,13 @@ var_lst toFunction(string::iterator* c, string::iterator end) {
                 var_lst scope;
                 uint8_t type = **c == '(' ? T_TRM : T_FNC;
                 ++*c;
+                printf(
+                    "%c: %s begin\n", TLst(scope).toStr().c_str()[0],
+                    typeName(type));
                 scope = toFunction(c, end);
-                printf("%s: %s\n", TLst(scope).toStr().c_str(), typeName(type));
+                printf(
+                    "%c: %s end\n", TLst(scope).toStr().c_str()[1],
+                    typeName(type));
             } break;
             default:
                 string word = "";

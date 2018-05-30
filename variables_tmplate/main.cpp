@@ -3,8 +3,8 @@
 
 int main() {
 
-    // test TInt
-    TInt v1(8);
+    // test TInt as Pin
+    TInt v1(8, T_PIN);
     printf("v: %i = %ld\n", v1.type, v1.value);
 
     // test TFlt
@@ -31,6 +31,7 @@ int main() {
     PVar pv = (new TStr(" World"))->getVar();
 
     // test subfunction "add" for strings
+    printf("test add\n");
     callP(s, "add", s, pv);
     printf("v: %i = %s\n", getType(s), getStr(s).c_str());
     delete pv;

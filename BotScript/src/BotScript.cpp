@@ -2,6 +2,8 @@
 //$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o
 // pins.o threads.o builtins.o
 
+// TODO: toFunction()
+
 //#include "builtins.hpp"
 #include "include.hpp" //includes special functions
 #include "macros.hpp"

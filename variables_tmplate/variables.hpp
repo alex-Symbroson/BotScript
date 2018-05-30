@@ -2,7 +2,9 @@
 #ifndef _VARIABLES_HPP_
 #define _VARIABLES_HPP_
 
+#define CUSTOM_BEGIN
 #include "headers.hpp"
+#include "macros.hpp"
 
 #define uint8_t unsigned char
 
@@ -17,6 +19,7 @@
 #define T_PIN 7
 #define T_TRM 8
 #define T_FNC 9
+#define TCNT 10
 
 class IVar;
 template <typename> class TVar;
@@ -36,6 +39,11 @@ typedef TVar<var_str> TStr;
 typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
 
+typedef unordered_map<string, function<void(PVar[])>> FuncMap;
+
+void FreeVariables();
+const char* typeName(uint8_t t);
+
 // macros for getting var instance values
 //-> prevents bigger code by defining functions
 #define callP(v, n, ...) \
@@ -54,12 +62,10 @@ typedef TVar<var_obj> TObj;
 #define getObjP(var) ((var_obj*)(var)->getPtr())
 #define getObj(var) (*(var_obj*)(var)->getPtr())
 
-const char* typeName(uint8_t t);
-
 class IVar {
   public:
-    const uint8_t* ptype;
-    unordered_map<string, function<void(PVar[])>>* pop;
+    uint8_t* ptype;
+    FuncMap* pop;
 
     static forward_list<PVar> collector; // garbage collector
 
@@ -77,12 +83,12 @@ class IVar {
 
 template <typename T> class TVar : public IVar {
   public:
-    static const uint8_t type;
-    static unordered_map<string, function<void(PVar[])>>* op;
+    uint8_t type;
+    FuncMap* op;
 
     T value;
 
-    TVar(T);
+    TVar(T, uint8_t = 0);
     ~TVar();
     void* operator new(size_t size);
     void operator delete(void* p);
@@ -95,13 +101,13 @@ template <typename T> class TVar : public IVar {
 
 template <typename T> void* TVar<T>::operator new(size_t size) {
     TVar<T>* p = (TVar<T>*)malloc(size);
-    printf("%p TVar<>::op new()\n", p);
+    DEBUG("%p TVar<>::op new()", p);
     IVar::collector.push_front(p->getVar());
     return p;
 }
 
 template <typename T> void TVar<T>::operator delete(void* p) {
-    printf("%p TVar<>::op delete()\n", p);
+    DEBUG("%p TVar<>::op delete()", p);
     free(p);
 }
 
@@ -109,14 +115,9 @@ template <typename T> void* TVar<T>::getPtr() {
     return (void*)&value;
 }
 
-template <typename T> inline PVar TVar<T>::getVar() {
+template <typename T> PVar TVar<T>::getVar() {
     return dynamic_cast<PVar>(this);
 }
-/*
-template <> inline PVar TVar<var_str>::getVar() {
-    printf("getVar str %s\n", this->value.c_str());
-    return dynamic_cast<PVar>(this);
-}*/
 
 /*
 TVar::toStr()
@@ -166,5 +167,4 @@ template <> inline string TVar<var_obj>::toStr() {
     return result;
 };
 
-void FreeVariables();
 #endif //_VARIABLES_HPP_
