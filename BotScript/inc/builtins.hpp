@@ -4,27 +4,9 @@
 
 #include "variables.hpp"
 
-#define uint16_t unsigned short int
+#define getBltin(NAME) (&builtins[NAME])
+extern unordered_map<string, TBltFnc> builtins;
 
-namespace Builtins {
-    PVar b_print(PVar param);
-
-    PVar b_input(PVar param);
-
-    PVar b_delay(PVar param);
-
-    PVar b_clock(PVar param);
-
-    // returns builtin index (0 = not found)
-    bool exists(string s);
-
-    void add(string name, vector<const char*> params[], PVar content);
-
-    PVar get(string name);
-
-    PVar call(string name, PVar arg);
-
-    void create();
-} // namespace Builtins
+bool builtin_exists(const char*);
 
 #endif //_BUILTINS_CPP_

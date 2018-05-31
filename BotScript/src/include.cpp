@@ -2,10 +2,28 @@
 //$ g++ -std=c++11 -O3 -c include.cpp
 
 #include "include.hpp"
+
+#include <math.h> //pow
+
 #include "builtins.hpp"
 #include "macros.hpp"
 
-#include <math.h> //pow
+bool isSymbol(char c) {
+    return (symbols.find(c) + 1);
+}
+
+bool isWhitespace(char c) {
+    return (whitespace.find(c) + 1);
+}
+
+bool isOperator(char c) {
+    return (operators.find(c) + 1);
+}
+
+bool isOperator(string s) {
+    if (s[1] == '=') return isOperator(s[0]);
+    return false;
+}
 
 // copied (and modified) from stackoverflow, "ausercomment"
 double stod(string s, uint8_t radix) {
@@ -59,46 +77,56 @@ void format(string* s) {
 var_lst toFunction(string::iterator* c, string::iterator end) {
     BEGIN("string::it*c=\"%c\",string::it end", **c);
     var_lst block(0);
+    uint8_t lastType = 0;
+
     while (**c != ')' && **c != '}' && *c < end) {
         switch (**c) {
             case '"': {
                 string word = "";
                 while (*++*c != '"' && *c < end) word += **c;
-                printf("%s: %s\n", word.c_str(), typeName(T_STR));
+                DEBUG("%s: %s", word.c_str(), typeName(T_STR));
+                lastType = T_STR;
             } break;
             case '(':
             case '{': {
-                var_lst scope;
                 uint8_t type = **c == '(' ? T_TRM : T_FNC;
+                DEBUG("%c: %s begin", **c, typeName(type));
+
+                if (type == T_TRM && lastType == T_BFN)
+                    block.push_back((new TStr("call")));
+
                 ++*c;
-                printf(
-                    "%c: %s begin\n", TLst(scope).toStr().c_str()[0],
-                    typeName(type));
-                scope = toFunction(c, end);
-                printf(
-                    "%c: %s end\n", TLst(scope).toStr().c_str()[1],
-                    typeName(type));
+                block.push_back((new TLst(toFunction(c, end), type))->getVar());
+                DEBUG("%c: %s end", **c, typeName(type));
+                lastType = type;
             } break;
             default:
                 string word = "";
-                if (symbols.find(**c) + 1) do
-                        word += **c;
-                    while (symbols.find(*++*c) + 1 && *c < end);
-                else
+
+                if (symbols.find(**c) + 1) {
+                    string symbol;
                     do
-                        word += **c;
-                    while (!(symbols.find(*++*c) + 1) && *c < end);
-                /*
-                if (Builtins::exists(word))
-                    printf("%s: %s\n", word.c_str(), "builtin");
-                else
-                */
-                printf("%s: %s\n", word.c_str(), typeName(T_VAR));
+                        symbol += **c;
+                    while (symbols.find(*++*c) + 1 && *c < end);
+                }
+
+                do
+                    word += **c;
+                while (!(symbols.find(*++*c) + 1) && *c < end);
+
+                if (builtin_exists(word.c_str())) {
+                    block.push_back((new TBfn(getBltin(word)))->getVar());
+                    DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
+                    lastType = T_BFN;
+                } else {
+                    DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
+                    lastType = T_VAR;
+                }
                 continue;
         }
         ++*c;
     }
-    // END("%s", Variables::sstringify(block));
+    // END("%s", TLst(block).toStr().c_str());
     return block;
 }
 

@@ -5,13 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define _DEBUG_ 1    // enables 1:INFO 2:BEGIN,END and 3:DEBUG macro
+#define _DEBUG_ 2    // enables 1:INFO 2:BEGIN,END and 3:DEBUG macro
 #define _ERR_EXIT_ 1 // exit on error
 
 #define ONCE(cmd) \
-    do {          \
-        cmd       \
-    } while (0)
+    do { cmd } while (0)
 
 // macros for error mesages
 #define err_ict(a, b) \
@@ -23,7 +21,8 @@
 #define error(a, ...) printf("\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
 
 #if defined(_ERR_EXIT_) && _ERR_EXIT_ != 0
-#    define error_exit(a, ...) (error(a, ##__VA_ARGS__), exit(0))
+#    define error_exit(a, ...) \
+        (error(a, ##__VA_ARGS__), FreeVariables(), exit(0))
 #else
 #    define error_exit error
 #endif
@@ -40,7 +39,7 @@
 #endif
 
 //
-#if _DEBUG_ > 1
+#if _DEBUG_ > 2
 #    ifndef CUSTOM_BEGIN
 #        define BEGIN(s, ...)                                                \
             printf(                                                          \
@@ -72,7 +71,7 @@
 #    endif
 #endif
 
-#if _DEBUG_ > 2
+#if _DEBUG_ > 1
 #    define DEBUG(s, ...) \
         printf("\033[2;33m      " s "\033[0;37m\n", ##__VA_ARGS__)
 #else

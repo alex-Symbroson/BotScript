@@ -17,7 +17,8 @@
 #define T_PIN 7
 #define T_TRM 8
 #define T_FNC 9
-#define TCNT 10
+#define T_BFN 10
+#define TCNT 11
 
 class IVar;
 template <typename> class TVar;
@@ -31,13 +32,24 @@ typedef IVar* PVar;
 #define var_lst vector<PVar>
 #define var_obj unordered_map<string, PVar>
 
+#define V_NULL (new TInt(0))->getVar()
+
+typedef function<void(PVar[])> TFunc;
+typedef unordered_map<string, TFunc> FuncMap;
+
+typedef struct {
+    const char* name;
+    uint16_t argc;
+    TFunc func;
+} TBltFnc;
+typedef TBltFnc* PBltFnc;
+
 typedef TVar<var_int> TInt;
 typedef TVar<var_flt> TFlt;
 typedef TVar<var_str> TStr;
 typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
-
-typedef unordered_map<string, function<void(PVar[])>> FuncMap;
+typedef TVar<PBltFnc> TBfn;
 
 void FreeVariables();
 const char* typeName(uint8_t t);
@@ -59,6 +71,8 @@ const char* typeName(uint8_t t);
 #define getLst(var) (*(var_lst*)(var)->getPtr())
 #define getObjP(var) ((var_obj*)(var)->getPtr())
 #define getObj(var) (*(var_obj*)(var)->getPtr())
+#define getBfnP(var) ((TBltFnc*)(var)->getPtr())
+#define getBfn(var) (*(TBltFnc*)(var)->getPtr())
 
 class IVar {
   public:
@@ -164,5 +178,20 @@ template <> inline string TVar<var_obj>::toStr() {
         result += "]";
     return result;
 };
+
+template <> inline string TVar<PBltFnc>::toStr() {
+    string result = value->name;
+    /*
+    if (value->argc) {
+        result += "(";
+        for (uint16_t i = 1; i <= value->argc; i++)
+            result += "p" + to_string(i) + ",";
+        result[result.size() - 1] = ')';
+    } else
+        result += "()";
+    result += " { [builtin] }"
+    */
+    return result;
+}
 
 #endif //_VARIABLES_HPP_

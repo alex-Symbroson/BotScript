@@ -3,6 +3,7 @@
 
 #define CUSTOM_BEGIN
 #include "variables.hpp"
+
 #include "macros.hpp"
 
 #define BEGIN(...) BEGIN_1("Variables", __VA_ARGS__)
@@ -46,7 +47,7 @@ static unordered_map<uint8_t, FuncMap> operations = {
 
     {T_FNC, {}}};
 
-static int VAR_Type[] = {T_NIL, T_STR, T_INT, T_FLT, T_STR,
+static int VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR,
                          T_LST, T_OBJ, T_INT, T_LST, T_LST};
 
 // returns the name of the type of a Variable
@@ -62,6 +63,7 @@ const char* typeName(uint8_t t) {
         case T_PIN: return "pin";
         case T_TRM: return "term";
         case T_FNC: return "function";
+        case T_BFN: return "builtin function";
         default: return "undefined";
     }
 }
@@ -69,11 +71,11 @@ const char* typeName(uint8_t t) {
 forward_list<PVar> IVar::collector = {};
 
 IVar::IVar() {
-    DEBUG("%p IVar<>::IVar()", this);
+    // DEBUG("%p IVar<>::IVar()", this);
 }
 
 IVar::~IVar() {
-    DEBUG("%p ~IVar<%s>::IVar()", this, typeName(getType(this)));
+    // DEBUG("%p ~IVar<%s>::IVar()", this, typeName(getType(this)));
 }
 
 #define TypeClassDef(tmpl, Type, TypeID)                          \
@@ -92,15 +94,15 @@ IVar::~IVar() {
                                                                   \
         ptype = &type;                                            \
         pop = op = &operations[TypeID];                           \
-        DEBUG(                                                    \
+        /*DEBUG(                                                  \
             "%p TVar<%s>::TVar(%s)", this, typeName(this->type),  \
-            this->toStr().c_str());                               \
+            this->toStr().c_str());*/                             \
     }                                                             \
                                                                   \
     template <tmpl> TVar<Type>::~TVar() {                         \
-        DEBUG(                                                    \
+        /*DEBUG(                                                  \
             "%p ~TVar<%s>::TVar(%s)", this, typeName(this->type), \
-            this->toStr().c_str());                               \
+            this->toStr().c_str());*/                             \
                                                                   \
         collector.remove(this);                                   \
     }
@@ -111,6 +113,7 @@ TypeClassDef(, var_flt, T_FLT);
 TypeClassDef(, var_str, T_STR);
 TypeClassDef(, var_lst, T_LST);
 TypeClassDef(, var_obj, T_OBJ);
+TypeClassDef(, PBltFnc, T_BFN);
 
 void FreeVariables() {
     INFO("freeing garbage");

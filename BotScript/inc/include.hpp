@@ -2,13 +2,22 @@
 #ifndef _BSINC_HPP_
 #define _BSINC_HPP_
 
+#include "builtins.hpp"
 #include "headers.hpp"
 #include "variables.hpp"
 
 using namespace std;
 
+bool isSymbol(char);
+bool isWhitespace(char);
+bool isOperator(char);
+bool isOperator(string);
+
 // characters interpreted as symbols
-const string symbols(" \n\t/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-…");
+const string symbols(" \t\r\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-…");
+
+// characters interpreted as operators (op and op=)
+const string operators("<>!%^&*|+=");
 
 // whitespace characters
 const string whitespace(" \t\r\n");

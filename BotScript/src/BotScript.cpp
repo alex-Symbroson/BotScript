@@ -3,8 +3,8 @@
 // pins.o threads.o builtins.o
 
 // TODO: toFunction()
+// TODO: handleScope()
 
-//#include "builtins.hpp"
 #include "include.hpp" //includes special functions
 #include "macros.hpp"
 
@@ -17,17 +17,13 @@ var_lst variables;
 PVar handleScope(var_lst* scope) {
     BEGIN("var_lst*scope");
     END();
-    return (new TInt(0))->getVar();
+    return V_NULL;
 }
 
 // initialisation
 int main(int argc, char* argv[]) {
     BEGIN("int argc=%i,char**argv", argc);
     PRINT_STATUS();
-    // argv[0] -> command which executed a.out (path)
-
-    // INFO("init builtins");
-    // Builtins::create();
 
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
     string code      = readFile(path, true);
