@@ -4,39 +4,78 @@
 #define CUSTOM_BEGIN
 #include "variables.hpp"
 
-#include "macros.hpp"
-
 #define BEGIN(...) BEGIN_1("Variables", __VA_ARGS__)
 #define END(...) END_1("Variables", __VA_ARGS__)
 
+#define FUNCTION (var_lst v)->PVar
 static unordered_map<uint8_t, FuncMap> operations = {
     {T_INT,
-     {{"add", [](PVar v[2]) { getInt(v[0]) += getInt(v[1]); }},
-      {"sub", [](PVar v[2]) { getInt(v[0]) -= getInt(v[1]); }},
-      {"mul", [](PVar v[2]) { getInt(v[0]) *= getInt(v[1]); }},
-      {"div", [](PVar v[2]) { getInt(v[0]) /= getInt(v[1]); }},
-      {"mod", [](PVar v[2]) { getInt(v[0]) %= getInt(v[1]); }}}},
+     {{"add",
+       [] FUNCTION {
+           getInt(v[0]) += getInt(v[1]);
+           return v[0];
+       }},
+      {"sub",
+       [] FUNCTION {
+           getInt(v[0]) -= getInt(v[1]);
+           return v[0];
+       }},
+      {"mul",
+       [] FUNCTION {
+           getInt(v[0]) *= getInt(v[1]);
+           return v[0];
+       }},
+      {"div",
+       [] FUNCTION {
+           getInt(v[0]) /= getInt(v[1]);
+           return v[0];
+       }},
+      {"mod",
+       [] FUNCTION {
+           getInt(v[0]) %= getInt(v[1]);
+           return v[0];
+       }}}},
 
     {T_FLT,
-     {{"add", [](PVar v[2]) { getFlt(v[0]) += getFlt(v[1]); }},
-      {"sub", [](PVar v[2]) { getFlt(v[0]) -= getFlt(v[1]); }},
-      {"mul", [](PVar v[2]) { getFlt(v[0]) *= getFlt(v[1]); }},
-      {"div", [](PVar v[2]) { getFlt(v[0]) /= getFlt(v[1]); }},
+     {{"add",
+       [] FUNCTION {
+           getFlt(v[0]) += getFlt(v[1]);
+           return v[0];
+       }},
+      {"sub",
+       [] FUNCTION {
+           getFlt(v[0]) -= getFlt(v[1]);
+           return v[0];
+       }},
+      {"mul",
+       [] FUNCTION {
+           getFlt(v[0]) *= getFlt(v[1]);
+           return v[0];
+       }},
+      {"div",
+       [] FUNCTION {
+           getFlt(v[0]) /= getFlt(v[1]);
+           return v[0];
+       }},
       {"mod",
-       [](PVar v[2]) {
+       [] FUNCTION {
            var_flt *a = getFltP(v[0]), b = getFlt(v[1]);
            *a = (*a - b * floor(*a / b));
+           return v[0];
        }}}},
 
     {T_STR,
      {{"add",
-       [](PVar v[2]) {
-           printf("str.add\n");
-           printf(" (%i,%i)\n", getType(v[0]), getType(v[1]));
-           printf(" (%s,%s)\n", getStr(v[0]).c_str(), getStr(v[1]).c_str());
-
+       [] FUNCTION {
            getStr(v[0]) += getStr(v[1]);
-           printf("~str.add\n");
+           return v[0];
+       }}}},
+
+    {T_BFN,
+     {{"call",
+       [] FUNCTION {
+           DEBUG("called %s(%s)", v[0]->toStr().c_str(), v[1]->toStr().c_str());
+           return callBuiltin(getBfn(v[0]), getLst(v[1]));
        }}}},
 
     {T_LST, {}},
@@ -108,12 +147,13 @@ IVar::~IVar() {
     }
 
 TypeClassDef(typename T, T, T_NIL);
+TypeClassDef(, var_nil, T_NIL);
 TypeClassDef(, var_int, T_INT);
 TypeClassDef(, var_flt, T_FLT);
 TypeClassDef(, var_str, T_STR);
 TypeClassDef(, var_lst, T_LST);
 TypeClassDef(, var_obj, T_OBJ);
-TypeClassDef(, PBltFnc, T_BFN);
+TypeClassDef(, var_bfn, T_BFN);
 
 void FreeVariables() {
     INFO("freeing garbage");

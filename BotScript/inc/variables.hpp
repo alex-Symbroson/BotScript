@@ -24,17 +24,18 @@ class IVar;
 template <typename> class TVar;
 typedef IVar* PVar;
 
+#define V_NULL (new TNil(0))->getVar()
+
 // types
 
-#define var_int long
-#define var_flt double
-#define var_str string
-#define var_lst vector<PVar>
-#define var_obj unordered_map<string, PVar>
+typedef char var_nil;
+typedef long var_int;
+typedef double var_flt;
+typedef string var_str;
+typedef vector<PVar> var_lst;
+typedef unordered_map<string, PVar> var_obj;
 
-#define V_NULL (new TInt(0))->getVar()
-
-typedef function<void(PVar[])> TFunc;
+typedef function<PVar(var_lst)> TFunc;
 typedef unordered_map<string, TFunc> FuncMap;
 
 typedef struct {
@@ -42,24 +43,25 @@ typedef struct {
     uint16_t argc;
     TFunc func;
 } TBltFnc;
-typedef TBltFnc* PBltFnc;
 
+typedef TBltFnc* var_bfn;
+
+typedef TVar<var_nil> TNil;
 typedef TVar<var_int> TInt;
 typedef TVar<var_flt> TFlt;
 typedef TVar<var_str> TStr;
 typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
-typedef TVar<PBltFnc> TBfn;
+typedef TVar<var_bfn> TBfn;
 
 void FreeVariables();
 const char* typeName(uint8_t t);
 
+// macros for calling type-specific functions
+#define callP(v, n, ...) (*(v)->pop)[n]({__VA_ARGS__})
+#define callT(v, n, ...) (*(v).op)[n]({__VA_ARGS__})
+
 // macros for getting var instance values
-//-> prevents bigger code by defining functions
-#define callP(v, n, ...) \
-    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*(v)->pop)[n](_args_##v);)
-#define callT(v, n, ...) \
-    ONCE(static PVar _args_##v[] = {__VA_ARGS__}; (*(v).op)[n](_args_##v);)
 #define getType(var) (*(var)->ptype)
 #define getIntP(var) ((var_int*)(var)->getPtr())
 #define getInt(var) (*(var_int*)(var)->getPtr())
@@ -71,11 +73,13 @@ const char* typeName(uint8_t t);
 #define getLst(var) (*(var_lst*)(var)->getPtr())
 #define getObjP(var) ((var_obj*)(var)->getPtr())
 #define getObj(var) (*(var_obj*)(var)->getPtr())
-#define getBfnP(var) ((TBltFnc*)(var)->getPtr())
-#define getBfn(var) (*(TBltFnc*)(var)->getPtr())
+#define getBfnP(var) ((var_bfn*)(var)->getPtr())
+#define getBfn(var) (*(var_bfn*)(var)->getPtr())
+
+#include "interpret.hpp"
 
 class IVar {
-  public:
+      public:
     uint8_t* ptype;
     FuncMap* pop;
 
@@ -94,7 +98,7 @@ class IVar {
 };
 
 template <typename T> class TVar : public IVar {
-  public:
+      public:
     uint8_t type;
     FuncMap* op;
 
@@ -134,6 +138,10 @@ template <typename T> PVar TVar<T>::getVar() {
 /*
 TVar::toStr()
 */
+
+template <> inline string TVar<var_nil>::toStr() {
+    return "null";
+};
 
 template <> inline string TVar<var_int>::toStr() {
     return to_string(value);
@@ -179,7 +187,7 @@ template <> inline string TVar<var_obj>::toStr() {
     return result;
 };
 
-template <> inline string TVar<PBltFnc>::toStr() {
+template <> inline string TVar<var_bfn>::toStr() {
     string result = value->name;
     /*
     if (value->argc) {

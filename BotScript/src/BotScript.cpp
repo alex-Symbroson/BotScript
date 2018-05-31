@@ -2,23 +2,18 @@
 //$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o
 // pins.o threads.o builtins.o
 
-// TODO: toFunction()
-// TODO: handleScope()
+// TODO:
+//      toFunction()
+//      handleScope()
+//      callBuiltin()
 
 #include "include.hpp" //includes special functions
-#include "macros.hpp"
+#include "interpret.hpp"
 
 using namespace std;
 
 // list of defined variables
-var_lst variables;
-
-// scope interpreter
-PVar handleScope(var_lst* scope) {
-    BEGIN("var_lst*scope");
-    END();
-    return V_NULL;
-}
+// var_lst variables;
 
 // initialisation
 int main(int argc, char* argv[]) {
@@ -43,7 +38,9 @@ int main(int argc, char* argv[]) {
 
     // execute code
     INFO("executing code");
-    printf("returned: %s\n", handleScope(&main)->toStr().c_str());
+    PVar res = handleScope(main);
+    printf("\n");
+    DEBUG("returned: %s\n", res->toStr().c_str());
 
     // free all allocated variables
     INFO("freeing...");

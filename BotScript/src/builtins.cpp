@@ -3,27 +3,21 @@
 
 #include "builtins.hpp"
 
-#include <stdlib.h>
-#include <time.h>
-
-#include "include.hpp"
-#include "macros.hpp"
-
 #define cstr const char*
 
-#define newFunc(NAME, ARGC, ...)                         \
-    {                                                    \
-        NAME, {                                          \
-            NAME, ARGC, [](PVar param[ARGC]) __VA_ARGS__ \
-        }                                                \
+#define newFunc(NAME, ARGC, ...)                       \
+    {                                                  \
+        NAME, {                                        \
+            NAME, ARGC, [](var_lst params) __VA_ARGS__ \
+        }                                              \
     }
 
 unordered_map<string, TBltFnc> builtins = { // builtin functions
     newFunc(
         "print", 1,
         {
-            BEGIN("PVar param=\"%s\"", param[0]->toStr().c_str());
-            printf("%s", param[0]->toStr().c_str());
+            BEGIN("PVar param=\"%s\"", params[0]->toStr().c_str());
+            if (params.size()) printf("%s", getStr(params[0]).c_str());
             END();
             return V_NULL;
         }),
@@ -31,8 +25,8 @@ unordered_map<string, TBltFnc> builtins = { // builtin functions
     newFunc(
         "input", 1,
         {
-            BEGIN("PVar param=\"%s\"", param[0]->toStr().c_str());
-            printf("%s", param[0]->toStr().c_str());
+            BEGIN("PVar param=\"%s\"", params[0]->toStr().c_str());
+            if (params.size()) printf("%s\n", getStr(params[0]).c_str());
             string inp;
             cin >> inp;
             END();
@@ -42,8 +36,8 @@ unordered_map<string, TBltFnc> builtins = { // builtin functions
     newFunc(
         "delay", 1,
         {
-            BEGIN("PVar param=\"%s\"", param[0]->toStr().c_str());
-            delay(getInt(param[0]));
+            BEGIN("PVar param=\"%s\"", params[0]->toStr().c_str());
+            if (params.size()) delay(getInt(params[0]));
             END();
             return V_NULL;
         }),

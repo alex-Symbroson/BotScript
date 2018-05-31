@@ -1,4 +1,4 @@
-print(input("\ntype smth: "));
+print(input("type smth: "));
 print("\n");
 print(clock());
 print("\n");

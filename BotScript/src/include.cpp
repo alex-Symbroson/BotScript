@@ -1,12 +1,7 @@
 
 //$ g++ -std=c++11 -O3 -c include.cpp
 
-#include "include.hpp"
-
-#include <math.h> //pow
-
 #include "builtins.hpp"
-#include "macros.hpp"
 
 bool isSymbol(char c) {
     return (symbols.find(c) + 1);
@@ -64,78 +59,14 @@ void delay(int time) {
 }
 
 // replace some \ placeholders
-void format(string* s) {
+string format(string& s) {
     BEGIN("string*s=\"%s\"", s->c_str());
-    replace(s, "\\n", "\n");
-    replace(s, "\\t", "\t");
-    replace(s, "\\033", "\033");
-    replace(s, "\\\\", "\\"); // must be last!!
+    replace(&s, "\\n", "\n");
+    replace(&s, "\\t", "\t");
+    replace(&s, "\\033", "\033");
+    replace(&s, "\\\\", "\\"); // must be last!!
+    return s;
     END();
-}
-
-// converts scope string to term
-var_lst toFunction(string::iterator* c, string::iterator end) {
-    BEGIN("string::it*c=\"%c\",string::it end", **c);
-    var_lst block(0);
-    uint8_t lastType = 0;
-
-    while (**c != ')' && **c != '}' && *c < end) {
-        switch (**c) {
-            case '"': {
-                string word = "";
-                while (*++*c != '"' && *c < end) word += **c;
-                DEBUG("%s: %s", word.c_str(), typeName(T_STR));
-                lastType = T_STR;
-            } break;
-            case '(':
-            case '{': {
-                uint8_t type = **c == '(' ? T_TRM : T_FNC;
-                DEBUG("%c: %s begin", **c, typeName(type));
-
-                if (type == T_TRM && lastType == T_BFN)
-                    block.push_back((new TStr("call")));
-
-                ++*c;
-                block.push_back((new TLst(toFunction(c, end), type))->getVar());
-                DEBUG("%c: %s end", **c, typeName(type));
-                lastType = type;
-            } break;
-            default:
-                string word = "";
-
-                if (symbols.find(**c) + 1) {
-                    string symbol;
-                    do
-                        symbol += **c;
-                    while (symbols.find(*++*c) + 1 && *c < end);
-                }
-
-                do
-                    word += **c;
-                while (!(symbols.find(*++*c) + 1) && *c < end);
-
-                if (builtin_exists(word.c_str())) {
-                    block.push_back((new TBfn(getBltin(word)))->getVar());
-                    DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
-                    lastType = T_BFN;
-                } else {
-                    DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
-                    lastType = T_VAR;
-                }
-                continue;
-        }
-        ++*c;
-    }
-    // END("%s", TLst(block).toStr().c_str());
-    return block;
-}
-
-// start recursive conversation from string to term
-var_lst toCode(string* code) {
-    BEGIN("string*code=\"%s\"", code->c_str());
-    string::iterator c = code->begin();
-    END();
-    return toFunction(&c, code->end());
 }
 
 // ignore == true -> ignore useless whitespace

@@ -2,11 +2,7 @@
 #ifndef _BSINC_HPP_
 #define _BSINC_HPP_
 
-#include "builtins.hpp"
 #include "headers.hpp"
-#include "variables.hpp"
-
-using namespace std;
 
 bool isSymbol(char);
 bool isWhitespace(char);
@@ -34,13 +30,7 @@ void replace(string* str, string src, string ovr);
 void delay(int time);
 
 // replace some \ placeholders
-void format(string* s);
-
-// converts scope string to term
-var_lst toFunction(string::iterator* c, string::iterator end);
-
-// start recursive conversation from string to term
-var_lst toCode(string* code);
+string format(string& s);
 
 // ignore == true -> ignore useless whitespace
 string readFile(const char* path, bool ignore);
