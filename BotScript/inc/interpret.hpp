@@ -10,10 +10,11 @@ PVar callBuiltin(var_bfn func, var_lst& args);
 PVar handleScope(var_lst& scope);
 
 // converts scope string to term
-var_lst toFunction(string::iterator* c, string::iterator end);
+var_lst toFunction(
+    string::iterator& c, string::iterator end, char separator = '\0');
 
 // start recursive conversation from string to term
-var_lst toCode(string* code);
+var_lst toCode(string& code);
 
 #include "builtins.hpp"
 

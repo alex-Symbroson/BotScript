@@ -6,6 +6,7 @@
 //      toFunction()
 //      handleScope()
 //      callBuiltin()
+//      RaspiBot functions
 
 #include "include.hpp" //includes special functions
 #include "interpret.hpp"
@@ -32,15 +33,14 @@ int main(int argc, char* argv[]) {
 
     // create code scope of content from default or argument file path
     INFO("formatting code");
-    var_lst main = toCode(&code);
+    var_lst main = toCode(code);
 
-    printf("main: %s\n", TLst(main).toStr().c_str());
+    printf("main: %s\n", TLst(main, T_FNC).toStr().c_str());
 
     // execute code
     INFO("executing code");
     PVar res = handleScope(main);
-    printf("\n");
-    DEBUG("returned: %s\n", res->toStr().c_str());
+    printf("\nreturned: %s\n", res->toStr().c_str());
 
     // free all allocated variables
     INFO("freeing...");

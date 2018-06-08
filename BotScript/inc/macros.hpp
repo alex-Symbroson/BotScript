@@ -8,8 +8,10 @@
 #define _DEBUG_ 2    // enables 1:INFO 2:BEGIN,END and 3:DEBUG macro
 #define _ERR_EXIT_ 1 // exit on error
 
-#define ONCE(...) \
-    do { __VA_ARGS__ } while (0)
+#define ONCE(...)   \
+    do {            \
+        __VA_ARGS__ \
+    } while (0)
 
 // macros for error mesages
 #define err_ict(a, b) \

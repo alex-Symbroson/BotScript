@@ -20,30 +20,14 @@ bool isOperator(string s) {
     return false;
 }
 
-// copied (and modified) from stackoverflow, "ausercomment"
-double stod(string s, uint8_t radix) {
-    BEGIN("string s=\"%s\",uint8_t=%i", s.c_str(), radix);
-    double n  = 0;
-    uint8_t x = s.size(), y = 0;
-    while (x)
-        if (!(s[--x] ^ '.'))
-            n /= pow(radix, s.size() - 1 - x), y += s.size() - x;
-        else
-            n +=
-                ((s[x] - (s[x] <= '9' ? '0' : '7')) *
-                 pow(radix, s.size() - 1 - x - y));
-    END();
-    return n;
-}
-
 // replace all in string
-void replace(string* str, string src, string ovr) {
+void replace(string& str, string src, string ovr) {
     BEGIN(
-        "string*str=\"%s\",string src=\"%s\",string ovr=\"%s\"", str->c_str(),
+        "string*str=\"%s\",string src=\"%s\",string ovr=\"%s\"", str.c_str(),
         src.c_str(), ovr.c_str());
     int start = 0;
-    while ((start = str->find(src, start)) + 1) {
-        str->replace(start, src.length(), ovr);
+    while ((start = str.find(src, start)) + 1) {
+        str.replace(start, src.length(), ovr);
         start += ovr.length(); // case 'ovr' is substring of 'src'
     }
     END();
@@ -58,13 +42,24 @@ void delay(int time) {
     END();
 }
 
-// replace some \ placeholders
+// replace some escape sequences
 string format(string& s) {
-    BEGIN("string*s=\"%s\"", s->c_str());
-    replace(&s, "\\n", "\n");
-    replace(&s, "\\t", "\t");
-    replace(&s, "\\033", "\033");
-    replace(&s, "\\\\", "\\"); // must be last!!
+    BEGIN("string*s=\"%s\"", s.c_str());
+    replace(s, "\\n", "\n");
+    replace(s, "\\t", "\t");
+    replace(s, "\\033", "\033");
+    replace(s, "\\\\", "\\"); // must be last
+    return s;
+    END();
+}
+
+// undo replace of escape sequences
+string unformat(string& s) {
+    BEGIN("string*s=\"%s\"", s.c_str());
+    replace(s, "\\", "\\\\"); // must be first
+    replace(s, "\n", "\\n");
+    replace(s, "\t", "\\t");
+    replace(s, "\033", "\\033");
     return s;
     END();
 }
@@ -83,17 +78,19 @@ string readFile(const char* path, bool ignore) {
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
             // whitespace
-            if (whitespace.find(c) < 3) {
-                if (c == '\n' && content[content.size() - 1] != ';')
-                    content += ';';
-                continue;
+            while (c != EOF && whitespace.find(c) + 1) {
+                // if (c == '\n' && content[content.size() - 1] != ';')
+                //     content += ';';
+                c = fgetc(f);
             }
+            if (c == EOF) break;
 
             // strings
             if (c == '"') {
-                do
+                do {
                     content += c;
-                while ((c = fgetc(f)) != EOF && c != '"');
+                    // don't change the cond. order
+                } while ((c = fgetc(f)) != EOF && c != '"');
                 if (c == EOF) break;
             }
 
@@ -101,9 +98,11 @@ string readFile(const char* path, bool ignore) {
             if (c == '/') {
                 c = fgetc(f);
                 // line
-                if (c == '/') do
+                if (c == '/') {
+                    do {
                         c = fgetc(f);
-                    while (c != EOF && c != '\n');
+                    } while (c != EOF && c != '\n');
+                }
                 // block
                 else if (c == '*') {
                     bool brk = false;
@@ -114,10 +113,12 @@ string readFile(const char* path, bool ignore) {
                 }
                 continue;
             }
-            content += c;
+            if (c != EOF) content += c;
         }
-    } else
-        while ((c = fgetc(f)) != EOF) content += c;
+    } else {
+        while ((c = fgetc(f)) != EOF)
+            content += c;
+    }
     END();
     return content;
 }

@@ -15,7 +15,8 @@ uint8_t Thread::create(void* (*foo)(void*), void* arg) {
     uint8_t id = 0, state;
 
     // find inactive thread
-    while (active[id]) id++;
+    while (active[id])
+        id++;
     DEBUG("  -> id = %i", id);
 
     // create thread

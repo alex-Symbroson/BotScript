@@ -119,7 +119,8 @@ IVar::~IVar() {
 
 #define TypeClassDef(tmpl, Type, TypeID)                          \
                                                                   \
-    template <tmpl> TVar<Type>::TVar(Type v, uint8_t typeID) {    \
+    template <tmpl>                                               \
+    TVar<Type>::TVar(Type v, uint8_t typeID) {                    \
         value = v;                                                \
         if (typeID) {                                             \
             if (VAR_Type[typeID] != VAR_Type[TypeID])             \
@@ -138,7 +139,8 @@ IVar::~IVar() {
             this->toStr().c_str());*/                             \
     }                                                             \
                                                                   \
-    template <tmpl> TVar<Type>::~TVar() {                         \
+    template <tmpl>                                               \
+    TVar<Type>::~TVar() {                                         \
         /*DEBUG(                                                  \
             "%p ~TVar<%s>::TVar(%s)", this, typeName(this->type), \
             this->toStr().c_str());*/                             \
@@ -157,5 +159,6 @@ TypeClassDef(, var_bfn, T_BFN);
 
 void FreeVariables() {
     INFO("freeing garbage");
-    while (!IVar::collector.empty()) delete IVar::collector.front();
+    while (!IVar::collector.empty())
+        delete IVar::collector.front();
 }

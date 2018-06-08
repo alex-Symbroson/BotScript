@@ -3,6 +3,7 @@
 #define _VARIABLES_HPP_
 
 #include "headers.hpp"
+#include "include.hpp"
 
 #define uint8_t unsigned char
 
@@ -21,7 +22,8 @@
 #define TCNT 11
 
 class IVar;
-template <typename> class TVar;
+template <typename>
+class TVar;
 typedef IVar* PVar;
 
 #define V_NULL (new TNil(0))->getVar()
@@ -90,14 +92,15 @@ class IVar {
 
     virtual void* getPtr() {
         return NULL;
-    };
+    }
 
     virtual string toStr() {
         return "null";
-    };
+    }
 };
 
-template <typename T> class TVar : public IVar {
+template <typename T>
+class TVar : public IVar {
       public:
     uint8_t type;
     FuncMap* op;
@@ -115,23 +118,27 @@ template <typename T> class TVar : public IVar {
     string toStr();
 };
 
-template <typename T> void* TVar<T>::operator new(size_t size) {
+template <typename T>
+void* TVar<T>::operator new(size_t size) {
     TVar<T>* p = (TVar<T>*)malloc(size);
     // DEBUG("%p TVar<>::op new()", p);
     IVar::collector.push_front(p->getVar());
     return p;
 }
 
-template <typename T> void TVar<T>::operator delete(void* p) {
+template <typename T>
+void TVar<T>::operator delete(void* p) {
     // DEBUG("%p TVar<>::op delete()", p);
     free(p);
 }
 
-template <typename T> void* TVar<T>::getPtr() {
+template <typename T>
+void* TVar<T>::getPtr() {
     return (void*)&value;
 }
 
-template <typename T> PVar TVar<T>::getVar() {
+template <typename T>
+PVar TVar<T>::getVar() {
     return dynamic_cast<PVar>(this);
 }
 
@@ -139,24 +146,42 @@ template <typename T> PVar TVar<T>::getVar() {
 TVar::toStr()
 */
 
-template <> inline string TVar<var_nil>::toStr() {
+template <>
+inline string TVar<var_nil>::toStr() {
     return "null";
-};
+}
 
-template <> inline string TVar<var_int>::toStr() {
+template <>
+inline string TVar<var_int>::toStr() {
     return to_string(value);
-};
+}
 
-template <> inline string TVar<var_flt>::toStr() {
+template <>
+inline string TVar<var_flt>::toStr() {
+    if (type == T_PIN) return "Pin(" + to_string(value) + ")";
     return to_string(value);
-};
+}
 
-template <> inline string TVar<var_str>::toStr() {
-    return "\"" + value + "\"";
-};
+template <>
+inline string TVar<var_str>::toStr() {
+    return "\"" + unformat(value) + "\"";
+}
 
-template <> inline string TVar<var_lst>::toStr() {
-    string result = "[";
+template <>
+inline string TVar<var_lst>::toStr() {
+    string result;
+    char lstEnd;
+    if (type == T_LST) {
+        result = "[";
+        lstEnd = ']';
+    } else if (type == T_FNC) {
+        result = "{";
+        lstEnd = '}';
+    } else if (type == T_TRM) {
+        result = "(";
+        lstEnd = ')';
+    }
+
     var_lst::iterator it, end = value.end();
 
     for (it = value.begin(); it != end; it++) {
@@ -164,13 +189,14 @@ template <> inline string TVar<var_lst>::toStr() {
     }
 
     if (value.size())
-        result[result.size() - 1] = ']';
+        result[result.size() - 1] = lstEnd;
     else
-        result += "]";
+        result += lstEnd;
     return result;
-};
+}
 
-template <> inline string TVar<var_obj>::toStr() {
+template <>
+inline string TVar<var_obj>::toStr() {
     string result = "]";
     var_obj::iterator it, end = value.end();
 
@@ -185,9 +211,10 @@ template <> inline string TVar<var_obj>::toStr() {
     else
         result += "]";
     return result;
-};
+}
 
-template <> inline string TVar<var_bfn>::toStr() {
+template <>
+inline string TVar<var_bfn>::toStr() {
     string result = value->name;
     /*
     if (value->argc) {
