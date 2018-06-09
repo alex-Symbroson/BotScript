@@ -26,7 +26,8 @@ template <typename>
 class TVar;
 typedef IVar* PVar;
 
-#define V_NULL (new TNil(0))->getVar()
+#define NEWVAR(v) ((new v)->getVar())
+#define V_NULL NEWVAR(TNil(0))
 
 // types
 
@@ -41,6 +42,7 @@ typedef function<PVar(var_lst)> TFunc;
 typedef unordered_map<string, TFunc> FuncMap;
 
 typedef struct {
+    var_lst dflt;
     const char* name;
     uint16_t argc;
     TFunc func;
@@ -56,7 +58,10 @@ typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
+void initOperations();
 void FreeVariables();
+extern unordered_map<uint8_t, FuncMap> operations;
+extern uint8_t VAR_Type[];
 const char* typeName(uint8_t t);
 
 // macros for calling type-specific functions
@@ -164,7 +169,7 @@ inline string TVar<var_flt>::toStr() {
 
 template <>
 inline string TVar<var_str>::toStr() {
-    return "\"" + unformat(value) + "\"";
+    return "\"" + value + "\"";
 }
 
 template <>
@@ -180,6 +185,9 @@ inline string TVar<var_lst>::toStr() {
     } else if (type == T_TRM) {
         result = "(";
         lstEnd = ')';
+    } else {
+        result = "|";
+        lstEnd = '|';
     }
 
     var_lst::iterator it, end = value.end();
@@ -188,7 +196,7 @@ inline string TVar<var_lst>::toStr() {
         result += (*it)->toStr() + ",";
     }
 
-    if (value.size())
+    if (result.size() > 1)
         result[result.size() - 1] = lstEnd;
     else
         result += lstEnd;
@@ -209,7 +217,7 @@ inline string TVar<var_obj>::toStr() {
     if (value.size())
         result[0] = '[';
     else
-        result += "]";
+        result = result + "[";
     return result;
 }
 

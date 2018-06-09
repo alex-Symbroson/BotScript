@@ -1,6 +1,4 @@
 
-//$ g++ -std=c++11 -O3 -c pins.cpp
-
 #include "pins.hpp"
 
 #define CUSTOM_BEGIN

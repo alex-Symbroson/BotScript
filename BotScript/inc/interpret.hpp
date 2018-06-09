@@ -7,7 +7,9 @@
 
 PVar callBuiltin(var_bfn func, var_lst& args);
 
-PVar handleScope(var_lst& scope);
+PVar handleLine(var_lst& line);
+
+void handleScope(var_lst& scope);
 
 // converts scope string to term
 var_lst toFunction(

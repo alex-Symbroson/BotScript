@@ -1,6 +1,4 @@
 
-//$ g++ -std=c++11 -O3 -c Variables.cpp
-
 #define CUSTOM_BEGIN
 #include "variables.hpp"
 
@@ -8,89 +6,96 @@
 #define END(...) END_1("Variables", __VA_ARGS__)
 
 #define FUNCTION (var_lst v)->PVar
-static unordered_map<uint8_t, FuncMap> operations = {
-    {T_INT,
-     {{"add",
-       [] FUNCTION {
-           getInt(v[0]) += getInt(v[1]);
-           return v[0];
-       }},
-      {"sub",
-       [] FUNCTION {
-           getInt(v[0]) -= getInt(v[1]);
-           return v[0];
-       }},
-      {"mul",
-       [] FUNCTION {
-           getInt(v[0]) *= getInt(v[1]);
-           return v[0];
-       }},
-      {"div",
-       [] FUNCTION {
-           getInt(v[0]) /= getInt(v[1]);
-           return v[0];
-       }},
-      {"mod",
-       [] FUNCTION {
-           getInt(v[0]) %= getInt(v[1]);
-           return v[0];
-       }}}},
+unordered_map<uint8_t, FuncMap> operations;
 
-    {T_FLT,
-     {{"add",
-       [] FUNCTION {
-           getFlt(v[0]) += getFlt(v[1]);
-           return v[0];
-       }},
-      {"sub",
-       [] FUNCTION {
-           getFlt(v[0]) -= getFlt(v[1]);
-           return v[0];
-       }},
-      {"mul",
-       [] FUNCTION {
-           getFlt(v[0]) *= getFlt(v[1]);
-           return v[0];
-       }},
-      {"div",
-       [] FUNCTION {
-           getFlt(v[0]) /= getFlt(v[1]);
-           return v[0];
-       }},
-      {"mod",
-       [] FUNCTION {
-           var_flt *a = getFltP(v[0]), b = getFlt(v[1]);
-           *a = (*a - b * floor(*a / b));
-           return v[0];
-       }}}},
+void initOperations() {
+    operations = {{T_INT,
+                   {{"add",
+                     [] FUNCTION {
+                         getInt(v[0]) += getInt(v[1]);
+                         return v[0];
+                     }},
+                    {"sub",
+                     [] FUNCTION {
+                         getInt(v[0]) -= getInt(v[1]);
+                         return v[0];
+                     }},
+                    {"mul",
+                     [] FUNCTION {
+                         getInt(v[0]) *= getInt(v[1]);
+                         return v[0];
+                     }},
+                    {"div",
+                     [] FUNCTION {
+                         getInt(v[0]) /= getInt(v[1]);
+                         return v[0];
+                     }},
+                    {"mod",
+                     [] FUNCTION {
+                         getInt(v[0]) %= getInt(v[1]);
+                         return v[0];
+                     }}}},
 
-    {T_STR,
-     {{"add",
-       [] FUNCTION {
-           getStr(v[0]) += getStr(v[1]);
-           return v[0];
-       }}}},
+                  {T_FLT,
+                   {{"add",
+                     [] FUNCTION {
+                         getFlt(v[0]) += getFlt(v[1]);
+                         return v[0];
+                     }},
+                    {"sub",
+                     [] FUNCTION {
+                         getFlt(v[0]) -= getFlt(v[1]);
+                         return v[0];
+                     }},
+                    {"mul",
+                     [] FUNCTION {
+                         getFlt(v[0]) *= getFlt(v[1]);
+                         return v[0];
+                     }},
+                    {"div",
+                     [] FUNCTION {
+                         getFlt(v[0]) /= getFlt(v[1]);
+                         return v[0];
+                     }},
+                    {"mod",
+                     [] FUNCTION {
+                         var_flt *a = getFltP(v[0]), b = getFlt(v[1]);
+                         *a = (*a - b * floor(*a / b));
+                         return v[0];
+                     }}}},
 
-    {T_BFN,
-     {{"call",
-       [] FUNCTION {
-           DEBUG("called %s(%s)", v[0]->toStr().c_str(), v[1]->toStr().c_str());
-           return callBuiltin(getBfn(v[0]), getLst(v[1]));
-       }}}},
+                  {T_STR,
+                   {{"add",
+                     [] FUNCTION {
+                         getStr(v[0]) += getStr(v[1]);
+                         return v[0];
+                     }}}},
 
-    {T_LST, {}},
+                  {T_BFN,
+                   {{"call",
+                     [] FUNCTION {
+                         DEBUG(
+                             "called %s%s", v[0]->toStr().c_str(),
+                             v[1]->toStr().c_str());
+                         return callBuiltin(getBfn(v[0]), getLst(v[1]));
+                     }}}},
 
-    {T_OBJ, {}},
+                  {T_LST, {}},
 
-    {T_PIN, {}},
+                  {T_OBJ, {}},
 
-    {T_FNC, {}}};
+                  {T_PIN, {}},
 
-static int VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR,
-                         T_LST, T_OBJ, T_INT, T_LST, T_LST};
+                  {T_FNC, {}}};
+}
+
+uint8_t VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR, T_LST,
+                      T_OBJ, T_INT, T_LST, T_LST, T_BFN};
 
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
+    BEGIN();
+    END();
     switch (t) {
         case T_NIL: return "null";
         case T_VAR: return "var";
@@ -110,42 +115,48 @@ const char* typeName(uint8_t t) {
 forward_list<PVar> IVar::collector = {};
 
 IVar::IVar() {
-    // DEBUG("%p IVar<>::IVar()", this);
+    BEGIN();
+    END("-> %p", this);
 }
 
 IVar::~IVar() {
-    // DEBUG("%p ~IVar<%s>::IVar()", this, typeName(getType(this)));
+    BEGIN("%p ~IVar<%s>", this, typeName(getType(this)));
+    END();
 }
 
-#define TypeClassDef(tmpl, Type, TypeID)                          \
-                                                                  \
-    template <tmpl>                                               \
-    TVar<Type>::TVar(Type v, uint8_t typeID) {                    \
-        value = v;                                                \
-        if (typeID) {                                             \
-            if (VAR_Type[typeID] != VAR_Type[TypeID])             \
-                error_exit(                                       \
-                    "cannot assign %s to %s", typeName(typeID),   \
-                    typeName(TypeID));                            \
-                                                                  \
-            type = typeID;                                        \
-        } else                                                    \
-            type = TypeID;                                        \
-                                                                  \
-        ptype = &type;                                            \
-        pop = op = &operations[TypeID];                           \
-        /*DEBUG(                                                  \
-            "%p TVar<%s>::TVar(%s)", this, typeName(this->type),  \
-            this->toStr().c_str());*/                             \
-    }                                                             \
-                                                                  \
-    template <tmpl>                                               \
-    TVar<Type>::~TVar() {                                         \
-        /*DEBUG(                                                  \
-            "%p ~TVar<%s>::TVar(%s)", this, typeName(this->type), \
-            this->toStr().c_str());*/                             \
-                                                                  \
-        collector.remove(this);                                   \
+#define TypeClassDef(TMPL, TYPE, TYPEID)                        \
+                                                                \
+    template <TMPL>                                             \
+    TVar<TYPE>::TVar(TYPE v, uint8_t typeID) {                  \
+        BEGIN();                                                \
+                                                                \
+        value = v;                                              \
+        if (typeID) {                                           \
+            if (VAR_Type[typeID] != VAR_Type[TYPEID]) {         \
+                END();                                          \
+                error_exit(                                     \
+                    "cannot assign %s to %s", typeName(typeID), \
+                    typeName(TYPEID));                          \
+            }                                                   \
+            type = typeID;                                      \
+        } else                                                  \
+            type = TYPEID;                                      \
+                                                                \
+        ptype = &type;                                          \
+        pop = op = &operations[TYPEID];                         \
+                                                                \
+        END("-> %p : TVar<%s> %s", this, typeName(this->type),  \
+            this->toStr().c_str());                             \
+    }                                                           \
+                                                                \
+    template <TMPL>                                             \
+    TVar<TYPE>::~TVar() {                                       \
+        BEGIN(                                                  \
+            "%p ~TVar<%s> %s", this, typeName(this->type),      \
+            this->toStr().c_str());                             \
+                                                                \
+        collector.remove(this);                                 \
+        END();                                                  \
     }
 
 TypeClassDef(typename T, T, T_NIL);
@@ -158,7 +169,21 @@ TypeClassDef(, var_obj, T_OBJ);
 TypeClassDef(, var_bfn, T_BFN);
 
 void FreeVariables() {
-    INFO("freeing garbage");
-    while (!IVar::collector.empty())
+    BEGIN();
+    uint32_t n = 0;
+    while (!IVar::collector.empty()) {
         delete IVar::collector.front();
+        n++;
+    }
+    INFO("freed %i variables", n);
+    /*
+    printf(
+        "sizes:\n"
+        "nil:%lu\nint:%lu\nflt:%lu\nstr:%lu\nlst:%lu\nobj:%lu\nbfn:%lu\n"
+        "IVar:%lu\n",
+        sizeof(TNil), sizeof(TInt), sizeof(TFlt), sizeof(TStr), sizeof(TLst),
+        sizeof(TObj), sizeof(TBfn) - sizeof(TBltFnc*) + sizeof(TBltFnc),
+        sizeof(IVar));
+        */
+    END();
 }

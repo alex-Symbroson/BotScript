@@ -1,36 +1,29 @@
 
-//$ g++ -std=c++11 -O3 -c include.cpp
-
 #include "builtins.hpp"
 
 bool isSymbol(char c) {
+    BEGIN();
+    END();
     return (symbols.find(c) + 1);
 }
 
 bool isWhitespace(char c) {
+    BEGIN();
+    END();
     return (whitespace.find(c) + 1);
 }
 
 bool isOperator(char c) {
+    BEGIN();
+    END();
     return (operators.find(c) + 1);
 }
 
 bool isOperator(string s) {
+    BEGIN();
+    END();
     if (s[1] == '=') return isOperator(s[0]);
     return false;
-}
-
-// replace all in string
-void replace(string& str, string src, string ovr) {
-    BEGIN(
-        "string*str=\"%s\",string src=\"%s\",string ovr=\"%s\"", str.c_str(),
-        src.c_str(), ovr.c_str());
-    int start = 0;
-    while ((start = str.find(src, start)) + 1) {
-        str.replace(start, src.length(), ovr);
-        start += ovr.length(); // case 'ovr' is substring of 'src'
-    }
-    END();
 }
 
 // delay in milliseonds
@@ -42,24 +35,42 @@ void delay(int time) {
     END();
 }
 
+// replace all in string
+string replace(string str, string src, string ovr) {
+    BEGIN(
+        "string*str=\"%s\",string src=\"%s\",string ovr=\"%s\"", str.c_str(),
+        src.c_str(), ovr.c_str());
+    int start = 0;
+    while ((start = str.find(src, start)) + 1) {
+        str.replace(start, src.length(), ovr);
+        start += ovr.length(); // case 'ovr' is substring of 'src'
+    }
+    END("-> %s", str.c_str());
+    return str;
+}
+
 // replace some escape sequences
-string format(string& s) {
+string format(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
-    replace(s, "\\n", "\n");
-    replace(s, "\\t", "\t");
-    replace(s, "\\033", "\033");
-    replace(s, "\\\\", "\\"); // must be last
+    if (s.size()) {
+        s = replace(s, "\\n", "\n");
+        s = replace(s, "\\t", "\t");
+        s = replace(s, "\\033", "\033");
+        s = replace(s, "\\\\", "\\"); // must be last
+    }
     return s;
     END();
 }
 
 // undo replace of escape sequences
-string unformat(string& s) {
+string unformat(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
-    replace(s, "\\", "\\\\"); // must be first
-    replace(s, "\n", "\\n");
-    replace(s, "\t", "\\t");
-    replace(s, "\033", "\\033");
+    if (s.size()) {
+        s = replace(s, "\\", "\\\\"); // must be first
+        s = replace(s, "\n", "\\n");
+        s = replace(s, "\t", "\\t");
+        s = replace(s, "\033", "\\033");
+    }
     return s;
     END();
 }

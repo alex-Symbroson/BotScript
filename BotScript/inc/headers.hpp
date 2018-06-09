@@ -3,10 +3,11 @@
 #define _PCH_HPP_
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include <cassert>
+#include <algorithm>
 #include <forward_list> //alternative linked list container
 #include <functional>
 #include <iostream>

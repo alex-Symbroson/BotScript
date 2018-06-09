@@ -3,8 +3,7 @@
 #    define _THREADS_HPP_
 
 #    include <pthread.h> //pthread_t, pthread_create, pthread_join, pthread_cancel
-
-#    define uint8_t unsigned char
+#    include <stdint.h>
 
 namespace Thread {
 

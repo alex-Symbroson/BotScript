@@ -18,18 +18,16 @@ const string operators("<>!%^&*|+=");
 // whitespace characters
 const string whitespace(" \t\r\n");
 
-string dtos(double d);
-
 // replace all in string
-void replace(string& str, string src, string ovr);
+string replace(string str, string src, string ovr);
 
 // delay in milliseonds
 void delay(int time);
 
 // replace some \ placeholders
-string format(string& s);
+string format(string s);
 
-string unformat(string& s);
+string unformat(string s);
 
 // ignore == true -> ignore useless whitespace
 string readFile(const char* path, bool ignore);

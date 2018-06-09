@@ -1,6 +1,4 @@
 
-//$ g++ -std=c++11 -O3 -c threads.cpp
-
 #include "threads.hpp"
 
 #define CUSTOM_BEGIN

@@ -1,30 +1,31 @@
 
-//$ g++ -std=c++11 -O3 BotScript.cpp -lwiringPi -pthread  include.o variables.o
-// pins.o threads.o builtins.o
-
 // TODO:
 //      toFunction()
 //      handleScope()
 //      callBuiltin()
 //      RaspiBot functions
+//      multi arguments
+
+unsigned int debug_func_intd = 0;
 
 #include "include.hpp" //includes special functions
 #include "interpret.hpp"
-
-using namespace std;
-
-// list of defined variables
-// var_lst variables;
 
 // initialisation
 int main(int argc, char* argv[]) {
     BEGIN("int argc=%i,char**argv", argc);
     PRINT_STATUS();
 
+    INFO("init operations");
+    initOperations();
+
+    INFO("init builtins");
+    initBuiltins();
+
+    INFO("reading file");
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
     string code      = readFile(path, true);
     INFO("file input:\n%s", code.c_str());
-    if (code == "") error("file \"%s\" is empty", path);
 
 #if DEBUG == 1
     printf("press enter to continue\n");
@@ -39,8 +40,7 @@ int main(int argc, char* argv[]) {
 
     // execute code
     INFO("executing code");
-    PVar res = handleScope(main);
-    printf("\nreturned: %s\n", res->toStr().c_str());
+    handleScope(main);
 
     // free all allocated variables
     INFO("freeing...");
