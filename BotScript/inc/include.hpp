@@ -10,7 +10,7 @@ bool isOperator(char);
 bool isOperator(string);
 
 // characters interpreted as symbols
-const string symbols(" \t\r\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-…");
+const string symbols(" \t\r\n/\\():,.;<>~!@#$%^&*|+=[]{}`?-…");
 
 // characters interpreted as operators (op and op=)
 const string operators("<>!%^&*|+=");
@@ -24,10 +24,11 @@ string replace(string str, string src, string ovr);
 // delay in milliseonds
 void delay(int time);
 
-// replace some \ placeholders
-string format(string s);
+// replace some escape sequences
+string unescape(string s);
 
-string unformat(string s);
+// undo replacement of escape sequences
+string escape(string s);
 
 // ignore == true -> ignore useless whitespace
 string readFile(const char* path, bool ignore);

@@ -1,15 +1,19 @@
-println(input("type smth: "));
+//println(input("type smth: "));
 println();
 print(clock());
 println();
-delay("1000");
-clock();
 
-println(clock());
-println();
+print("hello","world\n");
+
 delay("1000");
 println(clock());
 println();
+
+delay("1000");
+println(clock());
+println();
+
+
 delay("1000");
 println(clock());
 println("end.");

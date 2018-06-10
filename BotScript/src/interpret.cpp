@@ -73,13 +73,9 @@ PVar handleLine(var_lst& line) {
 void handleScope(var_lst& scope) {
     BEGIN("var_lst*scope");
 
-    if (scope.size()) {
-        var_lst::iterator it = scope.begin(), end = scope.end();
-        do {
-            handleLine(getLst(*it));
-            it++;
-        } while (it != end);
-    }
+    for (auto& v: scope)
+        handleLine(getLst(v));
+
     END();
 }
 
@@ -101,7 +97,7 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                 string word = "";
                 while (*++c != '"' && c < end)
                     word += *c;
-                line->push_back((new TStr(format(word))));
+                line->push_back((new TStr(word)));
                 DEBUG("%s: %s", word.c_str(), typeName(T_STR));
                 lastType = T_STR;
             } break;
@@ -139,31 +135,30 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                 string word = "";
 
                 if (symbols.find(*c) + 1) {
-                    string symbol;
                     do {
-                        symbol += *c;
-                    } while (symbols.find(*++c) + 1 && c < end);
+                        word += *c;
+                    } while (word.find(*++c) + 1 && c < end);
 
-                    DEBUG("symbol \"%s\"", symbol.c_str());
+                    DEBUG("symbol \"%s\"", word.c_str());
 
-                    if (symbol[0] == separator) {
+                    if (word[0] == separator) {
                         vline = new TLst({});
                         line  = getLstP(vline);
                         block.push_back(vline->getVar());
                     }
-                }
-
-                do {
-                    word += *c;
-                } while (!(symbols.find(*++c) + 1) && c < end);
-
-                if (builtin_exists(word.c_str())) {
-                    line->push_back((new TBfn(getBltin(word)))->getVar());
-                    DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
-                    lastType = T_BFN;
                 } else {
-                    DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
-                    lastType = T_VAR;
+                    do {
+                        word += *c;
+                    } while (!(symbols.find(*++c) + 1) && c < end);
+
+                    if (builtin_exists(word.c_str())) {
+                        line->push_back((new TBfn(getBltin(word)))->getVar());
+                        DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
+                        lastType = T_BFN;
+                    } else {
+                        DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
+                        lastType = T_VAR;
+                    }
                 }
                 continue;
         }

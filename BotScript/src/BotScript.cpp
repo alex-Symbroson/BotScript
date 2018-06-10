@@ -1,10 +1,7 @@
 
 // TODO:
-//      toFunction()
-//      handleScope()
-//      callBuiltin()
+//      toFunction(): operators. variables, ...
 //      RaspiBot functions
-//      multi arguments
 
 unsigned int debug_func_intd = 0;
 
@@ -36,7 +33,7 @@ int main(int argc, char* argv[]) {
     INFO("formatting code");
     var_lst main = toCode(code);
 
-    printf("main: %s\n", TLst(main, T_FNC).toStr().c_str());
+    INFO("\nmain: %s", TLst(main, T_FNC).toStr().c_str());
 
     // execute code
     INFO("executing code");

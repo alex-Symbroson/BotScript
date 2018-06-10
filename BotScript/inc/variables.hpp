@@ -190,11 +190,15 @@ inline string TVar<var_lst>::toStr() {
         lstEnd = '|';
     }
 
-    var_lst::iterator it, end = value.end();
+    /*
+        var_lst::iterator it, end = value.end();
 
-    for (it = value.begin(); it != end; it++) {
-        result += (*it)->toStr() + ",";
-    }
+        for (it = value.begin(); it != end; it++) {
+            result += (*it)->toStr() + ",";
+        }
+    */
+    for (auto& v: value)
+        result += v->toStr() + ",";
 
     if (result.size() > 1)
         result[result.size() - 1] = lstEnd;
@@ -206,13 +210,11 @@ inline string TVar<var_lst>::toStr() {
 template <>
 inline string TVar<var_obj>::toStr() {
     string result = "]";
-    var_obj::iterator it, end = value.end();
 
     // builds string reversed because every new unordered_map
     // element is inserted at the front
-    for (it = value.begin(); it != end; it++) {
-        result = ",\"" + it->first + "\":" + it->second->toStr() + result;
-    }
+    for (auto& v: value)
+        result = ",\"" + v.first + "\":" + v.second->toStr() + result;
 
     if (value.size())
         result[0] = '[';

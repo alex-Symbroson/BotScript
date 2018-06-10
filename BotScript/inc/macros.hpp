@@ -8,8 +8,9 @@
 
 extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 2    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
+#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
 #define _ERR_EXIT_ 1 // exit on error
+#define COMMA ,
 
 // doesnt work for empty argument list
 #define VA_ARGC_SEQ(                                                         \

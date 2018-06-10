@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <algorithm>
 #include <forward_list> //alternative linked list container
 #include <functional>
 #include <iostream>

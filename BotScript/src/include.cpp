@@ -42,34 +42,38 @@ string replace(string str, string src, string ovr) {
         src.c_str(), ovr.c_str());
     int start = 0;
     while ((start = str.find(src, start)) + 1) {
-        str.replace(start, src.length(), ovr);
-        start += ovr.length(); // case 'ovr' is substring of 'src'
+        str.replace(start, src.size(), ovr);
+        start += ovr.size(); // case 'ovr' is substring of 'src'
     }
     END("-> %s", str.c_str());
     return str;
 }
 
+#define REPLACE1(a) replace(s, a)
+#define REPLACE2(a, b) replace(REPLACE1(REP(a)), b)
+#define REPLACE3(a, b, c) replace(REPLACE2(REP(a), REP(b)), c)
+#define REPLACE4(a, b, c, d) replace(REPLACE3(REP(a), REP(b), REP(c)), d)
+#define REP(a, b) a COMMA b
+
 // replace some escape sequences
-string format(string s) {
+string unescape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
     if (s.size()) {
-        s = replace(s, "\\n", "\n");
-        s = replace(s, "\\t", "\t");
-        s = replace(s, "\\033", "\033");
-        s = replace(s, "\\\\", "\\"); // must be last
+        s = REPLACE4(
+            REP("\\n", "\n"), REP("\\t", "\t"), REP("\\033", "\033"),
+            REP("\\\\", "\\") /*must be last*/);
     }
     return s;
     END();
 }
 
-// undo replace of escape sequences
-string unformat(string s) {
+// undo replacement of escape sequences
+string escape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
     if (s.size()) {
-        s = replace(s, "\\", "\\\\"); // must be first
-        s = replace(s, "\n", "\\n");
-        s = replace(s, "\t", "\\t");
-        s = replace(s, "\033", "\\033");
+        s = REPLACE4(
+            REP("\\", "\\\\"), /* must be first*/
+            REP("\n", "\\n"), REP("\t", "\\t"), REP("\033", "\\033"));
     }
     return s;
     END();

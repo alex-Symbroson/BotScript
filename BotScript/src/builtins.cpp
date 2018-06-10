@@ -22,7 +22,14 @@ void initBuiltins() {
             "print", 1, {NEWVAR(TStr(""))},
             {
                 BEGIN("print params=%s", TLst(params).toStr().c_str());
-                if (params.size()) printf("%s", TLst(params).toStr().c_str());
+                PVar end = params.end()[-1];
+                for (PVar& v: params) {
+                    if (getType(v) == T_STR)
+                        printf("%s", unescape(getStr(v)).c_str());
+                    else
+                        printf("%s", v->toStr().c_str());
+                    if (v != end) printf(" ");
+                }
                 END("print");
                 return V_NULL;
             }),
@@ -31,7 +38,12 @@ void initBuiltins() {
             "println", 1, {NEWVAR(TStr(""))},
             {
                 BEGIN("println params=%s", TLst(params).toStr().c_str());
-                if (params.size()) printf("%s\n", TLst(params).toStr().c_str());
+                for (PVar& v: params) {
+                    if (getType(v) == T_STR)
+                        printf("%s\n", unescape(getStr(v)).c_str());
+                    else
+                        printf("%s\n", v->toStr().c_str());
+                }
                 END("println");
                 return V_NULL;
             }),
@@ -40,7 +52,7 @@ void initBuiltins() {
             "input", 1, {NEWVAR(TStr(""))},
             {
                 BEGIN("input params=%s", TLst(params).toStr().c_str());
-                if (params.size()) printf("%s\n", getStr(params[0]).c_str());
+                printf("%s\n", params[0]->toStr().c_str());
                 string inp;
                 cin >> inp;
                 END("input");
