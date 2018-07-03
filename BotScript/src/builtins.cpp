@@ -61,7 +61,7 @@ void initBuiltins() {
                 string input;
                 getline(std::cin, input);
                 END("input");
-                return NEWVAR(TStr(input);
+                return NEWVAR(TStr(input));
             }),
 
         newFunc(
