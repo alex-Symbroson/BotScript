@@ -27,14 +27,26 @@ bool isOperator(char c) {
 
 bool isOperator(string s) {
     // BEGIN("%s", s.c_str());
-    END();
+    // END();
     return operators.find(s) != operators.end();
 }
 
+double stod2(const char* s) {
+    BEGIN("s=\"%s\"", s);
+    END();
+    if (s[1] == 'x') return stoll(s + 2, NULL, s[0] - '0');
+    if (s[2] == 'x') return stoll(s + 3, NULL, s[0] * 10 + s[1] - 11 * '0');
+    return stoll(s);
+}
+
+double stod2(string& s) {
+    return stod2(s.c_str());
+}
+
 // delay in milliseonds
-void delay(int time) {
-    BEGIN("int time=%i", time);
-    time = clock() + time * 1000;
+void delay(double time) {
+    BEGIN("time=%f", time);
+    time = clock() + round(time * 1000);
     while (clock() < time)
         ;
     END();

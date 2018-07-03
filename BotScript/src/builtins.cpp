@@ -73,8 +73,10 @@ void initBuiltins() {
 
                     if (type == T_INT)
                         delay(getInt(params[0]));
+                    else if (type == T_FLT)
+                        delay(getFlt(params[0]));
                     else if (type == T_STR)
-                        delay(stoll(getStr(params[0])));
+                        delay(stod2(getStr(params[0])));
                 }
                 END("delay");
                 return V_NULL;
@@ -82,7 +84,7 @@ void initBuiltins() {
 
         newFunc("clock", 0, {}, {
             BEGIN("clock params=%s", TLst(params).toStr().c_str());
-            PVar ret = (new TInt(clock() / 1000))->getVar();
+            PVar ret = NEWVAR(TFlt(clock() / 1000.0));
             END("clock");
             return ret;
         })};

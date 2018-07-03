@@ -6,8 +6,8 @@ println(("Hello ") + ("World" + "!"));
 // print("you typed:", input("type smth: ")); println();
 
 print("timing:\n", clock(), "\n");
-delay("50"); print(clock(), "\n");
-delay("50"); print(clock(), "\n");
-delay("50"); print(clock());
+delay(50);       print(clock(), "\n");
+delay(16x32);    print(clock(), "\n");
+delay(2x110010); println(clock());
 
 println("end.");

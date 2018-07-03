@@ -210,6 +210,12 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                         line->push_back(NEWVAR(TBfn(getBltin(word))));
                         DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
                         lastType = T_BFN;
+
+                    } else if ((word[0] >= '0') && (word[0] <= '9')) {
+                        line->push_back(NEWVAR(TFlt(stod2(word))));
+                        DEBUG("%s: %s", word.c_str(), typeName(T_FLT));
+                        lastType = T_FLT;
+
                     } else {
                         DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
                         lastType = T_VAR;
