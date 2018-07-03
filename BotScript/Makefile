@@ -9,7 +9,7 @@ PCH       = headers.hpp
 ISPI = $(shell cat ispi)
 
 	# compiler flags
-CFLAGS  = -I $(DIR_INC) -Wall -std=c++11 -O3
+CFLAGS  = -I . -I $(DIR_INC) -Wall -std=c++11# -O3
 
 	# linker flags
 LDFLAGS  = -pthread
@@ -19,7 +19,8 @@ ifeq (ISPI,true)
 endif
 
 ifeq ($(debug),true)
-	LDFLAGS += -I nvwa nvwa/debug_new.cpp
+	CFLAGS += -I nvwa -D _DEBUG
+	LDFLAGS += nvwa/debug_new.cpp
 endif
 
 	# clean extensions

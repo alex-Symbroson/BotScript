@@ -5,7 +5,15 @@
 #include "include.hpp"
 #include "variables.hpp"
 
-PVar callBuiltin(var_bfn func, var_lst& args);
+typedef struct {
+    const char* name;
+    uint8_t priority;
+    char dir;
+} Operator;
+
+extern unordered_map<string, Operator> operators;
+
+PVar callBuiltin(var_bfn func, var_lst args);
 
 PVar handleLine(var_lst& line);
 

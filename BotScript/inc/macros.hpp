@@ -8,7 +8,7 @@
 
 extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
+#define _DEBUG_ 2    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
 #define _ERR_EXIT_ 1 // exit on error
 #define COMMA ,
 
@@ -56,27 +56,28 @@ extern unsigned int debug_func_intd;
 //
 #if _DEBUG_ > 2
 #    ifndef CUSTOM_BEGIN
-#        define BEGIN(s, ...)                                                  \
-            printf(                                                            \
-                " \033[1;33m%5i\033[2;32m%s\t line %4i %s(" s ")\033[0;37m\n", \
-                ++debug_func_intd, __FILE__, __LINE__, __func__,               \
+#        define BEGIN(s, ...)                                    \
+            printf(                                              \
+                " \033[1;33m%5i \033[2;32m%s\t line %4i %s(" s   \
+                ")\033[0;37m\n",                                 \
+                ++debug_func_intd, __FILE__, __LINE__, __func__, \
                 ##__VA_ARGS__)
 #        define END(s, ...)                                      \
             printf(                                              \
-                " \033[1;31m%5i\033[2;32m%s\t line %4i %s() " s  \
+                " \033[1;31m%5i \033[2;32m%s\t line %4i %s() " s \
                 "\033[0;37m\n",                                  \
                 debug_func_intd--, __FILE__, __LINE__, __func__, \
                 ##__VA_ARGS__)
 #    else
 #        define BEGIN_1(class, s, ...)                                  \
             printf(                                                     \
-                " \033[1;33m%5i\033[2;32m%s\t line %4i %s::%s(" s       \
+                " \033[1;33m%5i \033[2;32m%s\t line %4i %s::%s(" s      \
                 ")\033[0;37m\n",                                        \
                 ++debug_func_intd, __FILE__, __LINE__, class, __func__, \
                 ##__VA_ARGS__)
 #        define END_1(class, s, ...)                                    \
             printf(                                                     \
-                " \033[1;31m%5i\033[2;32m%s\t line %4i %s::%s() " s     \
+                " \033[1;31m%5i \033[2;32m%s\t line %4i %s::%s() " s    \
                 "\033[0;37m\n",                                         \
                 debug_func_intd--, __FILE__, __LINE__, class, __func__, \
                 ##__VA_ARGS__)

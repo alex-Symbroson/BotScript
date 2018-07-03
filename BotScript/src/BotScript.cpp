@@ -2,16 +2,28 @@
 // TODO:
 //      toFunction(): operators. variables, ...
 //      RaspiBot functions
+//      error operator '+(' isop: 0
 
 unsigned int debug_func_intd = 0;
 
 #include "include.hpp" //includes special functions
 #include "interpret.hpp"
 
+void interrupt(int sig) {
+    // free all allocated variables
+    INFO("interrupt catched - freeing");
+    FreeVariables();
+
+    printf("\n");
+    exit(0);
+}
+
 // initialisation
 int main(int argc, char* argv[]) {
     BEGIN("int argc=%i,char**argv", argc);
     PRINT_STATUS();
+
+    signal(SIGINT, interrupt);
 
     INFO("init operations");
     initOperations();
@@ -22,7 +34,7 @@ int main(int argc, char* argv[]) {
     INFO("reading file");
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
     string code      = readFile(path, true);
-    INFO("file input:\n%s", code.c_str());
+    INFO("file input:\n%s\n", code.c_str());
 
 #if DEBUG == 1
     printf("press enter to continue\n");
@@ -33,7 +45,7 @@ int main(int argc, char* argv[]) {
     INFO("formatting code");
     var_lst main = toCode(code);
 
-    INFO("\nmain: %s", TLst(main, T_FNC).toStr().c_str());
+    INFO("\nmain: %s\n", TLst(main, T_FNC).toStr().c_str());
 
     // execute code
     INFO("executing code");

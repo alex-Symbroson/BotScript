@@ -4,19 +4,10 @@
 
 #include "headers.hpp"
 
-bool isSymbol(char);
-bool isWhitespace(char);
-bool isOperator(char);
-bool isOperator(string);
-
-// characters interpreted as symbols
-const string symbols(" \t\r\n/\\():,.;<>~!@#$%^&*|+=[]{}`?-…");
-
-// characters interpreted as operators (op and op=)
-const string operators("<>!%^&*|+=");
-
-// whitespace characters
-const string whitespace(" \t\r\n");
+bool isSymbol(char c);
+bool isWhitespace(char c);
+bool isOperator(char c);
+bool isOperator(string s);
 
 // replace all in string
 string replace(string str, string src, string ovr);

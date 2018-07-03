@@ -14,8 +14,29 @@
 =   assign   1
 */
 
-PVar callBuiltin(var_bfn func, var_lst& args) {
-    BEGIN("func=%s, args=%s", func->name, TLst(args).toStr().c_str());
+#define Op(SYM, NAM, PRI, DIR) \
+    {                          \
+        SYM, {                 \
+            NAM, PRI, DIR      \
+        }                      \
+    }
+
+unordered_map<string, Operator> operators = {
+    Op("()", "call", 2, 'R'),   Op(".", "at", 2, 'R'),
+    Op("[]", "at", 2, 'R'),     Op("**", "pow", 3, 'R'),
+    Op("*", "mul", 4, 'R'),     Op("/", "div", 4, 'R'),
+    Op("%", "mod", 4, 'R'),     Op("+", "add", 5, 'R'),
+    Op("-", "sub", 5, 'R'),     Op("<<", "shl", 6, 'R'),
+    Op(">>", "shr", 6, 'R'),    Op("<", "smaller", 7, 'R'),
+    Op(">", "bigger", 7, 'R'),  Op("<=", "smalleq", 7, 'R'),
+    Op(">=", "bigeq", 7, 'R'),  Op("==", "equal", 8, 'R'),
+    Op("!=", "nequal", 8, 'R'), Op("&", "band", 9, 'R'),
+    Op("^", "bxor", 10, 'R'),   Op("|", "bor", 11, 'R'),
+    Op("&&", "and", 12, 'R'),   Op("||", "or", 13, 'R'),
+    Op("=", "assign", 14, 'L')};
+
+PVar callBuiltin(var_bfn func, var_lst args) {
+    BEGIN("func=%s, args=%s", func->name, TLst(args, T_ARGS).toStr().c_str());
 
     // fill minimum arguments
     int16_t i;
@@ -28,7 +49,7 @@ PVar callBuiltin(var_bfn func, var_lst& args) {
     var_lst fargs(i);
 
     while (i--) {
-        if (getType(args[i]) == T_LST)
+        if (getType(args[i]) == T_TRM)
             fargs[i] = handleLine(getLst(args[i]));
         else
             fargs[i] = args[i];
@@ -42,21 +63,30 @@ PVar callBuiltin(var_bfn func, var_lst& args) {
 
 PVar handleLine(var_lst& line) {
     BEGIN("line=%s", TLst(line).toStr().c_str());
-    uint32_t size = line.size();
+
+    uint32_t size           = line.size();
+    var_lst::iterator begin = line.begin();
+    PVar res                = *begin;
+    if (getType(res) == T_TRM) res = handleLine(getLst(res));
 
     if (size == 1) {
-        END("-> %s", line[0]->toStr().c_str());
-        return line[0];
+        END("-> %s", res->toStr().c_str());
+        return res;
     }
 
     if (size) {
-        var_lst::iterator begin = line.begin(), it, end = line.end();
-        it       = begin + 1;
-        PVar res = NULL;
+        var_lst::iterator it = begin + 1, end = line.end();
+        PVar param;
 
         do {
-            if (size > 2 && getType(it[1]) == T_TRM)
-                res = callP(begin[0], getStr(it[0]), begin[0], it[1]);
+            if (size > 2) {
+                if (getType(it[1]) == T_TRM && getLst(it[1]).size())
+                    param = handleLine(getLst(it[1]));
+                else
+                    param = it[1];
+
+                res = callP(res, getStr(it[0]), res, param);
+            }
             it += 2;
         } while (it != end);
 
@@ -81,11 +111,11 @@ void handleScope(var_lst& scope) {
 
 // converts scope string to term
 var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
-    BEGIN("string::it*c=\"%c\",string::it end", *c);
+    BEGIN("string::it*c='%c',string::it end", *c);
 
     var_lst block;
 
-    TLst* vline   = new TLst({});
+    TLst* vline   = new TLst({}, T_TRM);
     var_lst* line = getLstP(vline);
     block.push_back(vline->getVar());
 
@@ -97,12 +127,12 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                 string word = "";
                 while (*++c != '"' && c < end)
                     word += *c;
-                line->push_back((new TStr(word)));
+                line->push_back(NEWVAR(TStr(word)));
                 DEBUG("%s: %s", word.c_str(), typeName(T_STR));
                 lastType = T_STR;
             } break;
 
-            // case '[':
+            case '[':
             case '(':
             case '{': {
                 uint8_t type;
@@ -111,22 +141,23 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                 if (*c == '(') {
                     type = T_TRM;
                     sep  = ',';
-                } else /*if (*c == '{')*/ {
+                } else if (*c == '{') {
                     type = T_FNC;
                     sep  = ';';
-                } /* else if (*c == '[') {
-                     type = T_OBJ;
-                     sep  = ',';
-                 }*/
+                } else /*if (*c == '[')*/ {
+                    // detect list or obj later
+                    sep  = ',';
+                    type = T_LST;
+                }
                 DEBUG("%c: %s begin", *c, typeName(type));
 
                 if (type == T_TRM && lastType == T_BFN) {
-                    line->push_back((new TStr("call")));
+                    type = T_ARGS;
+                    line->push_back(NEWVAR(TStr("call")));
                 }
 
                 ++c;
-                line->push_back(
-                    (new TLst(toFunction(c, end, sep), type))->getVar());
+                line->push_back(NEWVAR(TLst(toFunction(c, end, sep), type)));
                 DEBUG("%c: %s end", *c, typeName(type));
                 lastType = type;
             } break;
@@ -134,25 +165,49 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
             default:
                 string word = "";
 
-                if (symbols.find(*c) + 1) {
+                if (isSymbol(*c)) {
+                    bool wasOp = false, isOp = false, isSep = false,
+                         cond = false;
+
                     do {
-                        word += *c;
-                    } while (word.find(*++c) + 1 && c < end);
+                        isSep = *c == separator;
 
-                    DEBUG("symbol \"%s\"", word.c_str());
+                        if (isSep) {
+                            DEBUG("seperator '%c'", separator);
+                            vline = new TLst({}, T_TRM);
+                            line  = getLstP(vline);
+                            block.push_back(vline->getVar());
+                        } else {
+                            cond  = isOperator(*(c + 1)) && (c + 1 < end);
+                            wasOp = isOperator(word);
+                            isOp  = isOperator(word + *c);
 
-                    if (word[0] == separator) {
-                        vline = new TLst({});
-                        line  = getLstP(vline);
-                        block.push_back(vline->getVar());
-                    }
+                            if ((isOp && (!cond || isSep)) ||
+                                (wasOp && (!cond || isSep || !isOp))) {
+                                if (isOp) word += *c;
+
+                                DEBUG(
+                                    "operator '%s' isop: %i", word.c_str(),
+                                    isOp);
+
+                                line->push_back(NEWVAR(
+                                    TStr(string(operators[word].name), T_OPR)));
+                                word = "";
+
+                                lastType = T_OPR;
+                            } else
+                                word += *c;
+                        }
+
+                        c++;
+                    } while (cond);
                 } else {
                     do {
                         word += *c;
-                    } while (!(symbols.find(*++c) + 1) && c < end);
+                    } while (!isSymbol(*++c) && c < end);
 
-                    if (builtin_exists(word.c_str())) {
-                        line->push_back((new TBfn(getBltin(word)))->getVar());
+                    if (isBuiltin(word.c_str())) {
+                        line->push_back(NEWVAR(TBfn(getBltin(word))));
                         DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
                         lastType = T_BFN;
                     } else {

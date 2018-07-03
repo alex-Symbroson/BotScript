@@ -52,11 +52,16 @@ void initBuiltins() {
             "input", 1, {NEWVAR(TStr(""))},
             {
                 BEGIN("input params=%s", TLst(params).toStr().c_str());
-                printf("%s\n", params[0]->toStr().c_str());
-                string inp;
-                cin >> inp;
+
+                if (getType(params[0]) == T_STR)
+                    printf("%s", unescape(getStr(params[0])).c_str());
+                else
+                    printf("%s", params[0]->toStr().c_str());
+
+                string input;
+                getline(std::cin, input);
                 END("input");
-                return (new TStr(inp))->getVar();
+                return NEWVAR(TStr(input);
             }),
 
         newFunc(
@@ -65,6 +70,7 @@ void initBuiltins() {
                 BEGIN("delay params=%s", TLst(params).toStr().c_str());
                 if (params.size()) {
                     uint8_t type = getType(params[0]);
+
                     if (type == T_INT)
                         delay(getInt(params[0]));
                     else if (type == T_STR)
@@ -83,7 +89,7 @@ void initBuiltins() {
 }
 
 // returns wether builtin name exists
-bool builtin_exists(const char* s) {
+bool isBuiltin(const char* s) {
     BEGIN("s=\"%s\"", s);
     END();
     return builtins.find(s) != builtins.end();

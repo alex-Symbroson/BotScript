@@ -1,19 +1,13 @@
-//println(input("type smth: "));
-println();
-print(clock());
-println();
 
-print("hello","world\n");
+// greeting
+println(("Hello ") + ("World" + "!"));
 
-delay("1000");
-println(clock());
-println();
+/* input test */
+// print("you typed:", input("type smth: ")); println();
 
-delay("1000");
-println(clock());
-println();
+print("timing:\n", clock(), "\n");
+delay("50"); print(clock(), "\n");
+delay("50"); print(clock(), "\n");
+delay("50"); print(clock());
 
-
-delay("1000");
-println(clock());
 println("end.");

@@ -2,28 +2,33 @@
 #include "builtins.hpp"
 
 bool isSymbol(char c) {
-    BEGIN();
-    END();
-    return (symbols.find(c) + 1);
+    // BEGIN("%c", c);
+    // characters interpreted as symbols
+    static const string s_symbols("/\\():,.;<>~!@#$%^&*|+=[]{}`?-…");
+    // END();
+    return (s_symbols.find(c) + 1);
 }
 
 bool isWhitespace(char c) {
-    BEGIN();
-    END();
-    return (whitespace.find(c) + 1);
+    // BEGIN("%c", c);
+    // whitespace characters
+    static const string s_whitespace(" \t\r\n");
+    // END();
+    return (s_whitespace.find(c) + 1);
 }
 
 bool isOperator(char c) {
-    BEGIN();
-    END();
-    return (operators.find(c) + 1);
+    // BEGIN("%c", c);
+    // characters interpreted as operators (op and op=)
+    static const string s_operators("<>!%^&*|+=");
+    // END();
+    return (s_operators.find(c) + 1);
 }
 
 bool isOperator(string s) {
-    BEGIN();
+    // BEGIN("%s", s.c_str());
     END();
-    if (s[1] == '=') return isOperator(s[0]);
-    return false;
+    return operators.find(s) != operators.end();
 }
 
 // delay in milliseonds
@@ -93,12 +98,8 @@ string readFile(const char* path, bool ignore) {
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
             // whitespace
-            while (c != EOF && whitespace.find(c) + 1) {
-                // if (c == '\n' && content[content.size() - 1] != ';')
-                //     content += ';';
+            while (c != EOF && isWhitespace(c))
                 c = fgetc(f);
-            }
-            if (c == EOF) break;
 
             // strings
             if (c == '"') {
@@ -106,7 +107,6 @@ string readFile(const char* path, bool ignore) {
                     content += c;
                     // don't change the cond. order
                 } while ((c = fgetc(f)) != EOF && c != '"');
-                if (c == EOF) break;
             }
 
             // comments
@@ -128,7 +128,11 @@ string readFile(const char* path, bool ignore) {
                 }
                 continue;
             }
-            if (c != EOF) content += c;
+
+            if (c == EOF)
+                break;
+            else
+                content += c;
         }
     } else {
         while ((c = fgetc(f)) != EOF)
