@@ -8,7 +8,7 @@
 
 extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 2    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
+#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
 #define _ERR_EXIT_ 1 // exit on error
 #define COMMA ,
 
@@ -28,12 +28,14 @@ extern unsigned int debug_func_intd;
     } while (0)
 
 // macros for error mesages
-#define err_ict(a, b) \
-    printf("\033[1;31mincompatible types %s and %s\033[0;37m\n", a, b)
-#define err_iop(a, b) \
-    printf("\033[1;31minvalid operator %s for %s\033[0;37m\n", a, b)
-#define err_imu(a, b) \
-    printf("\033[1;31m%ss have no '%s' member\033[0;37m\n", a, b)
+#define err_iop(o, a, b)                                         \
+    error_exit(                                                  \
+        "\033[1;31mno operator %s for %s and %s\033[0;37m\n", o, \
+        getTypeName(a), getTypeName(b))
+
+#define err_imb(a, b) \
+    error_exit("\033[1;31m%ss has no member '%s'\033[0;37m\n", a, TOSTR(b))
+
 #define error(a, ...) printf("\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
 
 #if defined(_ERR_EXIT_) && _ERR_EXIT_ != 0

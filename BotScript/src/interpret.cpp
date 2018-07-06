@@ -57,7 +57,7 @@ PVar callBuiltin(var_bfn func, var_lst args) {
 
     // call function
     PVar res = func->func(fargs);
-    END("-> %s", res->toStr().c_str());
+    END("-> %s", TOSTR(res));
     return res;
 }
 
@@ -70,7 +70,7 @@ PVar handleLine(var_lst& line) {
     if (getType(res) == T_TRM) res = handleLine(getLst(res));
 
     if (size == 1) {
-        END("-> %s", res->toStr().c_str());
+        END("-> %s", TOSTR(res));
         return res;
     }
 
@@ -84,14 +84,13 @@ PVar handleLine(var_lst& line) {
                     param = handleLine(getLst(it[1]));
                 else
                     param = it[1];
-
-                res = callP(res, getStr(it[0]), res, param);
+                res = callP(res, getStr(it[0]), param);
             }
             it += 2;
         } while (it != end);
 
         if (res) {
-            END("-> %s", res->toStr().c_str());
+            END("-> %s", TOSTR(res));
             return res;
         }
     }
@@ -121,7 +120,7 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
 
     uint8_t lastType = 0;
 
-    while (*c != ')' && *c != '}' && c < end) {
+    while (*c != ')' && *c != ']' && *c != '}' && c < end) {
         switch (*c) {
             case '"': {
                 string word = "";
@@ -165,59 +164,52 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
             default:
                 string word = "";
 
-                if (isSymbol(*c)) {
-                    bool wasOp = false, isOp = false, isSep = false,
-                         cond = false;
-
-                    do {
-                        isSep = *c == separator;
-
-                        if (isSep) {
-                            DEBUG("seperator '%c'", separator);
-                            vline = new TLst({}, T_TRM);
-                            line  = getLstP(vline);
-                            block.push_back(vline->getVar());
-                        } else {
-                            cond  = isOperator(*(c + 1)) && (c + 1 < end);
-                            wasOp = isOperator(word);
-                            isOp  = isOperator(word + *c);
-
-                            if ((isOp && (!cond || isSep)) ||
-                                (wasOp && (!cond || isSep || !isOp))) {
-                                if (isOp) word += *c;
-
-                                DEBUG(
-                                    "operator '%s' isop: %i", word.c_str(),
-                                    isOp);
-
-                                line->push_back(NEWVAR(
-                                    TStr(string(operators[word].name), T_OPR)));
-                                word = "";
-
-                                lastType = T_OPR;
-                            } else
-                                word += *c;
-                        }
-
-                        c++;
-                    } while (cond);
-                } else {
+                if (*c == separator) {
+                    DEBUG("seperator '%c'", separator);
+                    vline = new TLst({}, T_TRM);
+                    line  = getLstP(vline);
+                    block.push_back(vline->getVar());
+                    ++c;
+                } else if (
+                    line->size() && isOperator(*c) &&
+                    (*c != '.' || ((c[-1] < '0' || c[-1] > '9') &&
+                                   (c[01] < '0' || c[01] > '9')))) {
                     do {
                         word += *c;
-                    } while (!isSymbol(*++c) && c < end);
+                    } while (isOperator(word + *++c) && c < end);
+
+                    DEBUG("operator '%s'", word.c_str());
+                    line->push_back(NEWVAR(TStr(operators[word].name, T_OPR)));
+                    lastType = T_OPR;
+
+                } else {
+                    do {
+                        word += *c++;
+                    } while (c < end &&
+                             (!isSymbol(*c) ||
+                              // prevent floating point to be "at" operator
+                              (*c == '.' && ((c[-1] >= '0' && c[-1] <= '9') ||
+                                             (c[01] >= '0' && c[01] <= '9')))));
 
                     if (isBuiltin(word.c_str())) {
                         line->push_back(NEWVAR(TBfn(getBltin(word))));
                         DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
                         lastType = T_BFN;
 
-                    } else if ((word[0] >= '0') && (word[0] <= '9')) {
-                        line->push_back(NEWVAR(TFlt(stod2(word))));
-                        DEBUG("%s: %s", word.c_str(), typeName(T_FLT));
-                        lastType = T_FLT;
+                    } else if (
+                        (word[0] >= '0' && word[0] <= '9') || word[0] == '.') {
+                        if ((long)word.find(".") == -1) {
+                            line->push_back(NEWVAR(TInt(stod2(word))));
+                            lastType = T_INT;
+                        } else {
+                            line->push_back(NEWVAR(TFlt(stod2(word))));
+                            lastType = T_FLT;
+                        }
+                        DEBUG("%s: %s", word.c_str(), typeName(lastType));
 
                     } else {
-                        DEBUG("%s: %s", word.c_str(), typeName(T_VAR));
+                        DEBUG(
+                            "%s: %s [ignored]", word.c_str(), typeName(T_VAR));
                         lastType = T_VAR;
                     }
                 }

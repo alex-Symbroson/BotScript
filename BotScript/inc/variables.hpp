@@ -30,6 +30,7 @@ typedef IVar* PVar;
 
 #    define NEWVAR(v) ((new v)->getVar())
 #    define V_NULL NEWVAR(TNil(0))
+#    define TOSTR(v) v->toStr().c_str()
 
 // types
 
@@ -41,7 +42,9 @@ typedef vector<PVar> var_lst;
 typedef unordered_map<string, PVar> var_obj;
 
 typedef function<PVar(var_lst)> TFunc;
+typedef function<PVar(PVar, PVar)> TFuncOp;
 typedef unordered_map<string, TFunc> FuncMap;
+typedef unordered_map<string, TFuncOp> FuncMapOp;
 
 typedef struct {
     var_lst dflt;
@@ -61,17 +64,22 @@ typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
 void initOperations();
+bool hasOperator(PVar& v, char op);
+bool hasOperator(PVar& v, string op);
 void FreeVariables();
-extern unordered_map<uint8_t, FuncMap> operations;
-extern uint8_t VAR_Type[];
 const char* typeName(uint8_t t);
 
+extern unordered_map<uint8_t, FuncMapOp> operations;
+extern PVar handleLine(var_lst& line);
+extern uint8_t VAR_Type[];
+
 // macros for calling type-specific functions
-#    define callP(v, n, ...) (*(v)->pop)[n]({__VA_ARGS__})
-#    define callT(v, n, ...) (*(v).op)[n]({__VA_ARGS__})
+#    define callP(a, o, b) (*(a)->pop)[o](a, b)
+#    define callT(a, o, b) (*(a).op)[o](a, b)
 
 // macros for getting var instance values
 #    define getType(var) (*(var)->ptype)
+#    define getTypeName(var) typeName(getType(var))
 #    define getIntP(var) ((var_int*)(var)->getPtr())
 #    define getInt(var) (*(var_int*)(var)->getPtr())
 #    define getFltP(var) ((var_flt*)(var)->getPtr())
@@ -90,7 +98,7 @@ const char* typeName(uint8_t t);
 class IVar {
       public:
     uint8_t* ptype;
-    FuncMap* pop;
+    FuncMapOp* pop;
 
     static forward_list<PVar> collector; // garbage collector
 
@@ -110,7 +118,7 @@ template <typename T>
 class TVar : public IVar {
       public:
     uint8_t type;
-    FuncMap* op;
+    FuncMapOp* op;
 
     T value;
 
@@ -177,13 +185,29 @@ inline string TVar<var_nil>::toStr() {
 
 template <>
 inline string TVar<var_int>::toStr() {
+    if (type == T_PIN) return "Pin(" + to_string(value) + ")";
     return to_string(value);
 }
 
 template <>
 inline string TVar<var_flt>::toStr() {
-    if (type == T_PIN) return "Pin(" + to_string(value) + ")";
-    return to_string(value);
+    char str[19];
+    snprintf(str, 19, "%.16f", value);
+
+    // crop zeros
+    char* c = str + 16;
+    while (*c == '0' && c > str)
+        c--;
+    c[1 + (*c == '.')] = 0;
+
+    // crop nines
+    c = str + 16;
+    while (*c == '9' && c > str)
+        c--;
+    c[0]++;
+    c[1] = 0;
+
+    return string(str);
 }
 
 template <>
@@ -219,8 +243,18 @@ inline string TVar<var_lst>::toStr() {
             result += (*it)->toStr() + ",";
         }
     */
-    for (auto& v: value)
-        result += v->toStr() + ",";
+    if (type == T_LST) {
+        for (PVar& v: value) {
+            if (getType(v) == T_TRM)
+                result += handleLine(getLst(v))->toStr() + ",";
+            else
+                result += v->toStr() + ",";
+        }
+    } else {
+        for (PVar& v: value) {
+            result += v->toStr() + ",";
+        }
+    }
 
     if (result.size() > 1)
         result[result.size() - 1] = lstEnd;

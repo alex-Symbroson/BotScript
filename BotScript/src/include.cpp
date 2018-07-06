@@ -19,8 +19,8 @@ bool isWhitespace(char c) {
 
 bool isOperator(char c) {
     // BEGIN("%c", c);
-    // characters interpreted as operators (op and op=)
-    static const string s_operators("<>!%^&*|+=");
+    // characters interpreted as operators
+    static const string s_operators("<>!%^&*|+=.");
     // END();
     return (s_operators.find(c) + 1);
 }
@@ -33,10 +33,38 @@ bool isOperator(string s) {
 
 double stod2(const char* s) {
     BEGIN("s=\"%s\"", s);
-    END();
-    if (s[1] == 'x') return stoll(s + 2, NULL, s[0] - '0');
-    if (s[2] == 'x') return stoll(s + 3, NULL, s[0] * 10 + s[1] - 11 * '0');
-    return stoll(s);
+    var_int num = 0;
+    uint16_t f  = 0;
+
+    uint8_t e;
+    if (s[1] == 'x') {
+        e = s[0] - '0';
+        s += 2;
+    } else if (s[2] == 'x') {
+        e = s[0] * 10 + s[1] - 11 * '0';
+        s += 3;
+    } else
+        e = 10;
+
+    while (*s) {
+        if (f) f++;
+
+        if (*s == '.')
+            f = 1;
+        else {
+            if (*s >= 'a')
+                num = e * num + *s - 'a' + 10;
+            else if (*s >= 'A')
+                num = e * num + *s - 'A' + 10;
+            else if (*s >= 0)
+                num = e * num + *s - '0';
+        }
+        s++;
+    }
+
+    if (f) f--;
+    END("%f", num / pow(e, f));
+    return num / pow(e, f);
 }
 
 double stod2(string& s) {

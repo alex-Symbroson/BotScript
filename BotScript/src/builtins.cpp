@@ -27,7 +27,7 @@ void initBuiltins() {
                     if (getType(v) == T_STR)
                         printf("%s", unescape(getStr(v)).c_str());
                     else
-                        printf("%s", v->toStr().c_str());
+                        printf("%s", TOSTR(v));
                     if (v != end) printf(" ");
                 }
                 END("print");
@@ -42,7 +42,7 @@ void initBuiltins() {
                     if (getType(v) == T_STR)
                         printf("%s\n", unescape(getStr(v)).c_str());
                     else
-                        printf("%s\n", v->toStr().c_str());
+                        printf("%s\n", TOSTR(v));
                 }
                 END("println");
                 return V_NULL;
@@ -56,7 +56,7 @@ void initBuiltins() {
                 if (getType(params[0]) == T_STR)
                     printf("%s", unescape(getStr(params[0])).c_str());
                 else
-                    printf("%s", params[0]->toStr().c_str());
+                    printf("%s", TOSTR(params[0]));
 
                 string input;
                 getline(std::cin, input);
