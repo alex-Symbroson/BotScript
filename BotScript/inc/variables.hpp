@@ -35,8 +35,8 @@ typedef IVar* PVar;
 // types
 
 typedef char var_nil;
-typedef long var_int;
-typedef double var_flt;
+typedef long long var_int;
+typedef long double var_flt;
 typedef string var_str;
 typedef vector<PVar> var_lst;
 typedef unordered_map<string, PVar> var_obj;
@@ -65,6 +65,7 @@ typedef TVar<var_bfn> TBfn;
 
 void initOperations();
 bool hasOperator(PVar& v, char op);
+PVar evalExpr(PVar& expr);
 bool hasOperator(PVar& v, string op);
 void FreeVariables();
 const char* typeName(uint8_t t);
@@ -189,19 +190,21 @@ inline string TVar<var_int>::toStr() {
     return to_string(value);
 }
 
+#    define BUFLEN 19
+
 template <>
 inline string TVar<var_flt>::toStr() {
-    char str[19];
-    snprintf(str, 19, "%.16f", value);
+    char str[BUFLEN];
+    snprintf(str, BUFLEN, "%.16Lf", value);
 
     // crop zeros
-    char* c = str + 16;
+    char* c = str + BUFLEN - 3;
     while (*c == '0' && c > str)
         c--;
     c[1 + (*c == '.')] = 0;
 
     // crop nines
-    c = str + 16;
+    c = str + BUFLEN - 3;
     while (*c == '9' && c > str)
         c--;
     c[0]++;
@@ -243,17 +246,8 @@ inline string TVar<var_lst>::toStr() {
             result += (*it)->toStr() + ",";
         }
     */
-    if (type == T_LST) {
-        for (PVar& v: value) {
-            if (getType(v) == T_TRM)
-                result += handleLine(getLst(v))->toStr() + ",";
-            else
-                result += v->toStr() + ",";
-        }
-    } else {
-        for (PVar& v: value) {
-            result += v->toStr() + ",";
-        }
+    for (PVar& v: value) {
+        result += v->toStr() + ",";
     }
 
     if (result.size() > 1)

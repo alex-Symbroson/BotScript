@@ -48,12 +48,8 @@ PVar callBuiltin(var_bfn func, var_lst args) {
     i = args.size();
     var_lst fargs(i);
 
-    while (i--) {
-        if (getType(args[i]) == T_TRM)
-            fargs[i] = handleLine(getLst(args[i]));
-        else
-            fargs[i] = args[i];
-    }
+    while (i--)
+        fargs[i] = evalExpr(args[i]);
 
     // call function
     PVar res = func->func(fargs);
@@ -67,7 +63,7 @@ PVar handleLine(var_lst& line) {
     uint32_t size           = line.size();
     var_lst::iterator begin = line.begin();
     PVar res                = *begin;
-    if (getType(res) == T_TRM) res = handleLine(getLst(res));
+    res                     = evalExpr(res);
 
     if (size == 1) {
         END("-> %s", TOSTR(res));
@@ -81,7 +77,7 @@ PVar handleLine(var_lst& line) {
         do {
             if (size > 2) {
                 if (getType(it[1]) == T_TRM && getLst(it[1]).size())
-                    param = handleLine(getLst(it[1]));
+                    param = evalExpr(it[1]);
                 else
                     param = it[1];
                 res = callP(res, getStr(it[0]), param);
@@ -109,8 +105,8 @@ void handleScope(var_lst& scope) {
 }
 
 // converts scope string to term
-var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
-    BEGIN("string::it*c='%c',string::it end", *c);
+var_lst toFunction(string::iterator& c, char separator, char end) {
+    BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
 
     var_lst block;
 
@@ -120,11 +116,11 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
 
     uint8_t lastType = 0;
 
-    while (*c != ')' && *c != ']' && *c != '}' && c < end) {
+    while (*c != end && *c != ')' && *c != ']' && *c != '}') {
         switch (*c) {
             case '"': {
                 string word = "";
-                while (*++c != '"' && c < end)
+                while (*++c != '"' && *c != end)
                     word += *c;
                 line->push_back(NEWVAR(TStr(word)));
                 DEBUG("%s: %s", word.c_str(), typeName(T_STR));
@@ -135,28 +131,35 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
             case '(':
             case '{': {
                 uint8_t type;
-                char sep;
+                char sep, end;
 
                 if (*c == '(') {
                     type = T_TRM;
                     sep  = ',';
+                    end  = ')';
                 } else if (*c == '{') {
                     type = T_FNC;
                     sep  = ';';
+                    end  = '}';
                 } else /*if (*c == '[')*/ {
                     // detect list or obj later
-                    sep  = ',';
                     type = T_LST;
+                    sep  = ',';
+                    end  = ']';
                 }
                 DEBUG("%c: %s begin", *c, typeName(type));
 
                 if (type == T_TRM && lastType == T_BFN) {
                     type = T_ARGS;
                     line->push_back(NEWVAR(TStr("call")));
+                } else if (
+                    type == T_LST && (lastType == T_LST || lastType == T_OBJ)) {
+                    type = T_TRM;
+                    line->push_back(NEWVAR(TStr("at", T_OPR)));
                 }
 
                 ++c;
-                line->push_back(NEWVAR(TLst(toFunction(c, end, sep), type)));
+                line->push_back(NEWVAR(TLst(toFunction(c, sep, end), type)));
                 DEBUG("%c: %s end", *c, typeName(type));
                 lastType = type;
             } break;
@@ -169,6 +172,7 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                     vline = new TLst({}, T_TRM);
                     line  = getLstP(vline);
                     block.push_back(vline->getVar());
+                    lastType = 0;
                     ++c;
                 } else if (
                     line->size() && isOperator(*c) &&
@@ -176,7 +180,7 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                                    (c[01] < '0' || c[01] > '9')))) {
                     do {
                         word += *c;
-                    } while (isOperator(word + *++c) && c < end);
+                    } while (isOperator(word + *++c) && *c != end);
 
                     DEBUG("operator '%s'", word.c_str());
                     line->push_back(NEWVAR(TStr(operators[word].name, T_OPR)));
@@ -185,7 +189,7 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                 } else {
                     do {
                         word += *c++;
-                    } while (c < end &&
+                    } while (*c != end &&
                              (!isSymbol(*c) ||
                               // prevent floating point to be "at" operator
                               (*c == '.' && ((c[-1] >= '0' && c[-1] <= '9') ||
@@ -197,7 +201,8 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
                         lastType = T_BFN;
 
                     } else if (
-                        (word[0] >= '0' && word[0] <= '9') || word[0] == '.') {
+                        (word[0] >= '0' && word[0] <= '9') ||
+                        (word[0] == '.' || word[0] == '-' || word[0] == '+')) {
                         if ((long)word.find(".") == -1) {
                             line->push_back(NEWVAR(TInt(stod2(word))));
                             lastType = T_INT;
@@ -217,6 +222,15 @@ var_lst toFunction(string::iterator& c, string::iterator end, char separator) {
         }
         ++c;
     }
+
+    if (*c != end) {
+        block.clear();
+        if (!end)
+            error_exit("invalid token '%c' - expected EOF", *c);
+        else
+            error_exit("invalid token '%c' - expected '%c'", *c, end);
+    }
+
     if (!line->size()) block.pop_back();
     END();
     return block;
@@ -227,5 +241,5 @@ var_lst toCode(string& code) {
     BEGIN("string*code=\"%s\"", code.c_str());
     string::iterator c = code.begin();
     END();
-    return toFunction(c, code.end(), ';');
+    return toFunction(c, ';', *code.end());
 }

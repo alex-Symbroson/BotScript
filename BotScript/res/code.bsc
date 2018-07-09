@@ -1,21 +1,24 @@
 
-// greeting
 println(("Hello ") + ("World" + "!"));
 
 /* input test */
 // print("you typed:", input("type smth: "));
 println();
 
+// timing test
 print("timing:\n", clock(), "\n");
-delay(50);       print(clock(), "\n");
-delay(16x32);    print(clock(), "\n");
+delay(50);       println(clock());
+delay(16x32);    println(clock());
 delay(2x110010); println(clock());
 
+// operator test
 print(
-    "dec: 3+5*.4 =", 3+5*.4,
-    "\nhex: 16x1.8 =", 16x1.8,
+    "dec: 3+5*.4 = ", 3 + 5 * .4,
+    "\nhex: 16x1.8 = ", 16x1.8,
     "\n"
 );
-println([1,2.5,1.+.1]);
+
+// list test
+print("[1,2.5,1.+.1] = ", [1,2.5,1.+.1], [-1], " = ", [1,2.5,1.+.1][-1], "\n");
 
 println("end.");

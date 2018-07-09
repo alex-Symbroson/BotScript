@@ -8,7 +8,7 @@
 
 extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
+#define _DEBUG_ 2    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
 #define _ERR_EXIT_ 1 // exit on error
 #define COMMA ,
 
@@ -35,6 +35,11 @@ extern unsigned int debug_func_intd;
 
 #define err_imb(a, b) \
     error_exit("\033[1;31m%ss has no member '%s'\033[0;37m\n", a, TOSTR(b))
+
+#define err_rng(a, b)                                                       \
+    error_exit(                                                             \
+        "\033[1;31m%s index '%s' out of range\033[0;37m\n", getTypeName(a), \
+        TOSTR(b))
 
 #define error(a, ...) printf("\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
 

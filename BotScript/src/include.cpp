@@ -33,10 +33,13 @@ bool isOperator(string s) {
 
 double stod2(const char* s) {
     BEGIN("s=\"%s\"", s);
-    var_int num = 0;
-    uint16_t f  = 0;
-
+    const bool neg = *s == '-';
+    var_int num    = 0;
+    uint16_t f     = 0;
     uint8_t e;
+
+    if (*s == '+' || *s == '-') s++;
+
     if (s[1] == 'x') {
         e = s[0] - '0';
         s += 2;
@@ -63,6 +66,7 @@ double stod2(const char* s) {
     }
 
     if (f) f--;
+    if (neg) num = -num;
     END("%f", num / pow(e, f));
     return num / pow(e, f);
 }

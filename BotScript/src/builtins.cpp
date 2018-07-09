@@ -22,13 +22,13 @@ void initBuiltins() {
             "print", 1, {NEWVAR(TStr(""))},
             {
                 BEGIN("print params=%s", TLst(params).toStr().c_str());
-                PVar end = params.end()[-1];
+                // PVar end = params.end()[-1];
                 for (PVar& v: params) {
                     if (getType(v) == T_STR)
                         printf("%s", unescape(getStr(v)).c_str());
                     else
                         printf("%s", TOSTR(v));
-                    if (v != end) printf(" ");
+                    // if (v != end) printf(" ");
                 }
                 END("print");
                 return V_NULL;

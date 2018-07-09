@@ -201,6 +201,19 @@ void initOperations() {
                 PVar ret = getLst(a).back();
                 getLst(a).pop_back();
                 return ret;
+            }},
+            {"at", [] FUNCTION {
+                if(getType(b) == T_INT) {
+                    var_int i = getInt(b);
+                    uint32_t len = getLst(a).size();
+                    if(i < 0) i += len;
+
+                    if(i < 0 || i >= len)
+                        err_rng(a, b);
+                    else
+                        return getLst(a)[i];
+                } else
+                    err_iop("at", a, b);
             }}}},
 
         {T_OBJ, {}},
@@ -213,6 +226,23 @@ void initOperations() {
 }
 
 // clang-format on
+
+PVar evalExpr(PVar& expr) {
+    if (getType(expr) == T_TRM)
+        return handleLine(getLst(expr));
+    else if (getType(expr) == T_LST) {
+        var_lst lst;
+        for (PVar& v: getLst(expr))
+            lst.push_back(evalExpr(v));
+        return NEWVAR(TLst(lst));
+    } else if (getType(expr) == T_LST) {
+        var_obj obj;
+        for (auto& v: getObj(expr))
+            obj[v.first] = evalExpr(v.second);
+        return NEWVAR(TObj(obj));
+    } else
+        return expr;
+}
 
 bool hasOperator(PVar& v, char o) {
     BEGIN();

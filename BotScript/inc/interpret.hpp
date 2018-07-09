@@ -20,8 +20,7 @@ PVar handleLine(var_lst& line);
 void handleScope(var_lst& scope);
 
 // converts scope string to term
-var_lst toFunction(
-    string::iterator& c, string::iterator end, char separator = '\0');
+var_lst toFunction(string::iterator& c, char separator, char end);
 
 // start recursive conversation from string to term
 var_lst toCode(string& code);
