@@ -1,9 +1,9 @@
 
 println(("Hello ") + ("World" + "!"));
+println();
 
 /* input test */
 // print("you typed:", input("type smth: "));
-println();
 
 // timing test
 print("timing:\n", clock(), "\n");
@@ -13,12 +13,42 @@ delay(2x110010); println(clock());
 
 // operator test
 print(
-    "dec: 3+5*.4 = ", 3 + 5 * .4,
-    "\nhex: 16x1.8 = ", 16x1.8,
+    "dec: 3+-5*-.4 = ", 3 + -5 * -.4, "\n" //strings will be concatenated
+    "hex: -16x1.8  = ", -16x1.8,
     "\n"
 );
 
 // list test
 print("[1,2.5,1.+.1] = ", [1,2.5,1.+.1], [-1], " = ", [1,2.5,1.+.1][-1], "\n");
+
+//typeof test
+println(typeof((5).toStr));
+
+//number conversion test
+println(
+    "\nconversion",
+     987654321.123456789,
+    "987654321.123456789".toInt(),
+    (987654321.123456789).toStr(16),
+    (987654321.123456789).toStr(16).toInt(),
+    (987654321.123456789).toStr(16).toFlt(), //!
+    16xB3A73CE2D79
+);
+
+print(
+    101., " ", (101.).toStr(6), " ", " ", (101.).toStr(6).toFlt(), "\n",
+    10.3, " ", (10.3).toStr(6), " ", (10.3).toStr(6).toFlt(), "\n",
+    15., " ", (15.).toStr(16), " ", (15.).toStr(16).toFlt(), "\n",
+    1.5, " ", (1.5).toStr(16), " ", (1.5).toStr(16).toFlt(), "\n"
+);
+
+println("\n");
+
+//print float rounding test
+println([
+"float rounding: ",
+ 99.9999999,  1299.999999,  1234.9999999,  12.349999999,  0.999999,  0.12999999,
+-99.9999999, -1299.999999, -1234.9999999, -12.349999999, -0.999999, -0.12999999
+-0.04567].join("  "));
 
 println("end.");

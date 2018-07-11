@@ -21,7 +21,8 @@
 #    define T_OPR 10
 #    define T_ARGS 11
 #    define T_BFN 12
-#    define TCNT 13
+#    define T_MFN 13
+#    define TCNT 14
 
 class IVar;
 template <typename>
@@ -31,6 +32,9 @@ typedef IVar* PVar;
 #    define NEWVAR(v) ((new v)->getVar())
 #    define V_NULL NEWVAR(TNil(0))
 #    define TOSTR(v) v->toStr().c_str()
+#    define EVALARGS(ARGS, DFLT)           \
+        static const var_lst _dflt = DFLT; \
+        setDefault(ARGS, _dflt)
 
 // types
 
@@ -47,9 +51,7 @@ typedef unordered_map<string, TFunc> FuncMap;
 typedef unordered_map<string, TFuncOp> FuncMapOp;
 
 typedef struct {
-    var_lst dflt;
     const char* name;
-    uint16_t argc;
     TFunc func;
 } TBltFnc;
 
@@ -64,8 +66,9 @@ typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
 void initOperations();
-bool hasOperator(PVar& v, char op);
 PVar evalExpr(PVar& expr);
+void setDefault(var_lst& args, const var_lst& dflt);
+bool hasOperator(PVar& v, char op);
 bool hasOperator(PVar& v, string op);
 void FreeVariables();
 const char* typeName(uint8_t t);
@@ -110,7 +113,7 @@ class IVar {
         return NULL;
     }
 
-    virtual string toStr() {
+    virtual string toStr(bool escape = false) {
         return "null";
     }
 };
@@ -140,7 +143,7 @@ class TVar : public IVar {
     PVar getVar();
 
     void* getPtr();
-    string toStr();
+    string toStr(bool escape = false);
 };
 
 #    ifdef _DEBUG
@@ -180,46 +183,31 @@ TVar::toStr()
 */
 
 template <>
-inline string TVar<var_nil>::toStr() {
+inline string TVar<var_nil>::toStr(bool) {
     return "null";
 }
 
 template <>
-inline string TVar<var_int>::toStr() {
+inline string TVar<var_int>::toStr(bool) {
     if (type == T_PIN) return "Pin(" + to_string(value) + ")";
     return to_string(value);
 }
 
-#    define BUFLEN 19
-
 template <>
-inline string TVar<var_flt>::toStr() {
-    char str[BUFLEN];
-    snprintf(str, BUFLEN, "%.16Lf", value);
-
-    // crop zeros
-    char* c = str + BUFLEN - 3;
-    while (*c == '0' && c > str)
-        c--;
-    c[1 + (*c == '.')] = 0;
-
-    // crop nines
-    c = str + BUFLEN - 3;
-    while (*c == '9' && c > str)
-        c--;
-    c[0]++;
-    c[1] = 0;
-
-    return string(str);
+inline string TVar<var_flt>::toStr(bool) {
+    return dtos2(value);
 }
 
 template <>
-inline string TVar<var_str>::toStr() {
-    return "\"" + value + "\"";
+inline string TVar<var_str>::toStr(bool escapeStr) {
+    if (escapeStr)
+        return "\"" + escape(value) + "\"";
+    else
+        return value;
 }
 
 template <>
-inline string TVar<var_lst>::toStr() {
+inline string TVar<var_lst>::toStr(bool) {
     string result;
     char lstEnd;
     if (type == T_LST) {
@@ -239,32 +227,24 @@ inline string TVar<var_lst>::toStr() {
         lstEnd = '|';
     }
 
-    /*
-        var_lst::iterator it, end = value.end();
-
-        for (it = value.begin(); it != end; it++) {
-            result += (*it)->toStr() + ",";
-        }
-    */
-    for (PVar& v: value) {
-        result += v->toStr() + ",";
-    }
+    for (PVar& v: value) result += v->toStr(true) + ",";
 
     if (result.size() > 1)
         result[result.size() - 1] = lstEnd;
     else
         result += lstEnd;
+
     return result;
 }
 
 template <>
-inline string TVar<var_obj>::toStr() {
+inline string TVar<var_obj>::toStr(bool) {
     string result = "]";
 
     // builds string reversed because every new unordered_map
     // element is inserted at the front
     for (auto& v: value)
-        result = ",\"" + v.first + "\":" + v.second->toStr() + result;
+        result = ",\"" + v.first + "\":" + v.second->toStr(true) + result;
 
     if (value.size())
         result[0] = '[';
@@ -274,7 +254,7 @@ inline string TVar<var_obj>::toStr() {
 }
 
 template <>
-inline string TVar<var_bfn>::toStr() {
+inline string TVar<var_bfn>::toStr(bool) {
     string result = value->name;
     /*
     if (value->argc) {

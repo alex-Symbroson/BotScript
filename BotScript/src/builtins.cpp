@@ -5,89 +5,114 @@
 
 #define SEP ,
 
-#define newFunc(NAME, ARGC, DFLT, ...)                \
-    {                                                 \
-        NAME, {                                       \
-            .dflt = DFLT, .name = NAME, .argc = ARGC, \
-            .func = [](var_lst params) __VA_ARGS__    \
-        }                                             \
+#define newFunc(NAME, ...)                                     \
+    {                                                          \
+        NAME, {                                                \
+            .name = NAME, .func = [](var_lst args) __VA_ARGS__ \
+        }                                                      \
     }
 
 unordered_map<string, TBltFnc> builtins;
 
 void initBuiltins() {
-    builtins = {
-        // builtin functions
-        newFunc(
-            "print", 1, {NEWVAR(TStr(""))},
-            {
-                BEGIN("print params=%s", TLst(params).toStr().c_str());
-                // PVar end = params.end()[-1];
-                for (PVar& v: params) {
-                    if (getType(v) == T_STR)
-                        printf("%s", unescape(getStr(v)).c_str());
-                    else
-                        printf("%s", TOSTR(v));
-                    // if (v != end) printf(" ");
-                }
-                END("print");
-                return V_NULL;
-            }),
+    builtins = {// builtin functions
+                newFunc(
+                    "print",
+                    {
+                        BEGIN("print args=%s", TLst(args).toStr().c_str());
 
-        newFunc(
-            "println", 1, {NEWVAR(TStr(""))},
-            {
-                BEGIN("println params=%s", TLst(params).toStr().c_str());
-                for (PVar& v: params) {
-                    if (getType(v) == T_STR)
-                        printf("%s\n", unescape(getStr(v)).c_str());
-                    else
-                        printf("%s\n", TOSTR(v));
-                }
-                END("println");
-                return V_NULL;
-            }),
+                        if (args.size()) {
+                            EVALARGS(args, {});
 
-        newFunc(
-            "input", 1, {NEWVAR(TStr(""))},
-            {
-                BEGIN("input params=%s", TLst(params).toStr().c_str());
+                            for (PVar& v: args) printf("%s", TOSTR(v));
+                        }
+                        END("print");
+                        return V_NULL;
+                    }),
 
-                if (getType(params[0]) == T_STR)
-                    printf("%s", unescape(getStr(params[0])).c_str());
-                else
-                    printf("%s", TOSTR(params[0]));
+                newFunc(
+                    "println",
+                    {
+                        BEGIN("println args=%s", TLst(args).toStr().c_str());
 
-                string input;
-                getline(std::cin, input);
-                END("input");
-                return NEWVAR(TStr(input));
-            }),
+                        if (args.size()) {
+                            EVALARGS(args, {});
+                            for (PVar& v: args) printf("%s\n", TOSTR(v));
 
-        newFunc(
-            "delay", 1, {NEWVAR(TInt(0))},
-            {
-                BEGIN("delay params=%s", TLst(params).toStr().c_str());
-                if (params.size()) {
-                    uint8_t type = getType(params[0]);
+                        } else
+                            printf("\n");
 
-                    if (type == T_INT)
-                        delay(getInt(params[0]));
-                    else if (type == T_FLT)
-                        delay(getFlt(params[0]));
-                    else if (type == T_STR)
-                        delay(stod2(getStr(params[0])));
-                }
-                END("delay");
-                return V_NULL;
-            }),
+                        END("println");
+                        return V_NULL;
+                    }),
 
-        newFunc("clock", 0, {}, {
-            BEGIN("clock params=%s", TLst(params).toStr().c_str());
-            PVar ret = NEWVAR(TFlt(clock() / 1000.0));
-            END("clock");
-            return ret;
-        })};
+                newFunc(
+                    "input",
+                    {
+                        BEGIN("input args=%s", TLst(args).toStr().c_str());
+
+                        if (args.size()) {
+                            EVALARGS(args, {});
+                            printf("%s", TOSTR(args[0]));
+                        }
+
+                        string input;
+                        getline(std::cin, input);
+                        END("input");
+                        return NEWVAR(TStr(input));
+                    }),
+
+                newFunc(
+                    "delay",
+                    {
+                        BEGIN("delay args=%s", TLst(args).toStr().c_str());
+
+                        if (args.size()) {
+                            EVALARGS(args, {});
+                            uint8_t type = getType(args[0]);
+
+                            if (type == T_INT)
+                                delay(getInt(args[0]));
+                            else if (type == T_FLT)
+                                delay(getFlt(args[0]));
+                            else if (type == T_STR)
+                                delay(stod2(getStr(args[0])));
+                        }
+                        END("delay");
+                        return V_NULL;
+                    }),
+
+                newFunc(
+                    "clock",
+                    {
+                        BEGIN("clock args=%s", TLst(args).toStr().c_str());
+                        END("clock");
+                        return NEWVAR(TFlt(clock() / 1000.0));
+                    }),
+
+                newFunc(
+                    "typeof",
+                    {
+                        BEGIN("typeof args=%s", TLst(args).toStr().c_str());
+                        END("typeof");
+
+                        if (args.size()) {
+                            EVALARGS(args, {V_NULL});
+                            return NEWVAR(TStr(getTypeName(args[0])));
+                        } else
+                            return NEWVAR(TStr(typeName(-1)));
+                    }),
+
+                newFunc("toString", {
+                    BEGIN("typeof args=%s", TLst(args).toStr().c_str());
+                    END("toString");
+
+                    if (args.size()) {
+                        EVALARGS(args, {});
+                        return NEWVAR(TStr(escape(args[0]->toStr())));
+                    } else
+                        return NEWVAR(TStr(""));
+                })};
 }
 
 // returns wether builtin name exists

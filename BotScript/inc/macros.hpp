@@ -8,7 +8,7 @@
 
 extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 2    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
+#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
 #define _ERR_EXIT_ 1 // exit on error
 #define COMMA ,
 
@@ -22,10 +22,8 @@ extern unsigned int debug_func_intd;
         __VA_ARGS__, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, \
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
-#define ONCE(...)   \
-    do {            \
-        __VA_ARGS__ \
-    } while (0)
+#define ONCE(...) \
+    do { __VA_ARGS__ } while (0)
 
 // macros for error mesages
 #define err_iop(o, a, b)                                         \
@@ -33,8 +31,22 @@ extern unsigned int debug_func_intd;
         "\033[1;31mno operator %s for %s and %s\033[0;37m\n", o, \
         getTypeName(a), getTypeName(b))
 
-#define err_imb(a, b) \
-    error_exit("\033[1;31m%ss has no member '%s'\033[0;37m\n", a, TOSTR(b))
+#define err_imb(a, b)                                                   \
+    error_exit(                                                         \
+        "\033[1;31m%ss has no member '%s'\033[0;37m\n", getTypeName(a), \
+        TOSTR(b))
+
+#define err_iat(a, b, f, t)                                         \
+    error_exit(                                                     \
+        "\033[1;31minvalid argument type '%s' for %s.%s: expected " \
+        "'%s'\033[0;37m\n",                                         \
+        getTypeName(b), getTypeName(a), f, typeName(t))
+
+#define err_iac(a, b, f, c)                                                \
+    error_exit(                                                            \
+        "\033[1;31minvalid argument count for %s.%s: got %lu; expected %i" \
+        "\033[0;37m\n",                                                    \
+        getTypeName(a), f, b.size(), c)
 
 #define err_rng(a, b)                                                       \
     error_exit(                                                             \

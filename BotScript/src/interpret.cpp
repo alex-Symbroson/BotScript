@@ -35,28 +35,6 @@ unordered_map<string, Operator> operators = {
     Op("&&", "and", 12, 'R'),   Op("||", "or", 13, 'R'),
     Op("=", "assign", 14, 'L')};
 
-PVar callBuiltin(var_bfn func, var_lst args) {
-    BEGIN("func=%s, args=%s", func->name, TLst(args, T_ARGS).toStr().c_str());
-
-    // fill minimum arguments
-    int16_t i;
-
-    for (i = args.size(); i < func->argc; i++)
-        args.push_back(func->dflt[i]);
-
-    // evaluate arguments
-    i = args.size();
-    var_lst fargs(i);
-
-    while (i--)
-        fargs[i] = evalExpr(args[i]);
-
-    // call function
-    PVar res = func->func(fargs);
-    END("-> %s", TOSTR(res));
-    return res;
-}
-
 PVar handleLine(var_lst& line) {
     BEGIN("line=%s", TLst(line).toStr().c_str());
 
@@ -72,17 +50,27 @@ PVar handleLine(var_lst& line) {
 
     if (size) {
         var_lst::iterator it = begin + 1, end = line.end();
-        PVar param;
+        PVar arg;
+        // res: variable, it[0]: function, it[1]: arguments
 
         do {
             if (size > 2) {
+                if (!hasOperator(res, getStr(it[0])))
+                    error_exit(
+                        "%s has no operator %s", getTypeName(res),
+                        TOSTR(it[0]));
+
                 if (getType(it[1]) == T_TRM && getLst(it[1]).size())
-                    param = evalExpr(it[1]);
+                    arg = evalExpr(it[1]);
                 else
-                    param = it[1];
-                res = callP(res, getStr(it[0]), param);
-            }
+                    arg = it[1];
+
+                res = callP(res, getStr(it[0]), arg);
+            } else
+                return it[0];
+
             it += 2;
+            size -= 2;
         } while (it != end);
 
         if (res) {
@@ -98,8 +86,7 @@ PVar handleLine(var_lst& line) {
 void handleScope(var_lst& scope) {
     BEGIN("var_lst*scope");
 
-    for (auto& v: scope)
-        handleLine(getLst(v));
+    for (auto& v: scope) handleLine(getLst(v));
 
     END();
 }
@@ -120,10 +107,14 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
         switch (*c) {
             case '"': {
                 string word = "";
-                while (*++c != '"' && *c != end)
-                    word += *c;
-                line->push_back(NEWVAR(TStr(word)));
-                DEBUG("%s: %s", word.c_str(), typeName(T_STR));
+                while (*++c != '"' && *c != end) word += *c;
+
+                if (lastType == T_STR)
+                    getStr(line->back()) += unescape(word);
+                else
+                    line->push_back(NEWVAR(TStr(unescape(word))));
+
+                DEBUG("\"%s\": %s", word.c_str(), typeName(T_STR));
                 lastType = T_STR;
             } break;
 
@@ -149,7 +140,9 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                 }
                 DEBUG("%c: %s begin", *c, typeName(type));
 
-                if (type == T_TRM && lastType == T_BFN) {
+                if (type == T_TRM && lastType == T_MFN) {
+                    type = T_ARGS;
+                } else if (type == T_TRM && lastType == T_BFN) {
                     type = T_ARGS;
                     line->push_back(NEWVAR(TStr("call")));
                 } else if (
@@ -168,12 +161,12 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                 string word = "";
 
                 if (*c == separator) {
-                    DEBUG("seperator '%c'", separator);
                     vline = new TLst({}, T_TRM);
                     line  = getLstP(vline);
                     block.push_back(vline->getVar());
                     lastType = 0;
-                    ++c;
+                    word += *c++;
+
                 } else if (
                     line->size() && isOperator(*c) &&
                     (*c != '.' || ((c[-1] < '0' || c[-1] > '9') &&
@@ -182,7 +175,6 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                         word += *c;
                     } while (isOperator(word + *++c) && *c != end);
 
-                    DEBUG("operator '%s'", word.c_str());
                     line->push_back(NEWVAR(TStr(operators[word].name, T_OPR)));
                     lastType = T_OPR;
 
@@ -195,9 +187,12 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                               (*c == '.' && ((c[-1] >= '0' && c[-1] <= '9') ||
                                              (c[01] >= '0' && c[01] <= '9')))));
 
-                    if (isBuiltin(word.c_str())) {
+                    if (lastType == T_OPR && getStr(line->back()) == "at") {
+                        getStr(line->back()) = word;
+                        lastType = getType(line->back()) = T_MFN;
+
+                    } else if (isBuiltin(word.c_str())) {
                         line->push_back(NEWVAR(TBfn(getBltin(word))));
-                        DEBUG("%s: %s", word.c_str(), typeName(T_BFN));
                         lastType = T_BFN;
 
                     } else if (
@@ -210,14 +205,14 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                             line->push_back(NEWVAR(TFlt(stod2(word))));
                             lastType = T_FLT;
                         }
-                        DEBUG("%s: %s", word.c_str(), typeName(lastType));
 
                     } else {
-                        DEBUG(
-                            "%s: %s [ignored]", word.c_str(), typeName(T_VAR));
-                        lastType = T_VAR;
+                        DEBUG("%s: [ignored]", word.c_str());
+                        lastType = T_NIL;
                     }
                 }
+                if (lastType != T_NIL)
+                    DEBUG("%s: %s", word.c_str(), typeName(lastType));
                 continue;
         }
         ++c;

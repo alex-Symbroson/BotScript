@@ -1,6 +1,9 @@
 
 #include "builtins.hpp"
 
+static const char digits[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
 bool isSymbol(char c) {
     // BEGIN("%c", c);
     // characters interpreted as symbols
@@ -31,53 +34,174 @@ bool isOperator(string s) {
     return operators.find(s) != operators.end();
 }
 
-double stod2(const char* s) {
-    BEGIN("s=\"%s\"", s);
-    const bool neg = *s == '-';
-    var_int num    = 0;
-    uint16_t f     = 0;
-    uint8_t e;
+char* dtos2(long double num, uint8_t rad) {
+    BEGIN("num=%LF,r=%i", num, rad);
 
-    if (*s == '+' || *s == '-') s++;
+    if (!num) {
+        END("-> 0.0");
+        return strdup("0.0");
+    }
 
-    if (s[1] == 'x') {
-        e = s[0] - '0';
-        s += 2;
-    } else if (s[2] == 'x') {
-        e = s[0] * 10 + s[1] - 11 * '0';
-        s += 3;
+    static const char* digits =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    int8_t digit = 0, i = 0, end = 0, zeros = 0, nines = 0;
+    char res[70] = "", *begin, *d = res;
+    bool isfloat = false;
+    long double tnum;
+
+    // check negative
+    if (num < 0) {
+        *d++ = '-';
+        num  = -num;
+    }
+
+    // add radix
+    if (rad != 10) {
+        if (rad < 2 || rad > 62) error_exit("%Lf invalid radix %i", num, rad);
+        if (rad > 9) *d++ = '0' + (rad / 10) % 10;
+        *d++ = '0' + rad % 10;
+        *d++ = 'x';
+    }
+
+    // add 0 for 0.x or 9999.. -> 10000..
+    *d++ = '0';
+
+    // count decimals with target radix
+    tnum = num;
+    while (tnum >= rad) {
+        tnum /= rad;
+        i++;
+    }
+    end = i - 64;
+
+    // shift num to 0.x
+    while (num >= rad) num /= rad;
+
+    begin = d;
+
+    for (; i >= end && (i > -2 || (double)num - trunc(num) > 0); i--, end++) {
+        // write digit
+        *d++ = digits[digit = (long)num % rad];
+        // shift num
+        num = (num - digit) * rad;
+
+        if (isfloat) {
+            // count zeros
+            if (!digit) {
+                nines = 0;
+                if (++zeros >= 7) break;
+            } else
+                zeros = 0;
+
+            // count nines of radix (rad - 1)
+            if (digit == rad - 1) {
+                // if over 7 nines - round
+                if (++nines > 5) {
+                    char* c = d - nines - 1;
+                    if (*c == '.') {
+                        c[1] = '0';
+                        c[2] = 0;
+                        c--;
+                        while (*c == digits[rad - 1]) *c-- = '0';
+                    } else
+                        c[1] = 0;
+
+                    if (*c == '9')
+                        *c = 'A';
+                    else if (*c == 'Z')
+                        *c = 'a';
+                    else
+                        (*c)++;
+
+                    break;
+                }
+            } else
+                nines = 0;
+        }
+
+        // add floating point
+        if (!i) {
+            *d++    = '.';
+            zeros   = -1; // leave one zero for integers
+            isfloat = true;
+        }
+    }
+
+    // crop zeros
+    if (zeros) d[-zeros] = 0;
+
+    // remove zero from begin
+    if (begin[-1] == '0') {
+        while (begin-- - 1 > res) { *begin = begin[-1]; }
+        begin++;
     } else
-        e = 10;
+        begin = res;
 
+    END("-> \"%s\"", begin);
+    return strdup(begin);
+}
+
+long double stod2(string& s) {
+    return stod2(s.c_str());
+}
+
+long double stod2(const char* s) {
+    BEGIN("s=\"%s\"", s);
+
+    static char digits['z' + 1] = "";
+    long double pot, res = 0;
+    uint16_t i = 0, rad = 0;
+    bool isneg = false;
+    int16_t d  = -1;
+    const char* c;
+
+    if (*s == '-' || *s == '+') isneg = *s++ == '-';
+    c = s;
+
+    while (*c && *c != 'x') rad = rad * 10 + *c++ - '0';
+
+    if (!*c) {
+        if (s[0] == '0' && s[1] == 'b')
+            s += rad = 2;
+        else
+            rad = 10;
+    } else if (!rad) {
+        rad = 16;
+        s   = c + 1;
+    } else if (rad < 2 || rad > 62) {
+        error_exit("%s invalid radix %i", s, rad);
+    } else {
+        s = c + 1;
+    }
+
+    if (!*digits) {
+        for (i = '0'; i <= '9'; i++) digits[i] = i - '0';
+        for (i = 'A'; i <= 'Z'; i++) digits[i] = i - 'A' + 10;
+        for (i = 'a'; i <= 'z'; i++) digits[i] = i - 'Z' + 26;
+        *digits = 1;
+    }
+
+    while (*s == '0') s++;
+    c = s;
+    while (*c && *c != '.') c++, d++;
+    pot = pow(rad, d);
     while (*s) {
-        if (f) f++;
-
-        if (*s == '.')
-            f = 1;
-        else {
-            if (*s >= 'a')
-                num = e * num + *s - 'a' + 10;
-            else if (*s >= 'A')
-                num = e * num + *s - 'A' + 10;
-            else if (*s >= 0)
-                num = e * num + *s - '0';
+        if (*s != '.') {
+            res += digits[(unsigned)*s] * pot;
+            pot /= rad;
         }
         s++;
     }
 
-    if (f) f--;
-    if (neg) num = -num;
-    END("%f", num / pow(e, f));
-    return num / pow(e, f);
-}
-
-double stod2(string& s) {
-    return stod2(s.c_str());
+    if (isneg) res = -res;
+    END("-> %Lf", res);
+    return res;
 }
 
 // delay in milliseonds
-void delay(double time) {
-    BEGIN("time=%f", time);
+void delay(long double time) {
+    BEGIN("time=%Lf", time);
     time = clock() + round(time * 1000);
     while (clock() < time)
         ;
@@ -102,15 +226,17 @@ string replace(string str, string src, string ovr) {
 #define REPLACE2(a, b) replace(REPLACE1(REP(a)), b)
 #define REPLACE3(a, b, c) replace(REPLACE2(REP(a), REP(b)), c)
 #define REPLACE4(a, b, c, d) replace(REPLACE3(REP(a), REP(b), REP(c)), d)
+#define REPLACE5(a, b, c, d, e) \
+    replace(REPLACE4(REP(a), REP(b), REP(c), REP(d)), e)
 #define REP(a, b) a COMMA b
 
 // replace some escape sequences
 string unescape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
     if (s.size()) {
-        s = REPLACE4(
-            REP("\\n", "\n"), REP("\\t", "\t"), REP("\\033", "\033"),
-            REP("\\\\", "\\") /*must be last*/);
+        s = REPLACE5(
+            REP("\\\"", "\""), REP("\\n", "\n"), REP("\\t", "\t"),
+            REP("\\033", "\033"), REP("\\\\", "\\") /*must be last*/);
     }
     return s;
     END();
@@ -120,9 +246,10 @@ string unescape(string s) {
 string escape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
     if (s.size()) {
-        s = REPLACE4(
+        s = REPLACE5(
             REP("\\", "\\\\"), /* must be first*/
-            REP("\n", "\\n"), REP("\t", "\\t"), REP("\033", "\\033"));
+            REP("\"", "\\\""), REP("\n", "\\n"), REP("\t", "\\t"),
+            REP("\033", "\\033"));
     }
     return s;
     END();
@@ -142,8 +269,7 @@ string readFile(const char* path, bool ignore) {
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
             // whitespace
-            while (c != EOF && isWhitespace(c))
-                c = fgetc(f);
+            while (c != EOF && isWhitespace(c)) c = fgetc(f);
 
             // strings
             if (c == '"') {
@@ -158,9 +284,7 @@ string readFile(const char* path, bool ignore) {
                 c = fgetc(f);
                 // line
                 if (c == '/') {
-                    do {
-                        c = fgetc(f);
-                    } while (c != EOF && c != '\n');
+                    do { c = fgetc(f); } while (c != EOF && c != '\n');
                 }
                 // block
                 else if (c == '*') {
@@ -179,8 +303,7 @@ string readFile(const char* path, bool ignore) {
                 content += c;
         }
     } else {
-        while ((c = fgetc(f)) != EOF)
-            content += c;
+        while ((c = fgetc(f)) != EOF) content += c;
     }
     END();
     return content;

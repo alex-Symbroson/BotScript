@@ -1,8 +1,7 @@
 
 // TODO:
-//      toFunction(): operators. variables, ...
+//      toFunction(): variables, ...
 //      RaspiBot functions
-//      error operator '+(' isop: 0
 
 unsigned int debug_func_intd = 0;
 

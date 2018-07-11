@@ -13,8 +13,6 @@ typedef struct {
 
 extern unordered_map<string, Operator> operators;
 
-PVar callBuiltin(var_bfn func, var_lst args);
-
 PVar handleLine(var_lst& line);
 
 void handleScope(var_lst& scope);

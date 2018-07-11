@@ -9,7 +9,7 @@
 unordered_map<uint8_t, FuncMapOp> operations;
 
 uint8_t VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR, T_LST, T_OBJ,
-                      T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN};
+                      T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR};
 
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
@@ -29,6 +29,7 @@ const char* typeName(uint8_t t) {
         case T_OPR: return "operator";
         case T_ARGS: return "arguments";
         case T_BFN: return "builtin_function";
+        case T_MFN: return "member_function";
         default: return "undefined";
     }
 }
@@ -133,10 +134,22 @@ void initOperations() {
                     }
                     default   : err_iop("%", a, b);
                 }
+            }},
+            {"toStr", [] FUNCTION {
+                var_lst args = getLst(b);
+
+                if(args.size()) {
+                    EVALARGS(args, {});
+                    if(getType(args[0]) == T_INT)
+                        return NEWVAR(TStr(dtos2(getInt(a), getInt(args[0]))));
+                    else
+                        err_iat(a, args[0], "toString", T_INT);
+                } else
+                    return NEWVAR(TStr(dtos2(getInt(a), 10)));
             }}
         }},
 
-        {T_FLT,{
+        {T_FLT, {
             {"add", [] FUNCTION {
                 switch(getType(b)) {
                     case T_INT: return NEWVAR(TFlt(getFlt(a) + getInt(b)));
@@ -173,26 +186,51 @@ void initOperations() {
                     default   : err_iop("%", a, b);
                 }
                 return NEWVAR(TFlt(c - d * floor(c / d)));
+            }},
+            {"toStr", [] FUNCTION {
+                var_lst args = getLst(b);
+
+                if(args.size()) {
+                    EVALARGS(args, {});
+                    if(getType(args[0]) == T_INT)
+                        return NEWVAR(TStr(dtos2(getFlt(a), getInt(args[0]))));
+                    else
+                        err_iat(a, args[0], "toString", T_INT);
+                } else
+                    return NEWVAR(TStr(dtos2(getFlt(a), 10)));
             }}
         }},
 
-        {T_STR,{
+        {T_STR, {
             {"add", [] FUNCTION {
                 if(getType(b) == T_STR)
                     return NEWVAR(TStr(getStr(a) + getStr(b)));
                 else err_iop("+", a, b);
+            }},
+            {"toInt", [] FUNCTION {
+                string s = getStr(a);
+                int32_t pos = s.find('.');
+                if(pos > -1) s[pos] = 0;
+                return NEWVAR(TInt(stod2(s)));
+            }},
+            {"toFlt", [] FUNCTION {
+                return NEWVAR(TFlt(stod2(getStr(a))));
             }}
         }},
 
-        {T_BFN,{
+        {T_BFN, {
             {"call", [] FUNCTION {
-                if (getType(b) == T_ARGS)
-                    return callBuiltin(getBfn(a), getLst(b));
-                else err_iop("call", a, b);
-                //return callBuiltin(getBfn(a), {b});
+                BEGIN("%s call %s", TOSTR(a), TOSTR(b));
+
+                if (getType(b) == T_ARGS) {
+                    PVar res = getBfn(a)->func(getLst(b));
+                    END("%s", TOSTR(res));
+                    return res;
+                } else
+                    err_iop("call", a, b);
             }}}},
 
-        {T_LST,{
+        {T_LST, {
             {"push", [] FUNCTION {
                 getLst(a).push_back(b);
                 return NEWVAR(TInt(getLst(a).size()));
@@ -214,6 +252,22 @@ void initOperations() {
                         return getLst(a)[i];
                 } else
                     err_iop("at", a, b);
+            }},
+            {"join", [] FUNCTION {
+                var_lst args = getLst(b);
+
+                if(args.size()) {
+                    EVALARGS(args, {});
+                    string result = "", sep = "";
+
+                    if(getType(args[0]) == T_STR) sep = getStr(args[0]);
+                    else err_iat(a, args[0], "join", T_STR);
+
+                    for (PVar& v: getLst(a)) result += v->toStr() + sep;
+
+                    return NEWVAR(TStr(result));
+                } else
+                    err_iac(a, args, "join", 1);
             }}}},
 
         {T_OBJ, {}},
@@ -228,20 +282,34 @@ void initOperations() {
 // clang-format on
 
 PVar evalExpr(PVar& expr) {
-    if (getType(expr) == T_TRM)
-        return handleLine(getLst(expr));
-    else if (getType(expr) == T_LST) {
-        var_lst lst;
-        for (PVar& v: getLst(expr))
-            lst.push_back(evalExpr(v));
-        return NEWVAR(TLst(lst));
-    } else if (getType(expr) == T_LST) {
-        var_obj obj;
-        for (auto& v: getObj(expr))
-            obj[v.first] = evalExpr(v.second);
-        return NEWVAR(TObj(obj));
-    } else
-        return expr;
+    switch (getType(expr)) {
+        case T_TRM: return handleLine(getLst(expr));
+        case T_LST: {
+            var_lst lst;
+            for (PVar& v: getLst(expr)) lst.push_back(evalExpr(v));
+            return NEWVAR(TLst(lst));
+        }
+        case T_OBJ: {
+            var_obj obj;
+            for (auto& v: getObj(expr)) obj[v.first] = evalExpr(v.second);
+            return NEWVAR(TObj(obj));
+        }
+        default: return expr;
+    }
+}
+
+void setDefault(var_lst& args, const var_lst& dflt) {
+    int16_t i = 0, len = args.size();
+    var_lst fargs(len);
+
+    // evaluate arguments
+    for (; i < len; i++) fargs[i] = evalExpr(args[i]);
+
+    // fill arguments
+    i = dflt.size();
+    while (i-- > len) fargs.push_back(dflt[i]);
+
+    args = fargs;
 }
 
 bool hasOperator(PVar& v, char o) {
@@ -277,9 +345,9 @@ void FreeVariables() {
         "sizes:\n"
         "nil:%lu\nint:%lu\nflt:%lu\nstr:%lu\nlst:%lu\nobj:%lu\nbfn:%lu\n"
         "IVar:%lu\n",
-        sizeof(TNil), sizeof(TInt), sizeof(TFlt), sizeof(TStr), sizeof(TLst),
-        sizeof(TObj), sizeof(TBfn) - sizeof(TBltFnc*) + sizeof(TBltFnc),
-        sizeof(IVar));
+        sizeof(TNil), sizeof(TInt), sizeof(TFlt), sizeof(TStr),
+    sizeof(TLst), sizeof(TObj), sizeof(TBfn) - sizeof(TBltFnc*) +
+    sizeof(TBltFnc), sizeof(IVar));
         */
     END();
 }

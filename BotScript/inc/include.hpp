@@ -13,11 +13,14 @@ bool isOperator(string s);
 string replace(string str, string src, string ovr);
 
 // delay in milliseonds
-void delay(double time);
+void delay(long double time);
 
 // convert number string with radix (RxN) to double
-double stod2(const char* s);
-double stod2(string& s);
+long double stod2(const char* s);
+long double stod2(string& s);
+
+// convert number with radix (RxN) to string
+char* dtos2(long double num, uint8_t r = 10);
 
 // replace some escape sequences
 string unescape(string s);
