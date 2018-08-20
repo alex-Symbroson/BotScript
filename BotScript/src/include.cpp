@@ -1,5 +1,6 @@
 
 #include "builtins.hpp"
+#include "interpret.hpp"
 
 static const char digits[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

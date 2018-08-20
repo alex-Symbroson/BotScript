@@ -2,6 +2,8 @@
 #define CUSTOM_BEGIN
 #include "variables.hpp"
 
+#include "interpret.hpp"
+
 #define BEGIN(...) BEGIN_1("Variables", __VA_ARGS__)
 #define END(...) END_1("Variables", __VA_ARGS__)
 
@@ -38,6 +40,7 @@ forward_list<PVar> collector = {};
 
 IVar::IVar() {
     // BEGIN();
+    collector.push_front(this);
     // END("-> %p", this);
 }
 

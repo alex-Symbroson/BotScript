@@ -1,11 +1,12 @@
 
-// TODO:
-//      toFunction(): variables, ...
+// TODO: 446928
+//      toFunction(): keywords
 //      RaspiBot functions
+//      all isOperator to prev.hasOperator
 
 unsigned int debug_func_intd = 0;
 
-#include "include.hpp" //includes special functions
+#include "include.hpp"
 #include "interpret.hpp"
 
 void interrupt(int sig) {
@@ -19,7 +20,7 @@ void interrupt(int sig) {
 
 // initialisation
 int main(int argc, char* argv[]) {
-    BEGIN("int argc=%i,char**argv", argc);
+    BEGIN("argc=%i,argv", argc);
     PRINT_STATUS();
 
     signal(SIGINT, interrupt);
@@ -57,5 +58,6 @@ int main(int argc, char* argv[]) {
 
     INFO("end.");
     END();
+
     return 0;
 }

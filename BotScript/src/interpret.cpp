@@ -2,24 +2,16 @@
 #include "interpret.hpp"
 
 /*       priority
-.   at       6
-[]  at       6
-()  call     5
-**  pow      4
-*   mul      3
-/   div      3
-%   mod      3
-+   add      2
--   sub      2
-=   assign   1
+.   at       6        []  at       6
+()  call     5        **  pow      4
+*   mul      3        /   div      3
+%   mod      3        +   add      2
+-   sub      2        =   assign   1
 */
 
-#define Op(SYM, NAM, PRI, DIR) \
-    {                          \
-        SYM, {                 \
-            NAM, PRI, DIR      \
-        }                      \
-    }
+// clang-format off
+#define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
+// clang-format on
 
 unordered_map<string, Operator> operators = {
     Op("()", "call", 2, 'R'),   Op(".", "at", 2, 'R'),

@@ -25,7 +25,7 @@ Script language with optimized PIN access features
 - default command is ```make [-j4]```
 - optionally use ```make ISPI=true``` or ```make ISPI=false```
     depending on wether you are on a Raspberry pi or not
-    (default is defined in file ispi)
+    (default is defined in [ispi](https://github.com/alex-Symbroson/BotScript/blob/stack/BotScript/ispi))
 
 **External Dependencies:**
 - wiringPi.h ( -> https://github.com/WiringPi/WiringPi )

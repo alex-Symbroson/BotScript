@@ -1,40 +1,39 @@
 
 #ifndef _VARIABLES_HPP_
-#    define _VARIABLES_HPP_
+#define _VARIABLES_HPP_
 
-#    include "headers.hpp"
-#    include "include.hpp"
+#include "include.hpp"
 
-#    define uint8_t unsigned char
+#define uint8_t unsigned char
 
 // type id's  (requires addition in variables.cpp: VAR_Type[])
-#    define T_NIL 0
-#    define T_VAR 1
-#    define T_INT 2
-#    define T_FLT 3
-#    define T_STR 4
-#    define T_LST 5
-#    define T_OBJ 6
-#    define T_PIN 7
-#    define T_TRM 8
-#    define T_FNC 9
-#    define T_OPR 10
-#    define T_ARGS 11
-#    define T_BFN 12
-#    define T_MFN 13
-#    define TCNT 14
+#define T_NIL 0
+#define T_VAR 1
+#define T_INT 2
+#define T_FLT 3
+#define T_STR 4
+#define T_LST 5
+#define T_OBJ 6
+#define T_PIN 7
+#define T_TRM 8
+#define T_FNC 9
+#define T_OPR 10
+#define T_ARGS 11
+#define T_BFN 12
+#define T_MFN 13
+#define TCNT 14
 
 class IVar;
 template <typename>
 class TVar;
 typedef IVar* PVar;
 
-#    define NEWVAR(v) ((new v)->getVar())
-#    define V_NULL NEWVAR(TNil(0))
-#    define TOSTR(v) v->toStr().c_str()
-#    define EVALARGS(ARGS, DFLT)           \
-        static const var_lst _dflt = DFLT; \
-        setDefault(ARGS, _dflt)
+#define NEWVAR(v) ((new v)->getVar())
+#define V_NULL NEWVAR(TNil(0))
+#define TOSTR(v) v->toStr().c_str()
+#define EVALARGS(ARGS, DFLT)           \
+    static const var_lst _dflt = DFLT; \
+    setDefault(ARGS, _dflt)
 
 // types
 
@@ -80,26 +79,24 @@ extern uint8_t VAR_Type[];
 extern forward_list<PVar> collector; // garbage collector
 
 // macros for calling type-specific functions
-#    define callP(a, o, b) (operations[*(a)->ptype])[o]((a), (b))
-#    define callT(a, o, b) (operations[(a).type])[o]((a), (b))
+#define callP(a, o, b) (operations[*(a)->ptype])[o]((a), (b))
+#define callT(a, o, b) (operations[(a).type])[o]((a), (b))
 
 // macros for getting var instance values
-#    define getType(var) (*(var)->ptype)
-#    define getTypeName(var) typeName(getType(var))
-#    define getIntP(var) ((var_int*)(var)->getPtr())
-#    define getInt(var) (*(var_int*)(var)->getPtr())
-#    define getFltP(var) ((var_flt*)(var)->getPtr())
-#    define getFlt(var) (*(var_flt*)(var)->getPtr())
-#    define getStrP(var) ((var_str*)(var)->getPtr())
-#    define getStr(var) (*(var_str*)(var)->getPtr())
-#    define getLstP(var) ((var_lst*)(var)->getPtr())
-#    define getLst(var) (*(var_lst*)(var)->getPtr())
-#    define getObjP(var) ((var_obj*)(var)->getPtr())
-#    define getObj(var) (*(var_obj*)(var)->getPtr())
-#    define getBfnP(var) ((var_bfn*)(var)->getPtr())
-#    define getBfn(var) (*(var_bfn*)(var)->getPtr())
-
-#    include "interpret.hpp"
+#define getType(var) (*(var)->ptype)
+#define getTypeName(var) typeName(getType(var))
+#define getIntP(var) ((var_int*)(var)->getPtr())
+#define getInt(var) (*(var_int*)(var)->getPtr())
+#define getFltP(var) ((var_flt*)(var)->getPtr())
+#define getFlt(var) (*(var_flt*)(var)->getPtr())
+#define getStrP(var) ((var_str*)(var)->getPtr())
+#define getStr(var) (*(var_str*)(var)->getPtr())
+#define getLstP(var) ((var_lst*)(var)->getPtr())
+#define getLst(var) (*(var_lst*)(var)->getPtr())
+#define getObjP(var) ((var_obj*)(var)->getPtr())
+#define getObj(var) (*(var_obj*)(var)->getPtr())
+#define getBfnP(var) ((var_bfn*)(var)->getPtr())
+#define getBfn(var) (*(var_bfn*)(var)->getPtr())
 
 class IVar {
   public:
@@ -128,44 +125,11 @@ class TVar : public IVar {
     TVar(T, uint8_t = 0);
     ~TVar();
 
-#    ifdef _DEBUG
-#        undef new
-#    endif
-
-    void* operator new(size_t size);
-    void operator delete(void* p);
-
-#    ifdef _DEBUG
-#        define new DEBUG_NEW
-#    endif
-
     PVar getVar();
 
     void* getPtr();
     string toStr(bool escape = false);
 };
-
-#    ifdef _DEBUG
-#        undef new
-#    endif
-
-template <typename T>
-void* TVar<T>::operator new(size_t size) {
-    TVar<T>* p = (TVar<T>*)malloc(size);
-    // DEBUG("%p TVar<>::op new()", p);
-    collector.push_front(p->getVar());
-    return p;
-}
-
-template <typename T>
-void TVar<T>::operator delete(void* p) {
-    // DEBUG("%p TVar<>::op delete()", p);
-    free(p);
-}
-
-#    ifdef _DEBUG
-#        define new DEBUG_NEW
-#    endif
 
 template <typename T>
 void* TVar<T>::getPtr() {
@@ -178,7 +142,7 @@ PVar TVar<T>::getVar() {
 }
 
 /*
-TVar::toStr()
+    TVar::toStr()
 */
 
 template <>

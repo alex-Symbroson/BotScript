@@ -19,7 +19,7 @@ ifeq (ISPI,true)
 endif
 
 ifeq ($(debug),true)
-	CFLAGS += -I nvwa -D _DEBUG
+	CFLAGS += -I nvwa
 	LDFLAGS += nvwa/debug_new.cpp
 endif
 
