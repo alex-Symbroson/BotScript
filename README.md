@@ -7,7 +7,18 @@ Script language with optimized PIN access features
     - creates a stack of commands to interpret the preformatted code
 
 **planned features:**
-    -> Syntax.txt
+    -> [Syntax.md](https://github.com/alex-Symbroson/BotScript/blob/stack/BotScript/Syntax.md)
+
+**robot sensors**
+- Encoder l/r
+- Motor l/r
+- IR front l/r
+- Buttons (with rgy leds)
+- Camera
+- Display
+- LEDs (rgyw)
+- Buzzer
+- (Ground sensors)
 
 **Build:**
 - switch directory to BotScript root directory
@@ -16,17 +27,5 @@ Script language with optimized PIN access features
     depending on wether you are on a Raspberry pi or not
     (default is defined in file ispi)
 
-**Dependencies:**
-- c:
-    - math.h
-    - time.h
-    - stdio.h
-    - softPwm.h  (part of wiringPi)
-    - pthread.h
-    - wiringPi.h    ( -> https://github.com/WiringPi/WiringPi )
-- c++:
-    - string
-    - vector
-    - iostream
-    - forward_list
-    - unordered_map
+**External Dependencies:**
+- wiringPi.h ( -> https://github.com/WiringPi/WiringPi )

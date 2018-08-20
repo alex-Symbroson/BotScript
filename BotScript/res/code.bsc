@@ -35,14 +35,12 @@ println(
     16xB3A73CE2D79
 );
 
-print(
-    101., " ", (101.).toStr(6), " ", " ", (101.).toStr(6).toFlt(), "\n",
-    10.3, " ", (10.3).toStr(6), " ", (10.3).toStr(6).toFlt(), "\n",
-    15., " ", (15.).toStr(16), " ", (15.).toStr(16).toFlt(), "\n",
-    1.5, " ", (1.5).toStr(16), " ", (1.5).toStr(16).toFlt(), "\n"
-);
+println([101., (101.).toStr(6), (101.).toStr(6).toFlt()].join(" "));
+println([10.3, (10.3).toStr(6), (10.3).toStr(6).toFlt()].join(" "));
+println([15. , (15.).toStr(16), (15.).toStr(16).toFlt()].join(" "));
+println([ 1.5, (1.5).toStr(16), (1.5).toStr(16).toFlt()].join(" "));
 
-println("\n");
+println("");
 
 //print float rounding test
 println([
