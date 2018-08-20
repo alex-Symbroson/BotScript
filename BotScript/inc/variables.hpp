@@ -70,16 +70,18 @@ PVar evalExpr(PVar& expr);
 void setDefault(var_lst& args, const var_lst& dflt);
 bool hasOperator(PVar& v, char op);
 bool hasOperator(PVar& v, string op);
+void cleanupCollector();
 void FreeVariables();
 const char* typeName(uint8_t t);
 
-extern unordered_map<uint8_t, FuncMapOp> operations;
+extern FuncMapOp operations[TCNT];
 extern PVar handleLine(var_lst& line);
 extern uint8_t VAR_Type[];
+extern forward_list<PVar> collector; // garbage collector
 
 // macros for calling type-specific functions
-#    define callP(a, o, b) (*(a)->pop)[o](a, b)
-#    define callT(a, o, b) (*(a).op)[o](a, b)
+#    define callP(a, o, b) (operations[*(a)->ptype])[o]((a), (b))
+#    define callT(a, o, b) (operations[(a).type])[o]((a), (b))
 
 // macros for getting var instance values
 #    define getType(var) (*(var)->ptype)
@@ -100,11 +102,9 @@ extern uint8_t VAR_Type[];
 #    include "interpret.hpp"
 
 class IVar {
-      public:
+  public:
     uint8_t* ptype;
-    FuncMapOp* pop;
-
-    static forward_list<PVar> collector; // garbage collector
+    uint32_t refcnt = 0;
 
     IVar();
     virtual ~IVar();
@@ -120,9 +120,8 @@ class IVar {
 
 template <typename T>
 class TVar : public IVar {
-      public:
+  public:
     uint8_t type;
-    FuncMapOp* op;
 
     T value;
 
@@ -154,7 +153,7 @@ template <typename T>
 void* TVar<T>::operator new(size_t size) {
     TVar<T>* p = (TVar<T>*)malloc(size);
     // DEBUG("%p TVar<>::op new()", p);
-    IVar::collector.push_front(p->getVar());
+    collector.push_front(p->getVar());
     return p;
 }
 
