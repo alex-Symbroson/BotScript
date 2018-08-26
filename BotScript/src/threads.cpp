@@ -13,8 +13,7 @@ uint8_t Thread::create(void* (*foo)(void*), void* arg) {
     uint8_t id = 0, state;
 
     // find inactive thread
-    while (active[id])
-        id++;
+    while (active[id]) id++;
     DEBUG("  -> id = %i", id);
 
     // create thread
@@ -42,8 +41,17 @@ void* Thread::result(uint8_t id) {
 
 void Thread::cancel(uint8_t id) {
     BEGIN("uint8_t id=%i", id);
-    // cancel thread
+// cancel thread
+#ifdef __ANDROID__
+    int status;
+    if (status = pthread_kill(id, SIGUSR1)) {
+        printf(
+            "Error cancelling thread %d, error = %d (%s)", id, status,
+            strerror(status));
+    }
+#else
     pthread_cancel(thread[id]);
+#endif
 
     // update active state
     active[id] = false;

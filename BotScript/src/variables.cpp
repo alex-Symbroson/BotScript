@@ -8,15 +8,15 @@
 #define END(...) END_1("Variables", __VA_ARGS__)
 
 #define FUNCTION (PVar a, PVar b)->PVar
-FuncMapOp operations[TCNT];
+FuncMapOpr operations[TCNT];
 
 uint8_t VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR, T_LST, T_OBJ,
                       T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR};
 
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
-    BEGIN();
-    END();
+    // BEGIN();
+    // END();
     switch (t) {
         case T_NIL: return "null";
         case T_VAR: return "var";
@@ -46,42 +46,43 @@ IVar::IVar() {
 
 IVar::~IVar() {
     // BEGIN("%p ~IVar<%s>", this, typeName(getType(this)));
+    collector.remove(this);
     // END();
 }
 
-#define TypeClassDef(TMPL, TYPE, TYPEID)                            \
-                                                                    \
-    template <TMPL>                                                 \
-    TVar<TYPE>::TVar(TYPE v, uint8_t typeID) {                      \
-        /* BEGIN(); */                                              \
-                                                                    \
-        value = v;                                                  \
-        if (typeID) {                                               \
-            if (VAR_Type[typeID] != VAR_Type[TYPEID]) {             \
-                END();                                              \
-                error_exit(                                         \
-                    "cannot assign %s of type %s to %s of type %s", \
-                    typeName(typeID), typeName(VAR_Type[typeID]),   \
-                    typeName(TYPEID), typeName(VAR_Type[TYPEID]));  \
-            }                                                       \
-            type = typeID;                                          \
-        } else                                                      \
-            type = TYPEID;                                          \
-                                                                    \
-        ptype = &type;                                              \
-                                                                    \
-        /*END("-> %p : TVar<%s> %s", this, typeName(this->type),    \
-            TOSTR(this));*/                                         \
-    }                                                               \
-                                                                    \
-    template <TMPL>                                                 \
-    TVar<TYPE>::~TVar() {                                           \
-        /*BEGIN(                                                    \
-            "%p ~TVar<%s> %s", this, typeName(this->type),          \
-            TOSTR(this));*/                                         \
-                                                                    \
-        collector.remove(this);                                     \
-        /*END();*/                                                  \
+#define TypeClassDef(TMPL, TYPE, TYPEID)                                      \
+                                                                              \
+    template <TMPL>                                                           \
+    TVar<TYPE>::TVar(TYPE v, uint8_t typeID, bool Const) {                    \
+        /* BEGIN(); */                                                        \
+                                                                              \
+        value = v;                                                            \
+        if (typeID) {                                                         \
+            if (baseType(typeID) != baseType(TYPEID)) {                       \
+                END();                                                        \
+                error_exit(                                                   \
+                    "cannot assign %s of type %s to %s of type %s",           \
+                    typeName(typeID), baseTypeName(typeID), typeName(TYPEID), \
+                    baseTypeName(TYPEID));                                    \
+            }                                                                 \
+            type = typeID;                                                    \
+        } else                                                                \
+            type = TYPEID;                                                    \
+                                                                              \
+        ptype   = &type;                                                      \
+        isConst = Const;                                                      \
+                                                                              \
+        /*END("-> %p : TVar<%s> %s", this, typeName(this->type),              \
+            TOSTR(this));*/                                                   \
+    }                                                                         \
+                                                                              \
+    template <TMPL>                                                           \
+    TVar<TYPE>::~TVar() {                                                     \
+        /*BEGIN(                                                              \
+            "%p ~TVar<%s> %s", this, typeName(this->type),                    \
+            TOSTR(this));*/                                                   \
+                                                                              \
+        /*END();*/                                                            \
     }
 
 TypeClassDef(typename T, T, T_NIL);
@@ -353,8 +354,8 @@ void FreeVariables() {
         "nil:%lu\nint:%lu\nflt:%lu\nstr:%lu\nlst:%lu\nobj:%lu\nbfn:%lu\n"
         "IVar:%lu\n",
         sizeof(TNil), sizeof(TInt), sizeof(TFlt), sizeof(TStr),
-    sizeof(TLst), sizeof(TObj), sizeof(TBfn) - sizeof(TBltFnc*) +
-    sizeof(TBltFnc), sizeof(IVar));
+    sizeof(TLst), sizeof(TObj), sizeof(TBfn) - sizeof(TBltFunc*) +
+    sizeof(TBltFunc), sizeof(IVar));
         */
     END();
 }

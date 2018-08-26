@@ -9,7 +9,7 @@
         .func = [](var_lst args) __VA_ARGS__ \
     }}
 
-unordered_map<string, TBltFnc> builtins;
+unordered_map<string, TBltFunc> builtins;
 
 void initBuiltins() {
     builtins = { // builtin functions

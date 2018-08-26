@@ -26,9 +26,9 @@ extern unsigned int debug_func_intd;
     do { __VA_ARGS__ } while (0)
 
 // macros for error mesages
-#define err_iop(o, a, b)                                         \
-    error_exit(                                                  \
-        "\033[1;31mno operator %s for %s and %s\033[0;37m\n", o, \
+#define err_iop(o, a, b)                                           \
+    error_exit(                                                    \
+        "\033[1;31mno operator %s for %s and %s\033[0;37m\n", (o), \
         getTypeName(a), getTypeName(b))
 
 #define err_imb(a, b)                                                   \
@@ -40,13 +40,13 @@ extern unsigned int debug_func_intd;
     error_exit(                                                     \
         "\033[1;31minvalid argument type '%s' for %s.%s: expected " \
         "'%s'\033[0;37m\n",                                         \
-        getTypeName(b), getTypeName(a), f, typeName(t))
+        getTypeName(b), getTypeName(a), (f), typeName(t))
 
 #define err_iac(a, b, f, c)                                                \
     error_exit(                                                            \
-        "\033[1;31minvalid argument count for %s.%s: got %lu; expected %i" \
+        "\033[1;31minvalid argument count for %s.%s: got %ui; expected %i" \
         "\033[0;37m\n",                                                    \
-        getTypeName(a), f, b.size(), c)
+        getTypeName(a), (f), (b).size(), (c))
 
 #define err_rng(a, b)                                                       \
     error_exit(                                                             \

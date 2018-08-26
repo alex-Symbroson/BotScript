@@ -9,10 +9,10 @@ PCH       = headers.hpp
 ISPI = $(shell cat ispi)
 
 	# compiler flags
-CFLAGS  = -I . -I $(DIR_INC) -Wall -std=c++11# -O3
+CFLAGS  = -I . -I $(DIR_INC) -Wall -std=c++11 -fPIE # -O3
 
 	# linker flags
-LDFLAGS  = -pthread
+LDFLAGS  = -pthread -fPIE -pie
 
 ifeq (ISPI,true)
 	LDFLAGS += -lwiringPi

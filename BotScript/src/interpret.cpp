@@ -212,6 +212,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
     if (*c != end) {
         block.clear();
+        END();
         if (!end)
             error_exit("invalid token '%c' - expected EOF", *c);
         else

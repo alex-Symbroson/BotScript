@@ -1,8 +1,9 @@
 
-// TODO: 446928
-//      toFunction(): keywords
-//      RaspiBot functions
+// TODO:
+//      toFunction(): keywords, control statements
 //      all isOperator to prev.hasOperator
+//      operator precedence
+//      RaspiBot functions
 
 unsigned int debug_func_intd = 0;
 

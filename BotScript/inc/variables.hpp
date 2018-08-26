@@ -44,17 +44,23 @@ typedef string var_str;
 typedef vector<PVar> var_lst;
 typedef unordered_map<string, PVar> var_obj;
 
-typedef function<PVar(var_lst)> TFunc;
-typedef function<PVar(PVar, PVar)> TFuncOp;
-typedef unordered_map<string, TFunc> FuncMap;
-typedef unordered_map<string, TFuncOp> FuncMapOp;
+typedef function<PVar(var_lst)> TFuncSmp;
+typedef function<PVar(PVar, PVar)> TFuncOpr;
+// typedef unordered_map<string, TFuncSmp> FuncMapSmp;
+typedef unordered_map<string, TFuncOpr> FuncMapOpr;
 
 typedef struct {
     const char* name;
-    TFunc func;
-} TBltFnc;
+    forward_list<var_obj> vars; // list for recursive calls
+    var_lst func;               // content
+} TFunc;
 
-typedef TBltFnc* var_bfn;
+typedef struct {
+    const char* name;
+    TFuncSmp func;
+} TBltFunc;
+
+typedef TBltFunc* var_bfn;
 
 typedef TVar<var_nil> TNil;
 typedef TVar<var_int> TInt;
@@ -73,7 +79,7 @@ void cleanupCollector();
 void FreeVariables();
 const char* typeName(uint8_t t);
 
-extern FuncMapOp operations[TCNT];
+extern FuncMapOpr operations[TCNT];
 extern PVar handleLine(var_lst& line);
 extern uint8_t VAR_Type[];
 extern forward_list<PVar> collector; // garbage collector
@@ -82,9 +88,15 @@ extern forward_list<PVar> collector; // garbage collector
 #define callP(a, o, b) (operations[*(a)->ptype])[o]((a), (b))
 #define callT(a, o, b) (operations[(a).type])[o]((a), (b))
 
-// macros for getting var instance values
+// macros for type related values
 #define getType(var) (*(var)->ptype)
+#define baseType(type) VAR_Type[type]
+#define getBaseType(var) VAR_Type[getType(var)]
 #define getTypeName(var) typeName(getType(var))
+#define baseTypeName(type) typeName(baseType(type))
+#define getBaseTypeName(var) typeName(getBaseType(var))
+
+// macros for getting var instance values
 #define getIntP(var) ((var_int*)(var)->getPtr())
 #define getInt(var) (*(var_int*)(var)->getPtr())
 #define getFltP(var) ((var_flt*)(var)->getPtr())
@@ -100,7 +112,8 @@ extern forward_list<PVar> collector; // garbage collector
 
 class IVar {
   public:
-    uint8_t* ptype;
+    uint8_t* ptype  = NULL;
+    bool isConst    = false;
     uint32_t refcnt = 0;
 
     IVar();
@@ -122,7 +135,7 @@ class TVar : public IVar {
 
     T value;
 
-    TVar(T, uint8_t = 0);
+    TVar(T, uint8_t = 0, bool isConst = true);
     ~TVar();
 
     PVar getVar();

@@ -6,7 +6,7 @@
 #include "variables.hpp"
 
 #define getBltin(NAME) (&builtins[NAME])
-extern unordered_map<string, TBltFnc> builtins;
+extern unordered_map<string, TBltFunc> builtins;
 
 void initBuiltins();
 bool isBuiltin(const char*);
