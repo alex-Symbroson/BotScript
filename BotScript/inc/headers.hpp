@@ -9,9 +9,10 @@
 #include <string.h>
 #include <time.h>
 
-#include <forward_list> //alternative linked list container
+#include <forward_list>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <string>
 #include <unordered_map> //k:v object container
 #include <vector>        //alternative array based list container

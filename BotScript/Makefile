@@ -12,14 +12,14 @@ ISPI = $(shell cat ispi)
 CFLAGS  = -I . -I $(DIR_INC) -Wall -std=c++11 -fPIE # -O3
 
 	# linker flags
-LDFLAGS  = -pthread -fPIE -pie
+LDFLAGS  = -pthread -pie
 
 ifeq (ISPI,true)
 	LDFLAGS += -lwiringPi
 endif
 
 ifeq ($(debug),true)
-	CFLAGS += -I nvwa
+	CFLAGS += -I nvwa -g
 	LDFLAGS += nvwa/debug_new.cpp
 endif
 

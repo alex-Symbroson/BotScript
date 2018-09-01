@@ -2,7 +2,6 @@
 #ifndef _BS_EXT_HPP_
 #define _BS_EXT_HPP_
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -44,7 +43,7 @@ extern unsigned int debug_func_intd;
 
 #define err_iac(a, b, f, c)                                                \
     error_exit(                                                            \
-        "\033[1;31minvalid argument count for %s.%s: got %ui; expected %i" \
+        "\033[1;31minvalid argument count for %s.%s: got %lu; expected %i" \
         "\033[0;37m\n",                                                    \
         getTypeName(a), (f), (b).size(), (c))
 

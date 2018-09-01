@@ -13,6 +13,11 @@ typedef struct {
 
 extern unordered_map<string, Operator> operators;
 
+//#define isOperator(s) (operators.find(s) != operators.end())
+inline bool isOperator(string s) {
+    return operators.find(s) != operators.end();
+}
+
 PVar handleLine(var_lst& line);
 
 void handleScope(var_lst& scope);

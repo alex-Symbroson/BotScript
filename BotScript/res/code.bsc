@@ -2,6 +2,10 @@
 println(("Hello ") + ("World" + "!"));
 println();
 
+if  (false) do { println(" is true");  }
+elif(false) do { println("eis true"); }
+else { println("is false"); }
+
 /* input test */
 // print("you typed:", input("type smth: "));
 
@@ -49,4 +53,8 @@ println([
 -99.9999999, -1299.999999, -1234.9999999, -12.349999999, -0.999999, -0.12999999
 -0.04567].join("  "));
 
-println("end.");
+println("type quit");
+
+while(input() != "quit") do {
+    delay(1000);
+};

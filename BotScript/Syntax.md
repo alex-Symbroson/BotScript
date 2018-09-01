@@ -2,16 +2,18 @@
 # Botscript
 
 ## Keywords
-Keyword  | Usage
--------  | -------
-```import```   | import file
-```var```      | declare variable with dynamic type
-```loop```     | counting loop
-```while```    | condition loop
-```continue``` | jump to next loop cycle
-```break```    | leave loop
-```return```   | leave function
-```(null)```   | no value (default value for var)
+Keyword | Syntax | Description
+------- | ------ | -----------
+```import```   | ```inport "file1", "file2";```          | import file
+```var```      | ```var myvar1, myvar2;```               | declare variable with dynamic type
+```loop```     | ```loop(?)```                           | counting loop
+```while```    | ```while () do {};  do {} while ();```  | condition loop
+```until```    | ```until () do {};  do {} until ();```  | condition loop
+```if```       | ```if () do {} elif () do {} else {}``` | condition blocks
+```continue``` | ```continue;```                         | jump to next loop cycle
+```break```    | ```break;```                            | leave loop
+```return```   | ```return myvar;```                     | leave function
+```(null)```   | ```null;```                             | no value (default value for var)
 
 ## Operators
 -> see http://www.cplusplus.com/doc/tutorial/operators

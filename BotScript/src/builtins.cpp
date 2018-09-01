@@ -16,7 +16,7 @@ void initBuiltins() {
         newFunc( "print", {
             BEGIN("print args=%s", TLst(args).toStr().c_str());
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {});
 
                 for (PVar& v: args) printf("%s", TOSTR(v));
@@ -28,7 +28,7 @@ void initBuiltins() {
         newFunc( "println", {
             BEGIN("println args=%s", TLst(args).toStr().c_str());
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {});
                 for (PVar& v: args) printf("%s\n", TOSTR(v));
 
@@ -42,7 +42,7 @@ void initBuiltins() {
         newFunc( "input", {
             BEGIN("input args=%s", TLst(args).toStr().c_str());
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {});
                 printf("%s", TOSTR(args[0]));
             }
@@ -56,7 +56,7 @@ void initBuiltins() {
         newFunc( "delay", {
             BEGIN("delay args=%s", TLst(args).toStr().c_str());
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {});
                 uint8_t type = getType(args[0]);
 
@@ -81,7 +81,7 @@ void initBuiltins() {
             BEGIN("typeof args=%s", TLst(args).toStr().c_str());
             END("typeof");
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {V_NULL});
                 return NEWVAR(TStr(getTypeName(args[0])));
             } else
@@ -92,7 +92,7 @@ void initBuiltins() {
             BEGIN("typeof args=%s", TLst(args).toStr().c_str());
             END("toString");
 
-            if (args.size()) {
+            if (!args.empty()) {
                 EVALARGS(args, {});
                 return NEWVAR(TStr(escape(args[0]->toStr())));
             } else

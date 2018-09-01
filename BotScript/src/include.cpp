@@ -5,36 +5,6 @@
 static const char digits[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-bool isSymbol(char c) {
-    // BEGIN("%c", c);
-    // characters interpreted as symbols
-    static const string s_symbols("/\\():,.;<>~!@#$%^&*|+=[]{}`?-…");
-    // END();
-    return (s_symbols.find(c) + 1);
-}
-
-bool isWhitespace(char c) {
-    // BEGIN("%c", c);
-    // whitespace characters
-    static const string s_whitespace(" \t\r\n");
-    // END();
-    return (s_whitespace.find(c) + 1);
-}
-
-bool isOperator(char c) {
-    // BEGIN("%c", c);
-    // characters interpreted as operators
-    static const string s_operators("<>!%^&*|+=.");
-    // END();
-    return (s_operators.find(c) + 1);
-}
-
-bool isOperator(string s) {
-    // BEGIN("%s", s.c_str());
-    // END();
-    return operators.find(s) != operators.end();
-}
-
 char* dtos2(long double num, uint8_t rad) {
     BEGIN("num=%LF,r=%i", num, rad);
 
@@ -108,12 +78,11 @@ char* dtos2(long double num, uint8_t rad) {
                     } else
                         c[1] = 0;
 
-                    if (*c == '9')
-                        *c = 'A';
-                    else if (*c == 'Z')
-                        *c = 'a';
-                    else
-                        (*c)++;
+                    switch (*c) {
+                        case '9': *c = 'A'; break;
+                        case 'z': *c = 'a'; break;
+                        default: (*c)++;
+                    }
 
                     break;
                 }
@@ -141,10 +110,6 @@ char* dtos2(long double num, uint8_t rad) {
 
     END("-> \"%s\"", begin);
     return strdup(begin);
-}
-
-long double stod2(string& s) {
-    return stod2(s.c_str());
 }
 
 long double stod2(const char* s) {
@@ -211,15 +176,15 @@ void delay(long double time) {
 
 // replace all in string
 string replace(string str, string src, string ovr) {
-    BEGIN(
+    /*BEGIN(
         "string*str=\"%s\",string src=\"%s\",string ovr=\"%s\"", str.c_str(),
-        src.c_str(), ovr.c_str());
+        src.c_str(), ovr.c_str());*/
     int start = 0;
     while ((start = str.find(src, start)) + 1) {
         str.replace(start, src.size(), ovr);
         start += ovr.size(); // case 'ovr' is substring of 'src'
     }
-    END("-> %s", str.c_str());
+    // END("-> %s", str.c_str());
     return str;
 }
 
@@ -234,26 +199,26 @@ string replace(string str, string src, string ovr) {
 // replace some escape sequences
 string unescape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
-    if (s.size()) {
+    if (!s.empty()) {
         s = REPLACE5(
             REP("\\\"", "\""), REP("\\n", "\n"), REP("\\t", "\t"),
             REP("\\033", "\033"), REP("\\\\", "\\") /*must be last*/);
     }
-    return s;
     END();
+    return s;
 }
 
 // undo replacement of escape sequences
 string escape(string s) {
     BEGIN("string*s=\"%s\"", s.c_str());
-    if (s.size()) {
+    if (!s.empty()) {
         s = REPLACE5(
             REP("\\", "\\\\"), /* must be first*/
             REP("\"", "\\\""), REP("\n", "\\n"), REP("\t", "\\t"),
             REP("\033", "\\033"));
     }
-    return s;
     END();
+    return s;
 }
 
 // ignore == true -> ignore useless whitespace
@@ -265,12 +230,19 @@ string readFile(const char* path, bool ignore) {
     if (!f) error("file \"%s\" does not exist!", path);
 
     // character from file
-    int c;
+    int c, lc = 0;
     string content = "";
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
             // whitespace
-            while (c != EOF && isWhitespace(c)) c = fgetc(f);
+            if (isWhitespace(c)) {
+                do
+                    c = fgetc(f);
+                while (c != EOF && isWhitespace(c));
+
+                // keep two words separated
+                if (!isSymbol(lc) && !isSymbol(c)) content += ' ';
+            }
 
             // strings
             if (c == '"') {
@@ -295,6 +267,7 @@ string readFile(const char* path, bool ignore) {
                         brk = (c == '*');
                     }
                 }
+                lc = c;
                 continue;
             }
 
@@ -302,6 +275,7 @@ string readFile(const char* path, bool ignore) {
                 break;
             else
                 content += c;
+            lc = c;
         }
     } else {
         while ((c = fgetc(f)) != EOF) content += c;

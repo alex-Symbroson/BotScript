@@ -10,8 +10,12 @@
 #define FUNCTION (PVar a, PVar b)->PVar
 FuncMapOpr operations[TCNT];
 
-uint8_t VAR_Type[] = {T_INT, T_STR, T_INT, T_FLT, T_STR, T_LST, T_OBJ,
-                      T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR};
+uint8_t VAR_Type[CCNT] = {T_INT, T_INT, T_INT, T_FLT, T_STR, T_LST,
+                          T_OBJ, T_INT, T_LST, T_LST, T_STR, T_LST,
+                          T_BFN, T_STR, T_NIL, T_INT, T_INT, T_LST,
+                          T_LST, T_LST, T_LST, T_LST, T_LST};
+
+list<PVar> collector = {};
 
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
@@ -19,7 +23,8 @@ const char* typeName(uint8_t t) {
     // END();
     switch (t) {
         case T_NIL: return "null";
-        case T_VAR: return "var";
+        // case T_VAR: return "var";
+        case T_BIN: return "boolean";
         case T_INT: return "integer";
         case T_FLT: return "float";
         case T_STR: return "string";
@@ -29,24 +34,37 @@ const char* typeName(uint8_t t) {
         case T_TRM: return "term";
         case T_FNC: return "function";
         case T_OPR: return "operator";
-        case T_ARGS: return "arguments";
+        case T_ARG: return "arguments";
         case T_BFN: return "builtin_function";
         case T_MFN: return "member_function";
-        default: return "undefined";
+
+        case K_NIL: return "null";
+        case K_TRU: return "true";
+        case K_FLS: return "false";
+
+        case C_CIF: return "if";
+        case C_EIF: return "elif";
+        case C_ELS: return "else";
+        case C_CDO: return "do";
+        case C_WHL: return "while";
+        case C_UNT: return "until";
+
+        default:
+            error_exit("unknown type id %i - report", t);
+            return "undefined";
     }
 }
-
-forward_list<PVar> collector = {};
 
 IVar::IVar() {
     // BEGIN();
     collector.push_front(this);
+    this->it = collector.begin();
     // END("-> %p", this);
 }
 
 IVar::~IVar() {
     // BEGIN("%p ~IVar<%s>", this, typeName(getType(this)));
-    collector.remove(this);
+    collector.erase(this->it);
     // END();
 }
 
@@ -56,10 +74,8 @@ IVar::~IVar() {
     TVar<TYPE>::TVar(TYPE v, uint8_t typeID, bool Const) {                    \
         /* BEGIN(); */                                                        \
                                                                               \
-        value = v;                                                            \
         if (typeID) {                                                         \
             if (baseType(typeID) != baseType(TYPEID)) {                       \
-                END();                                                        \
                 error_exit(                                                   \
                     "cannot assign %s of type %s to %s of type %s",           \
                     typeName(typeID), baseTypeName(typeID), typeName(TYPEID), \
@@ -69,8 +85,10 @@ IVar::~IVar() {
         } else                                                                \
             type = TYPEID;                                                    \
                                                                               \
-        ptype   = &type;                                                      \
+        value   = v;                                                          \
         isConst = Const;                                                      \
+        pval    = &value;                                                     \
+        ptype   = &type;                                                      \
                                                                               \
         /*END("-> %p : TVar<%s> %s", this, typeName(this->type),              \
             TOSTR(this));*/                                                   \
@@ -99,6 +117,20 @@ TypeClassDef(, var_bfn, T_BFN);
 void initOperations() {
     BEGIN();
     operations[T_INT] = {
+        {"equal", [] FUNCTION {
+            switch(getType(b)) {
+                case T_INT: return NEWVAR(TInt(getInt(a) == getInt(b), T_BIN));
+                case T_FLT: return NEWVAR(TInt(getInt(a) == getFlt(b), T_BIN));
+                default   : return NEWVAR(TInt(0, T_BIN));
+            }
+        }},
+        {"nequal", [] FUNCTION {
+            switch(getType(b)) {
+                case T_INT: return NEWVAR(TInt(getInt(a) != getInt(b), T_BIN));
+                case T_FLT: return NEWVAR(TInt(getInt(a) != getFlt(b), T_BIN));
+                default   : return NEWVAR(TInt(1, T_BIN));
+            }
+        }},
         {"add", [] FUNCTION {
             switch(getType(b)) {
                 case T_INT: return NEWVAR(TInt(getInt(a) + getInt(b)));
@@ -140,7 +172,7 @@ void initOperations() {
         {"toStr", [] FUNCTION {
             var_lst args = getLst(b);
 
-            if(args.size()) {
+            if(!args.empty()) {
                 EVALARGS(args, {});
                 if(getType(args[0]) == T_INT)
                     return NEWVAR(TStr(dtos2(getInt(a), getInt(args[0]))));
@@ -152,6 +184,20 @@ void initOperations() {
     },
 
     operations[T_FLT] = {
+        {"equal", [] FUNCTION {
+            switch(getType(b)) {
+                case T_INT: return NEWVAR(TInt(getFlt(a) == getInt(b), T_BIN));
+                case T_FLT: return NEWVAR(TInt(getFlt(a) == getFlt(b), T_BIN));
+                default   : return NEWVAR(TInt(0, T_BIN));
+            }
+        }},
+        {"nequal", [] FUNCTION {
+            switch(getType(b)) {
+                case T_INT: return NEWVAR(TInt(getFlt(a) != getInt(b), T_BIN));
+                case T_FLT: return NEWVAR(TInt(getFlt(a) != getFlt(b), T_BIN));
+                default   : return NEWVAR(TInt(1, T_BIN));
+            }
+        }},
         {"add", [] FUNCTION {
             switch(getType(b)) {
                 case T_INT: return NEWVAR(TFlt(getFlt(a) + getInt(b)));
@@ -192,7 +238,7 @@ void initOperations() {
         {"toStr", [] FUNCTION {
             var_lst args = getLst(b);
 
-            if(args.size()) {
+            if(!args.empty()) {
                 EVALARGS(args, {});
                 if(getType(args[0]) == T_INT)
                     return NEWVAR(TStr(dtos2(getFlt(a), getInt(args[0]))));
@@ -204,6 +250,18 @@ void initOperations() {
     };
 
     operations[T_STR] = {
+        {"equal", [] FUNCTION {
+            if(getType(b) == T_STR)
+                return NEWVAR(TInt(getStr(a) == getStr(b), T_BIN));
+            else
+                return NEWVAR(TInt(0, T_BIN));
+        }},
+        {"nequal", [] FUNCTION {
+            if(getType(b) == T_STR)
+                return NEWVAR(TInt(getStr(a) != getStr(b), T_BIN));
+            else
+                return NEWVAR(TInt(1, T_BIN));
+        }},
         {"add", [] FUNCTION {
             if(getType(b) == T_STR)
                 return NEWVAR(TStr(getStr(a) + getStr(b)));
@@ -224,13 +282,14 @@ void initOperations() {
         {"call", [] FUNCTION {
             BEGIN("%s call %s", TOSTR(a), TOSTR(b));
 
-            if (getType(b) == T_ARGS) {
+            if (getType(b) == T_ARG) {
                 PVar res = getBfn(a)->func(getLst(b));
                 END("%s", TOSTR(res));
                 return res;
             } else
                 err_iop("call", a, b);
-        }}};
+        }}
+    };
 
     operations[T_LST] = {
         {"push", [] FUNCTION {
@@ -258,7 +317,7 @@ void initOperations() {
         {"join", [] FUNCTION {
             var_lst args = getLst(b);
 
-            if(args.size()) {
+            if(!args.empty()) {
                 EVALARGS(args, {});
                 string result = "", sep = "";
 
@@ -270,7 +329,8 @@ void initOperations() {
                 return NEWVAR(TStr(result));
             } else
                 err_iac(a, args, "join", 1);
-        }}};
+        }}
+    };
 
     END();
 }
@@ -308,24 +368,22 @@ void setDefault(var_lst& args, const var_lst& dflt) {
     args = fargs;
 }
 
-bool hasOperator(PVar& v, char o) {
-    BEGIN();
-    if (isOperator(o)) {
-        string op;
-        op += o;
-        op = operators[op].name;
-        END();
-        return operations[getType(v)].find(op) != operations[getType(v)].end();
+bool hasOperator(PVar& v, string o) {
+    BEGIN("v=%s, op=%s", getTypeName(v), o.c_str());
+    auto opr = operations[getType(v)];
+    if (opr.find(o) != opr.end()) {
+        END("-> %i", 1);
+        return true;
+    } else {
+        auto pop = operators.find(o);
+        if (pop != operators.end()) {
+            o = pop->second.name;
+            END("-> %i", opr.find(o) != opr.end());
+            return opr.find(o) != opr.end();
+        }
     }
-    END();
+    END("-> %i", 0);
     return false;
-}
-
-bool hasOperator(PVar& v, string op) {
-    BEGIN();
-    END();
-    if (isOperator(op)) op = operators[op].name;
-    return operations[getType(v)].find(op) != operations[getType(v)].end();
 }
 
 void cleanupCollector() {
@@ -333,7 +391,7 @@ void cleanupCollector() {
     collector.remove_if([&n](PVar& v) {
         if (!v->refcnt) {
             n++;
-            return true;
+            delete v;
         }
         return false;
     });
@@ -343,10 +401,11 @@ void cleanupCollector() {
 void FreeVariables() {
     BEGIN();
     uint32_t n = 0;
-    while (!collector.empty()) {
-        delete collector.front();
+    collector.remove_if([&n](PVar& v) {
         n++;
-    }
+        delete v;
+        return false;
+    });
     INFO("freed %i variables", n);
     /*
     printf(

@@ -45,7 +45,7 @@ void Thread::cancel(uint8_t id) {
 #ifdef __ANDROID__
     int status;
     if (status = pthread_kill(id, SIGUSR1)) {
-        printf(
+        error_exit(
             "Error cancelling thread %d, error = %d (%s)", id, status,
             strerror(status));
     }
