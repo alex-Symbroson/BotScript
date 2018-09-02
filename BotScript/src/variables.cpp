@@ -114,57 +114,57 @@ TypeClassDef(, var_bfn, T_BFN);
 
 // clang-format off
 
-void initOperations() {
+bool initOperations() {
     BEGIN();
     operations[T_INT] = {
         {"equal", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) == getInt(b), T_BIN));
-                case T_FLT: return NEWVAR(TInt(getInt(a) == getFlt(b), T_BIN));
-                default   : return NEWVAR(TInt(0, T_BIN));
+                case T_INT: return newBin(getInt(a) == getInt(b));
+                case T_FLT: return newBin(getInt(a) == getFlt(b));
+                default   : return newBin(false);
             }
         }},
         {"nequal", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) != getInt(b), T_BIN));
-                case T_FLT: return NEWVAR(TInt(getInt(a) != getFlt(b), T_BIN));
-                default   : return NEWVAR(TInt(1, T_BIN));
+                case T_INT: return newBin(getInt(a) != getInt(b));
+                case T_FLT: return newBin(getInt(a) != getFlt(b));
+                default   : return newBin(true);
             }
         }},
         {"add", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) + getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getInt(a) + getFlt(b)));
+                case T_INT: return newInt(getInt(a) + getInt(b));
+                case T_FLT: return newFlt(getInt(a) + getFlt(b));
                 default   : err_iop("+", a, b);
             }
         }},
         {"sub", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) - getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getInt(a) - getFlt(b)));
+                case T_INT: return newInt(getInt(a) - getInt(b));
+                case T_FLT: return newFlt(getInt(a) - getFlt(b));
                 default   : err_iop("-", a, b);
             }
         }},
         {"mul", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) * getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getInt(a) * getFlt(b)));
+                case T_INT: return newInt(getInt(a) * getInt(b));
+                case T_FLT: return newFlt(getInt(a) * getFlt(b));
                 default   : err_iop("*", a, b);
             }
         }},
         {"div", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) / getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getInt(a) / getFlt(b)));
+                case T_INT: return newInt(getInt(a) / getInt(b));
+                case T_FLT: return newFlt(getInt(a) / getFlt(b));
                 default   : err_iop("/", a, b);
             }
         }},
         {"mod", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getInt(a) % getInt(b)));
+                case T_INT: return newInt(getInt(a) % getInt(b));
                 case T_FLT: {
                     var_flt c = getInt(a), d = getFlt(b);
-                    return NEWVAR(TFlt(c - d * floor(c / d)));
+                    return newFlt(c - d * floor(c / d));
                 }
                 default   : err_iop("%", a, b);
             }
@@ -175,54 +175,54 @@ void initOperations() {
             if(!args.empty()) {
                 EVALARGS(args, {});
                 if(getType(args[0]) == T_INT)
-                    return NEWVAR(TStr(dtos2(getInt(a), getInt(args[0]))));
+                    return newStr(dtos2(getInt(a), getInt(args[0])));
                 else
                     err_iat(a, args[0], "toString", T_INT);
             } else
-                return NEWVAR(TStr(dtos2(getInt(a), 10)));
+                return newStr(dtos2(getInt(a), 10));
         }}
     },
 
     operations[T_FLT] = {
         {"equal", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getFlt(a) == getInt(b), T_BIN));
-                case T_FLT: return NEWVAR(TInt(getFlt(a) == getFlt(b), T_BIN));
-                default   : return NEWVAR(TInt(0, T_BIN));
+                case T_INT: return newBin(getFlt(a) == getInt(b));
+                case T_FLT: return newBin(getFlt(a) == getFlt(b));
+                default   : return newBin(false);
             }
         }},
         {"nequal", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TInt(getFlt(a) != getInt(b), T_BIN));
-                case T_FLT: return NEWVAR(TInt(getFlt(a) != getFlt(b), T_BIN));
-                default   : return NEWVAR(TInt(1, T_BIN));
+                case T_INT: return newBin(getFlt(a) != getInt(b));
+                case T_FLT: return newBin(getFlt(a) != getFlt(b));
+                default   : return newBin(true);
             }
         }},
         {"add", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TFlt(getFlt(a) + getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getFlt(a) + getFlt(b)));
+                case T_INT: return newFlt(getFlt(a) + getInt(b));
+                case T_FLT: return newFlt(getFlt(a) + getFlt(b));
                 default   : err_iop("+", a, b);
             }
         }},
         {"sub", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TFlt(getFlt(a) - getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getFlt(a) - getFlt(b)));
+                case T_INT: return newFlt(getFlt(a) - getInt(b));
+                case T_FLT: return newFlt(getFlt(a) - getFlt(b));
                 default   : err_iop("-", a, b);
             }
         }},
         {"mul", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TFlt(getFlt(a) * getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getFlt(a) * getFlt(b)));
+                case T_INT: return newFlt(getFlt(a) * getInt(b));
+                case T_FLT: return newFlt(getFlt(a) * getFlt(b));
                 default   : err_iop("*", a, b);
             }
         }},
         {"div", [] FUNCTION {
             switch(getType(b)) {
-                case T_INT: return NEWVAR(TFlt(getFlt(a) / getInt(b)));
-                case T_FLT: return NEWVAR(TFlt(getFlt(a) / getFlt(b)));
+                case T_INT: return newFlt(getFlt(a) / getInt(b));
+                case T_FLT: return newFlt(getFlt(a) / getFlt(b));
                 default   : err_iop("/", a, b);
             }
         }},
@@ -233,7 +233,7 @@ void initOperations() {
                 case T_FLT: d = getFlt(b);
                 default   : err_iop("%", a, b);
             }
-            return NEWVAR(TFlt(c - d * floor(c / d)));
+            return newFlt(c - d * floor(c / d));
         }},
         {"toStr", [] FUNCTION {
             var_lst args = getLst(b);
@@ -241,40 +241,40 @@ void initOperations() {
             if(!args.empty()) {
                 EVALARGS(args, {});
                 if(getType(args[0]) == T_INT)
-                    return NEWVAR(TStr(dtos2(getFlt(a), getInt(args[0]))));
+                    return newStr(dtos2(getFlt(a), getInt(args[0])));
                 else
                     err_iat(a, args[0], "toString", T_INT);
             } else
-                return NEWVAR(TStr(dtos2(getFlt(a), 10)));
+                return newStr(dtos2(getFlt(a), 10));
         }}
     };
 
     operations[T_STR] = {
         {"equal", [] FUNCTION {
             if(getType(b) == T_STR)
-                return NEWVAR(TInt(getStr(a) == getStr(b), T_BIN));
+                return newBin(getStr(a) == getStr(b));
             else
-                return NEWVAR(TInt(0, T_BIN));
+                return newBin(false);
         }},
         {"nequal", [] FUNCTION {
             if(getType(b) == T_STR)
-                return NEWVAR(TInt(getStr(a) != getStr(b), T_BIN));
+                return newBin(getStr(a) != getStr(b));
             else
-                return NEWVAR(TInt(1, T_BIN));
+                return newBin(true);
         }},
         {"add", [] FUNCTION {
             if(getType(b) == T_STR)
-                return NEWVAR(TStr(getStr(a) + getStr(b)));
+                return newStr(getStr(a) + getStr(b));
             else err_iop("+", a, b);
         }},
         {"toInt", [] FUNCTION {
             string s = getStr(a);
             int32_t pos = s.find('.');
             if(pos > -1) s[pos] = 0;
-            return NEWVAR(TInt(stod2(s)));
+            return newInt(stod2(s));
         }},
         {"toFlt", [] FUNCTION {
-            return NEWVAR(TFlt(stod2(getStr(a))));
+            return newFlt(stod2(getStr(a)));
         }}
     };
 
@@ -294,7 +294,7 @@ void initOperations() {
     operations[T_LST] = {
         {"push", [] FUNCTION {
             getLst(a).push_back(b);
-            return NEWVAR(TInt(getLst(a).size()));
+            return newInt(getLst(a).size());
         }},
         {"pop", [] FUNCTION {
             PVar ret = getLst(a).back();
@@ -326,13 +326,14 @@ void initOperations() {
 
                 for (PVar& v: getLst(a)) result += v->toStr() + sep;
 
-                return NEWVAR(TStr(result));
+                return newStr(result);
             } else
                 err_iac(a, args, "join", 1);
         }}
     };
 
-    END();
+    END("-> false");
+    return false;
 }
 
 // clang-format on
@@ -343,12 +344,12 @@ PVar evalExpr(PVar& expr) {
         case T_LST: {
             var_lst lst;
             for (PVar& v: getLst(expr)) lst.push_back(evalExpr(v));
-            return NEWVAR(TLst(lst));
+            return newLst(lst);
         }
         case T_OBJ: {
             var_obj obj;
             for (auto& v: getObj(expr)) obj[v.first] = evalExpr(v.second);
-            return NEWVAR(TObj(obj));
+            return newObj(obj);
         }
         default: return expr;
     }

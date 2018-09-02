@@ -2,6 +2,8 @@
 println(("Hello ") + ("World" + "!"));
 println();
 
+Bot_Write("Hello World");
+
 if  (false) do { println(" is true");  }
 elif(false) do { println("eis true"); }
 else { println("is false"); }

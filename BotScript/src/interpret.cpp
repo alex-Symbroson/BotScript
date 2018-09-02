@@ -167,7 +167,7 @@ err_tok:
 // scope interpreter
 void handleScope(var_lst& scope) {
     BEGIN("var_lst*scope");
-    for (auto& line: scope) handleLine(getLst(line));
+    for (auto& line: scope) delete handleLine(getLst(line));
     END();
 }
 
@@ -197,7 +197,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                 if (lastType == T_STR)
                     getStr(line.back()) += unescape(word);
                 else
-                    addVar(NEWVAR(TStr(unescape(word))));
+                    addVar(newStr(unescape(word)));
 
                 DEBUG("\"%s\": %s", word.c_str(), typeName(T_STR));
             } break;
@@ -229,11 +229,11 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     type = T_ARG;
                 } else if (type == T_TRM && lastType == T_BFN) {
                     type = T_ARG;
-                    addVar(NEWVAR(TStr("call")));
+                    addVar(newStr("call"));
                 } else if (
                     type == T_LST && (lastType == T_LST || lastType == T_OBJ)) {
                     type = T_TRM;
-                    addVar(NEWVAR(TStr("at", T_OPR)));
+                    addVar(newOpr("at"));
                 }
                 if (lastType > TCNT) {
                     if (type == getKeyType(lastType))
@@ -259,7 +259,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     if (line.size() == 1)
                         block.push_back(line[0]);
                     else
-                        block.push_back(NEWVAR(TLst(line, T_TRM)));
+                        block.push_back(newTrm(line));
 
                     line.clear();
                     lastType = T_NIL;
@@ -274,7 +274,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                         word += *c;
                     } while (isOperator(word + *++c) && *c != end);
 
-                    addVar(NEWVAR(TStr(operators.at(word).name, T_OPR)));
+                    addVar(newOpr(operators.at(word).name));
                 } else {
                     // clang-format off
                     do {
@@ -297,8 +297,8 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     if (kwtype != keywords.end()) {
                         switch (kwtype->second) {
                             case K_NIL: addVar(V_NULL); break;
-                            case K_TRU: addVar(NEWVAR(TInt(1, T_BIN))); break;
-                            case K_FLS: addVar(NEWVAR(TInt(0, T_BIN))); break;
+                            case K_TRU: addVar(newBin(true)); break;
+                            case K_FLS: addVar(newBin(false)); break;
                             default:
                                 lastType = kwtype->second;
                                 DEBUG("keyword %i", kwtype->second);
@@ -314,16 +314,16 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
                         // builtin
                     } else if (isBuiltin(word.c_str())) {
-                        addVar(NEWVAR(TBfn(getBltin(word))));
+                        addVar(newBfn(getBltin(word)));
 
                         // number
                     } else if (
                         (word[0] >= '0' && word[0] <= '9') ||
                         (word[0] == '.' || word[0] == '-' || word[0] == '+')) {
                         if ((long)word.find(".") == -1)
-                            addVar(NEWVAR(TInt(stod2(word))));
+                            addVar(newInt(stod2(word)));
                         else
-                            addVar(NEWVAR(TFlt(stod2(word))));
+                            addVar(newFlt(stod2(word)));
 
                     } else {
                         error_exit("unexpected token %s", word.c_str());
@@ -349,7 +349,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
     if (line.size() == 1)
         block.push_back(line[0]);
     else if (!line.empty())
-        block.push_back(NEWVAR(TLst(line, T_TRM)));
+        block.push_back(newTrm(line));
 
     END();
     return block;

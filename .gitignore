@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+*.pyc
 
 # Precompiled Headers
 *.gch
@@ -30,6 +31,8 @@
 
 #   hidden folders / files
 .*
+ispi
+isbot
 
 #   logs
 *.log

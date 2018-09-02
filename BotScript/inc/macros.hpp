@@ -11,6 +11,16 @@ extern unsigned int debug_func_intd;
 #define _ERR_EXIT_ 1 // exit on error
 #define COMMA ,
 
+extern void Free();
+
+#ifndef ISPI
+#    define ISPI false
+#endif
+
+#ifndef ISBOT
+#    define ISBOT true
+#endif
+
 // doesnt work for empty argument list
 #define VA_ARGC_SEQ(                                                         \
     _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16,   \
@@ -52,11 +62,13 @@ extern unsigned int debug_func_intd;
         "\033[1;31m%s index '%s' out of range\033[0;37m\n", getTypeName(a), \
         TOSTR(b))
 
-#define error(a, ...) printf("\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
+#define error(a, ...) \
+    fprintf(stderr, "\033[1;31m" a "\033[0;37m\n", ##__VA_ARGS__)
+
+#define Exit() (Free(), exit(1))
 
 #if defined(_ERR_EXIT_) && _ERR_EXIT_ != 0
-#    define error_exit(a, ...) \
-        (error(a, ##__VA_ARGS__), FreeVariables(), exit(0))
+#    define error_exit(a, ...) (error(a, ##__VA_ARGS__), Exit())
 #else
 #    define error_exit error
 #endif

@@ -5,21 +5,27 @@ DIR_SRC   = src/
 DIR_INC   = inc/
 PCH       = headers.hpp
 
-	# check for pi
-ISPI = $(shell cat ispi)
+	# check for pi and bot
+ISPI  = $(shell [ -e ispi  ] || echo false > ispi;  cat ispi)
+ISBOT = $(shell [ -e isbot ] || echo false > isbot; cat isbot)
 
 	# compiler flags
-CFLAGS  = -I . -I $(DIR_INC) -Wall -std=c++11 -fPIE # -O3
+CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -fPIE -D ISPI=$(ISPI) -D ISBOT=$(ISBOT) # -O3
 
 	# linker flags
 LDFLAGS  = -pthread -pie
 
-ifeq (ISPI,true)
+ifeq ($(ISPI),true)
 	LDFLAGS += -lwiringPi
 endif
 
+ifeq ($(ISBOT),true)
+	CFLAGS += $(shell python2.7-config --includes)
+	LDFLAGS += $(shell python2.7-config --libs)
+endif
+
 ifeq ($(debug),true)
-	CFLAGS += -I nvwa -g
+	CFLAGS += -Invwa -g
 	LDFLAGS += nvwa/debug_new.cpp
 endif
 
@@ -48,21 +54,22 @@ all: all_init $(DIR_INC)$(PCH).gch $(OUTPUT).out
 	@printf "\nCompilation done - No Errors.\n"
 
 all_init:
+	@echo "pi: $(ISPI) bot: $(ISBOT)"
 	@printf "\nbasepth: $(foreach name, $(basename $(notdir $(SRC))), $(DIR_BUILD)$(name).o)\n"
 	@printf "\n#### compiling project\n"
 	mkdir -p $(DIR_BUILD)
 
 %.out: $(OBJ)
 	@printf "\n#### linking project\n"
-	g++ $(CFLAGS) $(LDFLAGS) $(OBJ) -o $@ -D ISPI=$(ISPI)
+	g++ $(OBJ) -o $@ $(LDFLAGS)
 
 $(DIR_INC)%.gch: $(DIR_INC)$(PCH)
 	@echo "\n#### compiling precompiled header"
-	g++ -o $@ $(CFLAGS) $<
+	g++ -o $@ $<
 
 $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR)
-	@printf "\n#### compiling \"$@\" based on \"$^\"\n"
-	g++ -o $@ -c $(CFLAGS) $< -D ISPI=$(ISPI)
+	@printf "\n#### compiling \"$@\"\n"
+	g++ -o $@ -c $(CFLAGS) $<
 
 run: all
 	@printf "\n#### executing $(OUTPUT).out\n"

@@ -1,6 +1,10 @@
 
 #include "builtins.hpp"
 
+#if ISBOT
+#    include "RaspiBot.hpp"
+#endif
+
 // clang-format off
 
 #define newFunc(NAME, ...)                   \
@@ -11,7 +15,8 @@
 
 unordered_map<string, TBltFunc> builtins;
 
-void initBuiltins() {
+bool initBuiltins() {
+    BEGIN();
     builtins = { // builtin functions
         newFunc( "print", {
             BEGIN("print args=%s", TLst(args).toStr().c_str());
@@ -50,7 +55,7 @@ void initBuiltins() {
             string input;
             getline(std::cin, input);
             END("input");
-            return NEWVAR(TStr(input));
+            return newStr(input);
         }),
 
         newFunc( "delay", {
@@ -74,7 +79,7 @@ void initBuiltins() {
         newFunc( "clock", {
             BEGIN("clock args=%s", TLst(args).toStr().c_str());
             END("clock");
-            return NEWVAR(TFlt(clock() / 1000.0));
+            return newFlt(clock() / 1000.0);
         }),
 
         newFunc( "typeof", {
@@ -83,9 +88,9 @@ void initBuiltins() {
 
             if (!args.empty()) {
                 EVALARGS(args, {V_NULL});
-                return NEWVAR(TStr(getTypeName(args[0])));
+                return newStr(getTypeName(args[0]));
             } else
-                return NEWVAR(TStr(typeName(-1)));
+                return newStr(typeName(-1));
         }),
 
         newFunc( "toString", {
@@ -94,11 +99,30 @@ void initBuiltins() {
 
             if (!args.empty()) {
                 EVALARGS(args, {});
-                return NEWVAR(TStr(escape(args[0]->toStr())));
+                return newStr(escape(args[0]->toStr()));
             } else
-                return NEWVAR(TStr(""));
+                return newStr("");
         })
+
+
+#if ISBOT
+,
+        newFunc( "Bot_Write", {
+            BEGIN("Bot_write args=%s", TLst(args).toStr().c_str());
+
+            if (!args.empty()) {
+                EVALARGS(args, {});
+                RaspiBot::Call("write", args);
+            }
+
+            END("Bot_write");
+            return V_NULL;
+        })
+#endif
     };
+
+    END("-> false");
+    return false;
 }
 
 // clang-format on

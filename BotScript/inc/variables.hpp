@@ -46,7 +46,8 @@ class TVar;
 typedef IVar* PVar;
 
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
-#define V_NULL NEWVAR(TNil(0))
+#define REPVAR(var, v) (delete var, var = v)
+#define V_NULL newNil(0)
 #define TOSTR(v) v->toStr().c_str()
 #define EVALARGS(ARGS, DFLT)           \
     static const var_lst _dflt = DFLT; \
@@ -87,7 +88,20 @@ typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
-void initOperations();
+#define newNil(v) NEWVAR(TNil(v))
+#define newBin(v) NEWVAR(TInt(v, T_BIN))
+#define newInt(v) NEWVAR(TInt(v))
+#define newPin(v) NEWVAR(TInt(v, T_PIN))
+#define newFlt(v) NEWVAR(TFlt(v))
+#define newStr(v) NEWVAR(TStr(v))
+#define newLst(v) NEWVAR(TLst(v))
+#define newTrm(v) NEWVAR(TLst(v, T_TRM))
+#define newFnc(v) NEWVAR(TLst(v, T_FNC))
+#define newObj(v) NEWVAR(TObj(v))
+#define newBfn(v) NEWVAR(TBfn(v))
+#define newOpr(v) NEWVAR(TStr(v, T_OPR))
+
+bool initOperations();
 PVar evalExpr(PVar& expr);
 void setDefault(var_lst& args, const var_lst& dflt);
 bool hasOperator(PVar& v, string op);

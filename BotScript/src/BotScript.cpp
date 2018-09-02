@@ -10,13 +10,36 @@ unsigned int debug_func_intd = 0;
 #include "include.hpp"
 #include "interpret.hpp"
 
+#if ISBOT
+#    include "RaspiBot.hpp"
+#endif
+
+bool Init() {
+    INFO("init operations");
+    if (initOperations()) return true;
+
+    INFO("init builtins");
+    if (initBuiltins()) return true;
+
+#if ISBOT
+    INFO("init RaspiBot");
+    if (RaspiBot::Init()) return true;
+#endif
+
+    return false;
+}
+
+void Free() {
+    INFO("freeing...");
+    FreeVariables();
+    RaspiBot::Free();
+    printf("\n");
+}
+
 void interrupt(int sig) {
     // free all allocated variables
-    INFO("interrupt catched - freeing");
-    FreeVariables();
-
-    printf("\n");
-    exit(0);
+    error("\nkeyboard interrupt");
+    Exit();
 }
 
 // initialisation
@@ -26,21 +49,16 @@ int main(int argc, char* argv[]) {
 
     signal(SIGINT, interrupt);
 
-    INFO("init operations");
-    initOperations();
-
-    INFO("init builtins");
-    initBuiltins();
+    if (Init()) {
+        error("Initialization failed");
+        Exit();
+        return 1;
+    }
 
     INFO("reading file");
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
     string code      = readFile(path, true);
     INFO("file input:\n%s\n", code.c_str());
-
-#if DEBUG == 1
-    printf("press enter to continue\n");
-    wait_enter();
-#endif
 
     // create code scope of content from default or argument file path
     INFO("formatting code");
@@ -53,9 +71,7 @@ int main(int argc, char* argv[]) {
     handleScope(main);
 
     // free all allocated variables
-    INFO("freeing...");
-    FreeVariables();
-    printf("\n");
+    Free();
 
     INFO("end.");
     END();

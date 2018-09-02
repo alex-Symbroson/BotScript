@@ -8,7 +8,7 @@
 #define getBltin(NAME) (&builtins[NAME])
 extern unordered_map<string, TBltFunc> builtins;
 
-void initBuiltins();
+bool initBuiltins();
 bool isBuiltin(const char*);
 
 #endif //_BUILTINS_CPP_
