@@ -9,7 +9,7 @@
 
 namespace RaspiBot {
     bool Init();
-    bool Call(const char *func, var_lst &argv);
+    bool Call(const char *func, var_lst argv);
     void Free();
 } // namespace RaspiBot
 

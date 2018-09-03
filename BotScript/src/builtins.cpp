@@ -36,7 +36,6 @@ bool initBuiltins() {
             if (!args.empty()) {
                 EVALARGS(args, {});
                 for (PVar& v: args) printf("%s\n", TOSTR(v));
-
             } else
                 printf("\n");
 
@@ -112,6 +111,13 @@ bool initBuiltins() {
 
             if (!args.empty()) {
                 EVALARGS(args, {});
+
+                int size = args.size();
+                if(size == 3) {
+                    if(getType(args[1]) != T_INT) error_exit("Bot_Write argument 2: expected integer");
+                    if(getType(args[2]) != T_INT) error_exit("Bot_Write argument 3: expected integer");
+                }
+
                 RaspiBot::Call("write", args);
             }
 

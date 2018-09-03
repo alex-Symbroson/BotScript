@@ -33,9 +33,12 @@
 .*
 ispi
 isbot
+isdbg
 
 #   logs
 *.log
 
-#   Memory lack check
+# excluded dirs
+variables_tmplate
+raspibot
 nvwa

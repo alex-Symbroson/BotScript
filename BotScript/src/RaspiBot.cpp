@@ -42,10 +42,12 @@ namespace RaspiBot {
             error_exit("Couldn't find def \"callMethod\"");
             return true;
         }
+        
+        res = V_NULL;
         return false;
     }
 
-    bool Call(const char *func, var_lst &args) {
+    bool Call(const char *func, var_lst args) {
         PyObject *pArgs, *pValue;
         int argc = args.size(), i;
 
@@ -119,11 +121,14 @@ namespace RaspiBot {
         else
             error_exit(
                 "cannot convert %s to BotScript variable", Py_TYPE(v)->tp_name);
-        return NULL;
+        return V_NULL;
     }
 
     void Free() {
-        if (pFunc) Py_DECREF(pFunc);
+        if (pFunc) {
+            Call("cleanup", {});
+            Py_DECREF(pFunc);
+        }
         if (pModule) Py_DECREF(pModule);
         Py_Finalize();
     }

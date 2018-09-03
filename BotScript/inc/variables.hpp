@@ -7,8 +7,8 @@
 #define uint8_t unsigned char
 
 // type id's  (requires addition in variables.cpp: VAR_Type[])
-#define T_NIL 0
-// #define T_VAR 1
+#define T_NIL 0 // null
+// #define T_VAR 1  // variable
 #define T_BIN 1  // boolean
 #define T_INT 2  // integer
 #define T_FLT 3  // float/double
@@ -48,7 +48,7 @@ typedef IVar* PVar;
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
 #define REPVAR(var, v) (delete var, var = v)
 #define V_NULL newNil(0)
-#define TOSTR(v) v->toStr().c_str()
+#define TOSTR(v) (v)->toStr().c_str()
 #define EVALARGS(ARGS, DFLT)           \
     static const var_lst _dflt = DFLT; \
     setDefault(ARGS, _dflt)

@@ -1,5 +1,6 @@
 
 // TODO:
+//      handle while(); or repeat(); statements (without do)
 //      toFunction(): keywords, control statements
 //      all isOperator to prev.hasOperator
 //      operator precedence
@@ -31,8 +32,10 @@ bool Init() {
 
 void Free() {
     INFO("freeing...");
-    FreeVariables();
+#if ISBOT
     RaspiBot::Free();
+#endif
+    FreeVariables();
     printf("\n");
 }
 

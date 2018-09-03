@@ -30,8 +30,9 @@ unordered_map<string, Operator> operators = {
 
 // type of the keyword itself
 unordered_map<string, const uint8_t> keywords = {
-    {"true", K_TRU}, {"false", K_FLS}, {"if", C_CIF},    {"elif", C_EIF},
-    {"else", C_ELS}, {"do", C_CDO},    {"while", C_WHL}, {"until", C_UNT}};
+    {"null", K_NIL}, {"true", K_TRU},  {"false", K_FLS},
+    {"if", C_CIF},   {"elif", C_EIF},  {"else", C_ELS},
+    {"do", C_CDO},   {"while", C_WHL}, {"until", C_UNT}};
 
 // type of the value after the keyword (nil - no value)
 uint8_t KWType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC, T_FNC, T_TRM, T_TRM};
@@ -48,21 +49,22 @@ PVar handleLine(var_lst& line) {
 
     // res: variable, it[0]: base var, it[1]: sub func, it[2]: args
     uint32_t size;
-    PVar arg, res;
+    PVar res;
     uint8_t type, firstType = T_NIL;
     var_lst::iterator it, begin, end;
 
     size  = line.size();
     begin = line.begin();
-    res   = evalExpr(*begin);
-    type  = getType(res);
+    type  = getType(*begin);
 
     if (size == 1) {
-        if (type < KCNT) {
+        if (type < TCNT) {
+            res = evalExpr(*begin);
             END("-> %s", TOSTR(res));
             return res;
-        } else
+        } else if (type < KCNT) {
             goto err_tok;
+        }
     }
 
     it  = begin;
@@ -70,58 +72,136 @@ PVar handleLine(var_lst& line) {
 
     // handle control structures
     if (type >= KCNT) {
-        type = getType(*it);
+        res       = V_NULL;
+        firstType = type;
 
-        // if .. elif .. else
-        if (type == C_CIF) {
-            // get condition result
-            while (!getInt(handleLine(getLst(*it)))) {
-                it += 2;
-                if (it == line.end()) return V_NULL;
-                type = getType(*it);
-                if (type != C_EIF) break;
-            }
-            // else is already a scope
-            if (type != C_ELS) it++;
-            if (it < line.end()) {
-                // execute next scope if condition was true
-                handleScope(getLst(*it));
-            }
+        switch (firstType) {
+            // if .. elif .. else
+            case C_CIF:
+                do {
+                    type = getType(*it);
+                    if (type == C_CIF || type == C_EIF) {
+                        REPVAR(res, handleLine(getLst(*it)));
 
-        } else if (size == 2) {
-            uint8_t type2 = getType(it[1]);
+                        if (getType(res) == T_BIN) {
+                            // go to next condition
+                            if (!getInt(res)) it++;
+                        } else {
+                            goto err_bin;
+                        }
+                    } else if (type == C_ELS) {
+                        break;
+                    } else {
+                        goto err_tok;
+                    }
 
-            if (type == C_CDO) {
-                if (type2 == C_WHL) {
-                    // do .. while
-                    do
+                    if (it == end) break;
+                    // go to next block
+                    it++;
+                } while (it != end);
+
+                if (it != end) {
+                    if (getType(*it) == C_CDO || getType(*it) == C_ELS) {
                         handleScope(getLst(*it));
-                    while (getInt(handleLine(getLst(it[1]))));
-
-                } else if (type2 == C_UNT) {
-                    // do -- until
-                    do
-                        handleScope(getLst(*it));
-                    while (!getInt(handleLine(getLst(it[1]))));
+                        it++;
+                    } else {
+                        type = getType(*it);
+                        goto err_tok;
+                    }
                 }
-            } else if (type2 == C_CDO) {
-                if (type == C_WHL) {
-                    // while .. do
-                    while (getInt(handleLine(getLst(*it))))
-                        handleScope(getLst(it[1]));
 
-                } else if (type == C_UNT) {
-                    // until .. do
-                    while (!getInt(handleLine(getLst(*it))))
-                        handleScope(getLst(it[1]));
+                if (it != end) {
+                    type = getType(*it);
+                    goto err_tok;
                 }
-            }
-        } else
-            error_exit("invalid line %s", TLst(line).toStr().c_str());
-        return V_NULL;
+                break;
+
+            case C_CDO:
+                if (size == 1) { // do
+                    handleScope(getLst(*it));
+                } else {
+                    type = getType(it[1]);
+                    switch (type) {
+                        case C_WHL: // do .. while
+                            do {
+                                handleScope(getLst(*it));
+                                REPVAR(res, handleLine(getLst(it[1])));
+                                if (getType(res) != T_BIN) goto err_bin;
+                            } while (getInt(res));
+                            break;
+
+                        case C_UNT: // do .. until
+                            do {
+                                handleScope(getLst(*it));
+                                REPVAR(res, handleLine(getLst(it[1])));
+                                if (getType(res) != T_BIN) goto err_bin;
+                            } while (!getInt(res));
+                            break;
+
+                        default: goto err_tok;
+                    }
+                }
+                break;
+
+            case C_WHL:
+                if (size == 1) { // while
+                    do {
+                        REPVAR(res, handleLine(getLst(*it)));
+                        if (getType(res) != T_BIN) goto err_bin;
+                    } while (getInt(res));
+                } else {
+                    type = getType(it[1]);
+
+                    if (type == C_CDO) { // while .. do
+                        REPVAR(res, handleLine(getLst(*it)));
+                        if (getType(res) != T_BIN) goto err_bin;
+
+                        while (getInt(res)) {
+                            handleScope(getLst(*it));
+                            REPVAR(res, handleLine(getLst(*it)));
+                            if (getType(res) != T_BIN) goto err_bin;
+                        }
+                    } else {
+                        goto err_tok;
+                    }
+                }
+                break;
+
+            case C_UNT:
+                if (size == 1) { // until
+                    do {
+                        REPVAR(res, handleLine(getLst(*it)));
+                        if (getType(res) != T_BIN) goto err_bin;
+                    } while (!getInt(res));
+                } else {
+                    type = getType(it[1]);
+
+                    if (type == C_CDO) { // until .. do
+                        REPVAR(res, handleLine(getLst(*it)));
+                        if (getType(res) != T_BIN) goto err_bin;
+
+                        while (!getInt(res)) {
+                            handleScope(getLst(*it));
+                            REPVAR(res, handleLine(getLst(*it)));
+                            if (getType(res) != T_BIN) goto err_bin;
+                        }
+                    } else {
+                        goto err_tok;
+                    }
+                }
+                break;
+
+            default:
+                error_exit("invalid line %s", TLst(line).toStr().c_str());
+                delete res;
+                return V_NULL;
+        }
     } else {
         // other statements
+        res      = evalExpr(*begin);
+        PVar arg = V_NULL;
         it++;
+
         do {
             if (size > 2) {
                 // check wether operator available
@@ -132,16 +212,22 @@ PVar handleLine(var_lst& line) {
 
                 // calculate term of 2nd arg if required
                 if (getType(it[1]) == T_TRM) {
-                    if (!getLst(it[1]).empty())
-                        arg = evalExpr(it[1]);
-                    else
-                        arg = V_NULL;
-                } else
-                    arg = it[1];
-
+                    if (!getLst(it[1]).empty()) {
+                        REPVAR(arg, evalExpr(it[1]));
+                    } else {
+                        error_exit("empty term");
+                        REPVAR(arg, V_NULL);
+                    }
+                } else {
+                    arg = evalExpr(it[1]);
+                }
+                // PVar t = res;
                 res = callP(res, getStr(it[0]), arg);
-            } else
+                // delete t;
+            } else {
+                delete res;
                 return it[0];
+            }
 
             it += 2;
             size -= 2;
@@ -152,8 +238,10 @@ PVar handleLine(var_lst& line) {
     if (res) {
         END("-> %s", TOSTR(res));
         return res;
-    } else
-        error_exit("no result of line %s", TLst(line).toStr().c_str());
+    }
+
+    error_exit("no result of line %s", TLst(line).toStr().c_str());
+    return V_NULL;
 
 err_tok:
     if (firstType == T_NIL)
@@ -162,6 +250,13 @@ err_tok:
         error_exit(
             "unexpected token %s in %s statement", typeName(type),
             typeName(firstType));
+    return V_NULL;
+
+err_bin:
+    error_exit(
+        "expected boolean in %s condition, got %s", typeName(type),
+        getTypeName(res));
+    return V_NULL;
 }
 
 // scope interpreter
@@ -173,7 +268,7 @@ void handleScope(var_lst& scope) {
 
 // converts scope string to term
 var_lst toFunction(string::iterator& c, char separator, char end) {
-    BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
+    BEGIN("string::it*c='%c',sep='%c',end='%c'\n", *c, separator, end);
 
     var_lst block;
     var_lst line;
@@ -235,7 +330,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     type = T_TRM;
                     addVar(newOpr("at"));
                 }
-                if (lastType > TCNT) {
+                if (lastType >= KCNT) {
                     if (type == getKeyType(lastType))
                         type = lastType;
                     else
@@ -247,7 +342,8 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                 var_lst list = toFunction(c, sep, end);
                 DEBUG("%c: %s end", *c, typeName(type));
 
-                if (type == T_TRM && list.size() == 1)
+                if (type == T_TRM && list.size() == 1 &&
+                    getType(list[0]) < TCNT)
                     addVar(list[0]);
                 else
                     addVar(NEWVAR(TLst(list, type)), false);
@@ -256,7 +352,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
             default: {
                 if (*c == separator) {
-                    if (line.size() == 1)
+                    if (line.size() == 1 && getType(line[0]) < TCNT)
                         block.push_back(line[0]);
                     else
                         block.push_back(newTrm(line));
@@ -296,12 +392,12 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     auto kwtype = keywords.find(word);
                     if (kwtype != keywords.end()) {
                         switch (kwtype->second) {
-                            case K_NIL: addVar(V_NULL); break;
+                            case K_NIL: addVar(newNil(0)); break;
                             case K_TRU: addVar(newBin(true)); break;
                             case K_FLS: addVar(newBin(false)); break;
                             default:
                                 lastType = kwtype->second;
-                                DEBUG("keyword %i", kwtype->second);
+                                DEBUG("keyword %i", lastType);
                         }
                         continue;
                     } // else ..
@@ -346,12 +442,12 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
             error_exit("invalid token '%c' - expected '%c'", *c, end);
     }
 
-    if (line.size() == 1)
+    if (line.size() == 1 && getType(line[0]) < TCNT)
         block.push_back(line[0]);
     else if (!line.empty())
         block.push_back(newTrm(line));
 
-    END();
+    END("-> %s\n", TLst(block).toStr().c_str());
     return block;
 }
 

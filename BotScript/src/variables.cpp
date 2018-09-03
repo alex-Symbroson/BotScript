@@ -341,16 +341,18 @@ bool initOperations() {
 PVar evalExpr(PVar& expr) {
     switch (getType(expr)) {
         case T_TRM: return handleLine(getLst(expr));
+        case T_ARG:
         case T_LST: {
             var_lst lst;
             for (PVar& v: getLst(expr)) lst.push_back(evalExpr(v));
-            return newLst(lst);
+            return NEWVAR(TLst(lst, getType(expr)));
         }
         case T_OBJ: {
             var_obj obj;
             for (auto& v: getObj(expr)) obj[v.first] = evalExpr(v.second);
             return newObj(obj);
         }
+
         default: return expr;
     }
 }

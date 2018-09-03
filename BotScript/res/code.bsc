@@ -3,10 +3,11 @@ println(("Hello ") + ("World" + "!"));
 println();
 
 Bot_Write("Hello World");
+Bot_Write("Hello World", 2, 1);
 
 if  (false) do { println(" is true");  }
 elif(false) do { println("eis true"); }
-else { println("is false"); }
+else { println("is false"); };
 
 /* input test */
 // print("you typed:", input("type smth: "));
@@ -57,6 +58,4 @@ println([
 
 println("type quit");
 
-while(input() != "quit") do {
-    delay(1000);
-};
+while(input() != "quit")

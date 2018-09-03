@@ -198,26 +198,26 @@ string replace(string str, string src, string ovr) {
 
 // replace some escape sequences
 string unescape(string s) {
-    BEGIN("string*s=\"%s\"", s.c_str());
+    // BEGIN("string*s=\"%s\"", s.c_str());
     if (!s.empty()) {
         s = REPLACE5(
             REP("\\\"", "\""), REP("\\n", "\n"), REP("\\t", "\t"),
             REP("\\033", "\033"), REP("\\\\", "\\") /*must be last*/);
     }
-    END();
+    // END();
     return s;
 }
 
 // undo replacement of escape sequences
 string escape(string s) {
-    BEGIN("string*s=\"%s\"", s.c_str());
+    // BEGIN("string*s=\"%s\"", s.c_str());
     if (!s.empty()) {
         s = REPLACE5(
             REP("\\", "\\\\"), /* must be first*/
             REP("\"", "\\\""), REP("\n", "\\n"), REP("\t", "\\t"),
             REP("\033", "\\033"));
     }
-    END();
+    // END();
     return s;
 }
 

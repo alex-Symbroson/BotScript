@@ -22,10 +22,10 @@ Script language with optimized PIN access features
 
 **Build:**
 - switch directory to BotScript root directory
-- execute ```make [-j4] [ISPI=true] [ISBOT=true] [debug=true]```
-    - ISPI:  includes pin access features
-    - ISBOT: includes python and therefore RaspiBot functions
-    - debug: adds -g flag and nvwa memory leak detector
+- execute ```make [-j4] [ISPI=true] [ISBOT=true] [ISDBG=true]```
+    - ```ISPI ```: includes pin access features
+    - ```ISBOT```: includes python and therefore RaspiBot functions
+    - ```ISDBG```: adds -g flag and nvwa memory leak detector
 
 **External Dependencies:**
 - wiringPi.h ( -> https://github.com/WiringPi/WiringPi )
