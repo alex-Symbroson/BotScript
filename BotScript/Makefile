@@ -16,7 +16,7 @@ CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -fPIE -D ISPI=$(ISPI) -D ISBOT=$(ISB
 	# linker flags
 LDFLAGS  = -pthread -pie
 
-GLOBDEP = ispi isbot isdbg
+GLOBDEP = ispi isbot isdbg Makefile
 
 ifeq ($(ISPI),true)
 	LDFLAGS += -lwiringPi

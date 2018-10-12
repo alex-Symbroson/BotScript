@@ -5,13 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern unsigned int debug_func_intd;
 
-#define _DEBUG_ 1    // enables 1:INFO 2:DEBUG and 3:BEGIN,END macro
-#define _ERR_EXIT_ 1 // exit on error
+extern uint debug_depth;
+extern void Free();
+extern bool debg;
+
+
+#define _DEBUG_ 0b001 // 1<<0:INFO;  1<<1:DEBUG;  1<<2:BEGIN,END macro
+#define _ERR_EXIT_ 1  // exit on error
 #define COMMA ,
 
-extern void Free();
 
 #ifndef ISPI
 #    define ISPI false
@@ -30,6 +33,11 @@ extern void Free();
     VA_ARGC_SEQ(                                                             \
         __VA_ARGS__, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, \
         15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+
+#define S_INIT 1
+#define S_FORMAT 2
+#define S_EXEC 3
+#define S_FREE 4
 
 #define ONCE(...) \
     do { __VA_ARGS__ } while (0)
@@ -51,7 +59,13 @@ extern void Free();
         "'%s'\033[0;37m\n",                                         \
         getTypeName(b), getTypeName(a), (f), typeName(t))
 
-#define err_iac(a, b, f, c)                                                \
+#define err_iac(f, a, c)                                                \
+    error_exit(                                                         \
+        "\033[1;31minvalid argument count for %s: got %lu; expected %i" \
+        "\033[0;37m\n",                                                 \
+        (f), (a).size(), (c))
+
+#define err_iac2(a, b, f, c)                                               \
     error_exit(                                                            \
         "\033[1;31minvalid argument count for %s.%s: got %lu; expected %i" \
         "\033[0;37m\n",                                                    \
@@ -75,71 +89,85 @@ extern void Free();
 
 #define wait_enter() ONCE(stdin = freopen(NULL, "r", stdin); getchar();)
 
-// yellow coloured debug macro
-#if _DEBUG_ > 0
+// blue coloured info macro
+#if _DEBUG_ & 1 << 0
 #    define INFO(s, ...) \
-        printf("\033[0;36m    " s "\033[0;37m\n", ##__VA_ARGS__)
+        printf("%5i\033[0;36m " s "\033[0;37m\n", debug_depth, ##__VA_ARGS__)
 #else
 #    define INFO(...)
 #endif
 
-//
-#if _DEBUG_ > 2
-#    ifndef CUSTOM_BEGIN
-#        define BEGIN(s, ...)                                    \
-            printf(                                              \
-                " \033[1;33m%5i \033[2;32m%s\t line %4i %s(" s   \
-                ")\033[0;37m\n",                                 \
-                ++debug_func_intd, __FILE__, __LINE__, __func__, \
-                ##__VA_ARGS__)
-#        define END(s, ...)                                      \
-            printf(                                              \
-                " \033[1;31m%5i \033[2;32m%s\t line %4i %s() " s \
-                "\033[0;37m\n",                                  \
-                debug_func_intd--, __FILE__, __LINE__, __func__, \
-                ##__VA_ARGS__)
-#    else
-#        define BEGIN_1(class, s, ...)                                  \
-            printf(                                                     \
-                " \033[1;33m%5i \033[2;32m%s\t line %4i %s::%s(" s      \
-                ")\033[0;37m\n",                                        \
-                ++debug_func_intd, __FILE__, __LINE__, class, __func__, \
-                ##__VA_ARGS__)
-#        define END_1(class, s, ...)                                    \
-            printf(                                                     \
-                " \033[1;31m%5i \033[2;32m%s\t line %4i %s::%s() " s    \
-                "\033[0;37m\n",                                         \
-                debug_func_intd--, __FILE__, __LINE__, class, __func__, \
-                ##__VA_ARGS__)
-#    endif
-#else
-#    ifndef CUSTOM_BEGIN
-#        define BEGIN(...)
-#        define END(...)
-#    else
-#        define BEGIN_1(...)
-#        define END_1(...)
-#    endif
-#endif
-
-#if _DEBUG_ > 1
+// yellow coloured debug macro
+#if _DEBUG_ & 1 << 1
 #    define DEBUG(s, ...) \
-        printf("\033[2;33m      " s "\033[0;37m\n", ##__VA_ARGS__)
+        printf("%5i\033[2;33m " s "\033[0;37m\n", debug_depth, ##__VA_ARGS__)
 #else
 #    define DEBUG(...)
 #endif
 
-#define PRINT_STATUS() \
-    printf("compiled: " _DATE_S_ _TIME_S_ "\n\n", __DATE__, __TIME__)
+// green colored begin / end macro
+#if _DEBUG_ & 1 << 2
+#    define _BEGIN(func_fmt, func, s, ...)                             \
+        if (!debg && (debg = true))                                    \
+        printf(                                                        \
+            "\033[1;33m%5i\033[2;32m %s%s line %4i " func_fmt "(" s    \
+            ")\033[0;37m\n",                                           \
+            ++debug_depth, __FILE__,                                   \
+            "                    " + strlen(__FILE__), __LINE__, func, \
+            ##__VA_ARGS__),                                            \
+            debg = false
 
-#define _DATE_S_ "date:\"%s\" "
+#    define _END(func_fmt, func, s, ...)                                \
+                                                                        \
+        if (!debg && (debg = true))                                     \
+        printf(                                                         \
+            "\033[1;31m%5i\033[2;32m %s%s line %4i " func_fmt "() %s" s \
+            "\033[0;37m\n",                                             \
+            debug_depth--, __FILE__,                                    \
+            "                    " + strlen(__FILE__), __LINE__, func,  \
+            (s + 0) ? "-> " : "", ##__VA_ARGS__),                       \
+            debg = false
+#else
+#    define _BEGIN(...) ++debug_depth
+#    define _END(...) debug_depth--
+#endif
+
+#ifndef CUSTOM_BEGIN
+#    define BEGIN(s, ...) _BEGIN("%s", __func__, s, ##__VA_ARGS__)
+#    define END(s, ...) _END("%s", __func__, s, ##__VA_ARGS__)
+#else
+#    define BEGIN_1(class, func, s, ...) \
+        _BEGIN(class "%s", func, s, ##__VA_ARGS__)
+#    define END_1(class, func, s, ...) _END(class "%s", func, s, ##__VA_ARGS__)
+#endif
+
+// compilation infos
+#define PRINT_STATUS()                                                         \
+    printf(                                                                    \
+        "compiled: " _DATE_S_ _TIME_S_ _OS_NAME_S_ "\n\n", __DATE__, __TIME__, \
+        _OS_NAME_)
+
+#define _DATE_S_ "%s "
 #ifndef __DATE__
-#    define __DATE__ "-"
+#    define __DATE__ "- "
 #endif
 
-#define _TIME_S_ "time:\"%s\" "
+#define _TIME_S_ "%s "
 #ifndef __TIME__
-#    define __TIME__ "-"
+#    define __TIME__ "- "
 #endif
 
+#define OS_LIN 1
+#define OS_WIN 2
+
+#ifdef __unix__
+#    define OS_NUM OS_LIN
+#elif defined(_WIN32) || defined(WIN32) || defined(_WIN32)
+#    define OS_NUM OS_WIN
+#else
+#    define OS_NUM 0
+#endif
+
+#define _OS_NAME_S_ "%.*s"
+#define _OS_NAME_ 7, "UnknownLinux  Windows" + 7 * OS_NUM
 #endif

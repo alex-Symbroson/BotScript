@@ -4,11 +4,16 @@
 
 #include "include.hpp"
 
-#define uint8_t unsigned char
+
+// predefinitions
+class IVar;
+template <typename>
+class TVar;
+typedef IVar* PVar;
+
 
 // type id's  (requires addition in variables.cpp: VAR_Type[])
-#define T_NIL 0 // null
-// #define T_VAR 1  // variable
+#define T_NIL 0  // null
 #define T_BIN 1  // boolean
 #define T_INT 2  // integer
 #define T_FLT 3  // float/double
@@ -24,8 +29,7 @@
 #define T_MFN 13 // member function
 #define TCNT 14
 
-// keywords
-//! add in interpret.cpp/ctrl_types and CTRL_Type
+// keywords  (! add in interpret.cpp/ctrl_types and CTRL_Type)
 #define K_NIL 14 // true
 #define K_TRU 15 // true
 #define K_FLS 16 // false
@@ -40,20 +44,74 @@
 #define C_UNT 22 // until ()
 #define CCNT 23
 
-class IVar;
-template <typename>
-class TVar;
-typedef IVar* PVar;
 
+// new variables
+#define newNil() NEWVAR(TNil(0, T_NIL, false))
+#define newBin(v) NEWVAR(TInt(v, T_BIN, false))
+#define newInt(v) NEWVAR(TInt(v, T_INT, false))
+#define newPin(v) NEWVAR(TInt(v, T_PIN, false))
+#define newFlt(v) NEWVAR(TFlt(v, T_FLT, false))
+#define newStr(v) NEWVAR(TStr(v, T_STR, false))
+#define newLst(v) NEWVAR(TLst(v, T_LST, false))
+#define newTrm(v) NEWVAR(TLst(v, T_TRM, false))
+#define newFnc(v) NEWVAR(TLst(v, T_FNC, false))
+#define newObj(v) NEWVAR(TObj(v, T_OBJ, false))
+#define newOpr(v) NEWVAR(TStr(v, T_OPR, false))
+#define newArg(v) NEWVAR(TLst(v, T_ARG, false))
+#define newBfn(v) NEWVAR(TBfn(v, T_BFN, false))
+
+// new constants
+#define newNilC() NEWVAR(TNil(0, T_NIL, false))
+#define newBinC(v) NEWVAR(TInt(v, T_BIN, true))
+#define newIntC(v) NEWVAR(TInt(v, T_INT, true))
+#define newPinC(v) NEWVAR(TInt(v, T_PIN, true))
+#define newFltC(v) NEWVAR(TFlt(v, T_FLT, true))
+#define newStrC(v) NEWVAR(TStr(v, T_STR, true))
+#define newLstC(v) NEWVAR(TLst(v, T_LST, true))
+#define newTrmC(v) NEWVAR(TLst(v, T_TRM, true))
+#define newFncC(v) NEWVAR(TLst(v, T_FNC, true))
+#define newObjC(v) NEWVAR(TObj(v, T_OBJ, true))
+#define newOprC(v) NEWVAR(TStr(v, T_OPR, true))
+#define newArgC(v) NEWVAR(TLst(v, T_ARG, true))
+#define newBfnC(v) NEWVAR(TBfn(v, T_BFN, true))
+
+// macros for getting var instance values
+#define getInt(var) (*(var_int*)(var)->pval)
+#define getFlt(var) (*(var_flt*)(var)->pval)
+#define getStr(var) (*(var_str*)(var)->pval)
+#define getLst(var) (*(var_lst*)(var)->pval)
+#define getObj(var) (*(var_obj*)(var)->pval)
+#define getBfn(var) (*(var_bfn*)(var)->pval)
+
+#define getIntP(var) ((var_int*)(var)->pval)
+#define getFltP(var) ((var_flt*)(var)->pval)
+#define getStrP(var) ((var_str*)(var)->pval)
+#define getLstP(var) ((var_lst*)(var)->pval)
+#define getObjP(var) ((var_obj*)(var)->pval)
+#define getBfnP(var) ((var_bfn*)(var)->pval)
+
+
+// macros for type related values
+#define getType(var) ((var)->type)
+#define baseType(type) VAR_Type[type]
+#define setType(var, t) ((var)->type = t)
+#define getBaseType(var) VAR_Type[getType(var)]
+#define getTypeName(var) typeName(getType(var))
+#define baseTypeName(type) typeName(baseType(type))
+#define getBaseTypeName(var) typeName(getBaseType(var))
+
+
+// pther variable related macros
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
-#define REPVAR(var, v) (delete var, var = v)
-#define V_NULL newNil(0)
-#define TOSTR(v) (v)->toStr().c_str()
-#define EVALARGS(ARGS, DFLT)           \
-    static const var_lst _dflt = DFLT; \
-    setDefault(ARGS, _dflt)
+#define REPVAR(var, v) (decRef(var), incRef(var = v))
+#define TOSTR(val, ...) toStr(val, ##__VA_ARGS__).c_str()
+#define CALLOPR(a, o, b) (operations[a->type]).at(o)((a), (b))
+#define FILLARGS(ARGS, DFLT)     \
+    static var_lst _dflt = DFLT; \
+    fillArgs(ARGS, _dflt)
 
-// types
+
+// typedefs
 
 typedef char var_nil;
 typedef long long var_int;
@@ -88,191 +146,94 @@ typedef TVar<var_lst> TLst;
 typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
-#define newNil(v) NEWVAR(TNil(v))
-#define newBin(v) NEWVAR(TInt(v, T_BIN))
-#define newInt(v) NEWVAR(TInt(v))
-#define newPin(v) NEWVAR(TInt(v, T_PIN))
-#define newFlt(v) NEWVAR(TFlt(v))
-#define newStr(v) NEWVAR(TStr(v))
-#define newLst(v) NEWVAR(TLst(v))
-#define newTrm(v) NEWVAR(TLst(v, T_TRM))
-#define newFnc(v) NEWVAR(TLst(v, T_FNC))
-#define newObj(v) NEWVAR(TObj(v))
-#define newBfn(v) NEWVAR(TBfn(v))
-#define newOpr(v) NEWVAR(TStr(v, T_OPR))
 
+// functions
 bool initOperations();
-PVar evalExpr(PVar& expr);
-void setDefault(var_lst& args, const var_lst& dflt);
-bool hasOperator(PVar& v, string op);
 void cleanupCollector();
 void FreeVariables();
+bool hasOperator(PVar& v, string op);
+void fillArgs(var_lst& args, var_lst& dflt);
+PVar evalExpr(PVar& expr, bool copy);
+PVar copyVar(PVar& v);
 const char* typeName(uint8_t t);
 
-extern FuncMapOpr operations[TCNT];
-extern PVar handleLine(var_lst& line);
-extern uint8_t VAR_Type[CCNT];
-extern list<PVar> collector; // garbage collector
-extern uint8_t KWType[CCNT - KCNT];
+string toStr(PVar& v, uint8_t type = T_NIL);
+string toStr(var_nil& v, uint8_t type = T_NIL);
+string toStr(var_int& v, uint8_t type = T_INT);
+string toStr(var_flt& v, uint8_t type = T_FLT);
+string toStr(var_str& v, uint8_t type = T_STR);
+string toStr(var_lst& v, uint8_t type = T_LST);
+string toStr(var_obj& v, uint8_t type = T_OBJ);
+string toStr(var_bfn& v, uint8_t type = T_BFN);
 
-// macros for calling type-specific functions
-#define callP(a, o, b) (operations[*(a)->ptype]).at(o)((a), (b))
-#define callT(a, o, b) (operations[(a).type]).at(o)((a), (b))
+// extern functions and variables
+extern PVar handleLine(var_lst& line); // execute code line
+extern FuncMapOpr operations[TCNT];    // type operators
+extern uint8_t KWType[CCNT - KCNT];    // keyword types
+extern uint8_t VAR_Type[CCNT];         // base type of types
+extern list<PVar> collector;           // garbage collector
+extern uint8_t status;                 // current program status
 
-// macros for type related values
-#define getType(var) (*(var)->ptype)
-#define setType(var, t) (*(var)->ptype = t)
-#define baseType(type) VAR_Type[type]
-#define getBaseType(var) VAR_Type[getType(var)]
-#define getTypeName(var) typeName(getType(var))
-#define baseTypeName(type) typeName(baseType(type))
-#define getBaseTypeName(var) typeName(getBaseType(var))
 
-// macros for getting var instance values
-#define getIntP(var) ((var_int*)(var)->pval)
-#define getInt(var) (*(var_int*)(var)->pval)
-#define getFltP(var) ((var_flt*)(var)->pval)
-#define getFlt(var) (*(var_flt*)(var)->pval)
-#define getStrP(var) ((var_str*)(var)->pval)
-#define getStr(var) (*(var_str*)(var)->pval)
-#define getLstP(var) ((var_lst*)(var)->pval)
-#define getLst(var) (*(var_lst*)(var)->pval)
-#define getObjP(var) ((var_obj*)(var)->pval)
-#define getObj(var) (*(var_obj*)(var)->pval)
-#define getBfnP(var) ((var_bfn*)(var)->pval)
-#define getBfn(var) (*(var_bfn*)(var)->pval)
-
+// Variable interface class
 class IVar {
   public:
-    uint32_t refcnt = 0;
-    uint8_t* ptype  = NULL;
-    void* pval      = NULL;
-    bool isConst    = false;
-    list<PVar>::iterator it;
+    uint32_t refcnt = 0;    // reference counter
+    uint8_t type    = 0;    // pointer to value type
+    bool isConst    = true; // is constant bool
+    void* pval      = NULL; // pointer to value
+    // PVar ret        = NULL;  // return value when used (ie. functions)
+    list<PVar>::iterator it; // iterator from collector
 
     IVar();
     virtual ~IVar();
 
-    virtual string toStr(bool escape = false) {
+    virtual string toString(bool escape = false) {
         return "null";
     }
 };
 
+
+// Variable class
 template <typename T>
 class TVar : public IVar {
   public:
-    uint8_t type;
-
     T value;
 
-    TVar(T, uint8_t = 0, bool isConst = true);
+    TVar(T v_value, uint8_t v_type, bool v_isConst = false);
     ~TVar();
 
-    string toStr(bool escape = false);
+    string toString(bool escape = false);
 };
 
-/*
-    TVar::toStr()
-*/
 
-template <>
-inline string TVar<var_nil>::toStr(bool) {
-    return "null";
+template <typename T>
+inline string TVar<T>::toString(bool) {
+    return toStr(value, type);
 }
 
 template <>
-inline string TVar<var_int>::toStr(bool) {
-    if (type == T_PIN) return "Pin(" + to_string(value) + ")";
-    if (type == T_BIN) return value ? "true" : "false";
-    if (type >= TCNT) return typeName(type);
-    return to_string(value);
-}
-
-template <>
-inline string TVar<var_flt>::toStr(bool) {
-    return dtos2(value);
-}
-
-template <>
-inline string TVar<var_str>::toStr(bool escapeStr) {
+inline string TVar<var_str>::toString(bool escapeStr) {
     if (escapeStr)
         return "\"" + escape(value) + "\"";
     else
         return value;
 }
 
-template <>
-inline string TVar<var_lst>::toStr(bool) {
-    string result;
-    char lstEnd;
-    switch (type >= KCNT ? KWType[type - KCNT] : type) {
-        case T_LST:
-            result = "[";
-            lstEnd = ']';
-            break;
 
-        case T_FNC:
-            result = "{";
-            lstEnd = '}';
-            break;
+// inline functions
 
-        case T_TRM:
-            result = "(";
-            lstEnd = ')';
-            break;
-
-        case T_ARG:
-            result = "<";
-            lstEnd = '>';
-            break;
-
-        default:
-            error_exit("unknown list type id %i - report", type);
-            // result = "|"; lstEnd = '|';
-    }
-
-    for (PVar& v: value) result += v->toStr(true) + ",";
-
-    if (result.size() > 1)
-        result[result.size() - 1] = lstEnd;
-    else
-        result += lstEnd;
-
-    if (type >= TCNT) result = typeName(type) + (' ' + result);
-
-    return result;
+inline PVar incRef(PVar v) {
+    // INFO("incRef %p %s", v, getTypeName(v));
+    ++v->refcnt;
+    return v;
 }
 
-template <>
-inline string TVar<var_obj>::toStr(bool) {
-    string result = "]";
-
-    // builds string reversed because every new unordered_map
-    // element is inserted at the front
-    for (auto& v: value)
-        result = ",\"" + v.first + "\":" + v.second->toStr(true) + result;
-
-    if (!value.empty())
-        result[0] = '[';
-    else
-        result = result + "[";
-    return result;
-}
-
-template <>
-inline string TVar<var_bfn>::toStr(bool) {
-    string result = value->name;
-    /*
-    if (value->argc) {
-        result += "(";
-        for (uint16_t i = 1; i <= value->argc; i++)
-            result += "p" + to_string(i) + ",";
-        result[result.size() - 1] = ')';
-    } else
-        result += "()";
-    result += " { [builtin] }"
-    */
-    return result;
+inline PVar decRef(PVar v) {
+    // INFO("decRef %p %s", v, getTypeName(v));
+    if (v->refcnt <= 0) error("refcnt=%i", v->refcnt - 1), getchar();
+    if (!--v->refcnt) delete v;
+    return v;
 }
 
 #endif //_VARIABLES_HPP_

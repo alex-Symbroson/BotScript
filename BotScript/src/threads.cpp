@@ -4,8 +4,8 @@
 #define CUSTOM_BEGIN
 #include "macros.hpp"
 
-#define BEGIN(...) BEGIN_1("Thread", __VA_ARGS__)
-#define END(...) BEGIN_1("Thread", __VA_ARGS__)
+#define BEGIN(...) BEGIN_1("Thread::", __func__, __VA_ARGS__)
+#define END(...) BEGIN_1("Thread::", __func__, __VA_ARGS__)
 
 // creates new thread and return thread-id
 uint8_t Thread::create(void* (*foo)(void*), void* arg) {

@@ -6,17 +6,20 @@
 #    define CUSTOM_BEGIN
 #    include "RaspiBot.hpp"
 
-#    define BEGIN(...) BEGIN_1("RaspiBot", __VA_ARGS__)
-#    define END(...) END_1("RaspiBot", __VA_ARGS__)
+#    define BEGIN(...) BEGIN_1("RaspiBot::", __func__, __VA_ARGS__)
+#    define END(...) END_1("RaspiBot::", __func__, __VA_ARGS__)
+
 
 namespace RaspiBot {
     PVar toBSVar(PyObject *v);
     PyObject *toPyVar(PVar &v);
 
     PyObject *pModule, *pFunc;
-    PVar res;
+    PVar res     = NULL;
+    bool freeing = false;
 
     bool Init() {
+        BEGIN();
         PyObject *pName;
 
         Py_Initialize();
@@ -32,6 +35,7 @@ namespace RaspiBot {
         if (pModule == NULL) {
             PyErr_Print();
             error_exit("Failed to load \"RaspiBot\"");
+            END();
             return true;
         }
 
@@ -40,14 +44,16 @@ namespace RaspiBot {
         if (pFunc == NULL || !PyCallable_Check(pFunc)) {
             if (PyErr_Occurred()) PyErr_Print();
             error_exit("Couldn't find def \"callMethod\"");
+            END();
             return true;
         }
-        
-        res = V_NULL;
+
+        END();
         return false;
     }
 
     bool Call(const char *func, var_lst args) {
+        BEGIN("func=%s,args=%s", func, TOSTR(args));
         PyObject *pArgs, *pValue;
         int argc = args.size(), i;
 
@@ -64,6 +70,7 @@ namespace RaspiBot {
                 error_exit(
                     "couldn't convert argument %i for \"%s\": %s", i, func,
                     TOSTR(args[i]));
+                END();
                 return true;
             }
             PyTuple_SetItem(pArgs, i + 1, pValue);
@@ -73,13 +80,18 @@ namespace RaspiBot {
         Py_DECREF(pArgs);
 
         if (pValue != NULL) {
-            REPVAR(res, toBSVar(pValue));
+            if (res == NULL)
+                res = incRef(toBSVar(pValue));
+            else
+                REPVAR(res, toBSVar(pValue));
             Py_DECREF(pValue);
         } else {
             PyErr_Print();
             error_exit("Call of \"%s\" failed", func);
+            END();
             return true;
         }
+        END();
         return false;
     }
 
@@ -117,20 +129,23 @@ namespace RaspiBot {
         else if (v == Py_False)
             return newBin(false);
         else if (v == Py_None)
-            return newNil(0);
+            return newNil();
         else
             error_exit(
                 "cannot convert %s to BotScript variable", Py_TYPE(v)->tp_name);
-        return V_NULL;
+        return newNil();
     }
 
     void Free() {
+        BEGIN();
+        freeing = true;
         if (pFunc) {
             Call("cleanup", {});
             Py_DECREF(pFunc);
         }
         if (pModule) Py_DECREF(pModule);
         Py_Finalize();
+        END();
     }
 } // namespace RaspiBot
 

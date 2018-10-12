@@ -1,6 +1,7 @@
 
 #include "interpret.hpp"
 
+
 /*       priority
 .   at       6        []  at       6
 ()  call     5        **  pow      4
@@ -12,6 +13,8 @@
 // clang-format off
 #define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
 // clang-format on
+#define getKeyType(k) KWType[k - KCNT]
+
 
 // all operators
 unordered_map<string, Operator> operators = {
@@ -37,14 +40,13 @@ unordered_map<string, const uint8_t> keywords = {
 // type of the value after the keyword (nil - no value)
 uint8_t KWType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC, T_FNC, T_TRM, T_TRM};
 
-#define getKeyType(k) KWType[k - KCNT]
 
 PVar handleLine(var_lst& line) {
-    BEGIN("line=%s", TLst(line).toStr().c_str());
+    BEGIN("line=%s", TOSTR(line));
 
     if (line.empty()) {
-        END("-> null");
-        return V_NULL;
+        END("null");
+        return newNil();
     }
 
     // res: variable, it[0]: base var, it[1]: sub func, it[2]: args
@@ -59,8 +61,8 @@ PVar handleLine(var_lst& line) {
 
     if (size == 1) {
         if (type < TCNT) {
-            res = evalExpr(*begin);
-            END("-> %s", TOSTR(res));
+            res = evalExpr(*begin, false);
+            END("%s", TOSTR(res));
             return res;
         } else if (type < KCNT) {
             goto err_tok;
@@ -72,7 +74,7 @@ PVar handleLine(var_lst& line) {
 
     // handle control structures
     if (type >= KCNT) {
-        res       = V_NULL;
+        res       = incRef(newNil());
         firstType = type;
 
         switch (firstType) {
@@ -191,16 +193,13 @@ PVar handleLine(var_lst& line) {
                 }
                 break;
 
-            default:
-                error_exit("invalid line %s", TLst(line).toStr().c_str());
-                delete res;
-                return V_NULL;
+            default: error_exit("invalid line %s", TOSTR(line)); return res;
         }
     } else {
         // other statements
-        res      = evalExpr(*begin);
-        PVar arg = V_NULL;
         it++;
+        PVar args;
+        res = incRef(evalExpr(*begin, false));
 
         do {
             if (size > 2) {
@@ -210,22 +209,15 @@ PVar handleLine(var_lst& line) {
                         "%s has no operator %s", getTypeName(res),
                         TOSTR(it[0]));
 
-                // calculate term of 2nd arg if required
-                if (getType(it[1]) == T_TRM) {
-                    if (!getLst(it[1]).empty()) {
-                        REPVAR(arg, evalExpr(it[1]));
-                    } else {
-                        error_exit("empty term");
-                        REPVAR(arg, V_NULL);
-                    }
-                } else {
-                    arg = evalExpr(it[1]);
-                }
-                // PVar t = res;
-                res = callP(res, getStr(it[0]), arg);
-                // delete t;
+                args      = incRef(evalExpr(it[1], true)); // get 2nd arg
+                PVar tRes = res; // for safe overriding & freeing
+                res       = incRef(CALLOPR(res, getStr(it[0]), args));
+
+                decRef(tRes); // delete previous result
+                decRef(args); // delete copied args
             } else {
-                delete res;
+                decRef(res);
+                END("%s", TOSTR(it[0]));
                 return it[0];
             }
 
@@ -236,12 +228,13 @@ PVar handleLine(var_lst& line) {
     }
 
     if (res) {
-        END("-> %s", TOSTR(res));
+        END("%s", TOSTR(res));
         return res;
     }
 
-    error_exit("no result of line %s", TLst(line).toStr().c_str());
-    return V_NULL;
+    error_exit("no result of line %s", TOSTR(line));
+    return newNil();
+
 
 err_tok:
     if (firstType == T_NIL)
@@ -250,25 +243,25 @@ err_tok:
         error_exit(
             "unexpected token %s in %s statement", typeName(type),
             typeName(firstType));
-    return V_NULL;
+    return newNil();
 
 err_bin:
     error_exit(
         "expected boolean in %s condition, got %s", typeName(type),
         getTypeName(res));
-    return V_NULL;
+    return newNil();
 }
 
 // scope interpreter
 void handleScope(var_lst& scope) {
     BEGIN("var_lst*scope");
-    for (auto& line: scope) delete handleLine(getLst(line));
+    for (auto& line: scope) decRef(handleLine(getLst(line)));
     END();
 }
 
 // converts scope string to term
 var_lst toFunction(string::iterator& c, char separator, char end) {
-    BEGIN("string::it*c='%c',sep='%c',end='%c'\n", *c, separator, end);
+    BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
 
     var_lst block;
     var_lst line;
@@ -277,8 +270,10 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
     string word;
 
     auto addVar = [&line, &lastType](PVar v, bool dbg = true) {
-        line.push_back(v);
+        if (!v->refcnt) incRef(v);
+        if (!v->isConst) printf("err!\n"), getchar();
         lastType = getType(v);
+        line.push_back(v);
         if (dbg) DEBUG("%s: %s", TOSTR(v), typeName(lastType));
     };
 
@@ -292,7 +287,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                 if (lastType == T_STR)
                     getStr(line.back()) += unescape(word);
                 else
-                    addVar(newStr(unescape(word)));
+                    addVar(newStrC(unescape(word)));
 
                 DEBUG("\"%s\": %s", word.c_str(), typeName(T_STR));
             } break;
@@ -324,11 +319,11 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     type = T_ARG;
                 } else if (type == T_TRM && lastType == T_BFN) {
                     type = T_ARG;
-                    addVar(newStr("call"));
+                    addVar(newStrC("call"));
                 } else if (
                     type == T_LST && (lastType == T_LST || lastType == T_OBJ)) {
                     type = T_TRM;
-                    addVar(newOpr("at"));
+                    addVar(newOprC("at"));
                 }
                 if (lastType >= KCNT) {
                     if (type == getKeyType(lastType))
@@ -346,16 +341,17 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     getType(list[0]) < TCNT)
                     addVar(list[0]);
                 else
-                    addVar(NEWVAR(TLst(list, type)), false);
+                    addVar(NEWVAR(TLst(list, type, true)));
 
             } break;
 
             default: {
                 if (*c == separator) {
-                    if (line.size() == 1 && getType(line[0]) < TCNT)
+                    if (line.size() == 1 && getType(line[0]) < TCNT) {
                         block.push_back(line[0]);
-                    else
-                        block.push_back(newTrm(line));
+                    } else {
+                        block.push_back(incRef(newTrmC(line)));
+                    }
 
                     line.clear();
                     lastType = T_NIL;
@@ -370,7 +366,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                         word += *c;
                     } while (isOperator(word + *++c) && *c != end);
 
-                    addVar(newOpr(operators.at(word).name));
+                    addVar(newOprC(operators.at(word).name));
                 } else {
                     // clang-format off
                     do {
@@ -392,9 +388,9 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     auto kwtype = keywords.find(word);
                     if (kwtype != keywords.end()) {
                         switch (kwtype->second) {
-                            case K_NIL: addVar(newNil(0)); break;
-                            case K_TRU: addVar(newBin(true)); break;
-                            case K_FLS: addVar(newBin(false)); break;
+                            case K_NIL: addVar(newNilC()); break;
+                            case K_TRU: addVar(newBinC(true)); break;
+                            case K_FLS: addVar(newBinC(false)); break;
                             default:
                                 lastType = kwtype->second;
                                 DEBUG("keyword %i", lastType);
@@ -410,16 +406,16 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
                         // builtin
                     } else if (isBuiltin(word.c_str())) {
-                        addVar(newBfn(getBltin(word)));
+                        addVar(newBfnC(getBltin(word)));
 
                         // number
                     } else if (
                         (word[0] >= '0' && word[0] <= '9') ||
                         (word[0] == '.' || word[0] == '-' || word[0] == '+')) {
                         if ((long)word.find(".") == -1)
-                            addVar(newInt(stod2(word)));
+                            addVar(newIntC(stod2(word)));
                         else
-                            addVar(newFlt(stod2(word)));
+                            addVar(newFltC(stod2(word)));
 
                     } else {
                         error_exit("unexpected token %s", word.c_str());
@@ -442,12 +438,13 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
             error_exit("invalid token '%c' - expected '%c'", *c, end);
     }
 
-    if (line.size() == 1 && getType(line[0]) < TCNT)
+    if (line.size() == 1 && getType(line[0]) < TCNT) {
         block.push_back(line[0]);
-    else if (!line.empty())
-        block.push_back(newTrm(line));
+    } else if (!line.empty()) {
+        block.push_back(incRef(newTrmC(line)));
+    }
 
-    END("-> %s\n", TLst(block).toStr().c_str());
+    END("%s", TOSTR(block));
     return block;
 }
 

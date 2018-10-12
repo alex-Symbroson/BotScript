@@ -1,67 +1,69 @@
 
+#define CUSTOM_BEGIN
 #include "builtins.hpp"
 
 #if ISBOT
 #    include "RaspiBot.hpp"
 #endif
 
-// clang-format off
 
-#define newFunc(NAME, ...)                   \
-    { NAME, {                                \
-        .name = NAME,                        \
-        .func = [](var_lst args) __VA_ARGS__ \
-    }}
+#define BEGIN(...) BEGIN_1("", __func__, __VA_ARGS__)
+#define END(...) END_1("", __func__, __VA_ARGS__)
+
+#define FBEGIN(func, ...) BEGIN_1("Blt::", func, __VA_ARGS__)
+#define FEND(func, ...) END_1("Blt::", func, __VA_ARGS__)
+
+// clang-format off
+#define DEFFUNC(NAME, ...)                              \
+    { NAME, {                                           \
+            .name = NAME, .func = [](var_lst args) {    \
+                FBEGIN(NAME, "%s", TOSTR(args, T_ARG)); \
+                __VA_ARGS__                             \
+            }                                           \
+    } }
+
 
 unordered_map<string, TBltFunc> builtins;
+
 
 bool initBuiltins() {
     BEGIN();
     builtins = { // builtin functions
-        newFunc( "print", {
-            BEGIN("print args=%s", TLst(args).toStr().c_str());
-
+        DEFFUNC("print", {
             if (!args.empty()) {
-                EVALARGS(args, {});
-
+                FILLARGS(args, {});
                 for (PVar& v: args) printf("%s", TOSTR(v));
             }
-            END("print");
-            return V_NULL;
+            FEND("print", "null");
+            return newNil();
         }),
 
-        newFunc( "println", {
-            BEGIN("println args=%s", TLst(args).toStr().c_str());
-
+        DEFFUNC("println", {
             if (!args.empty()) {
-                EVALARGS(args, {});
+                FILLARGS(args, {});
                 for (PVar& v: args) printf("%s\n", TOSTR(v));
             } else
                 printf("\n");
 
-            END("println");
-            return V_NULL;
+            FEND("println", "null");
+            return newNil();
         }),
 
-        newFunc( "input", {
-            BEGIN("input args=%s", TLst(args).toStr().c_str());
-
+        DEFFUNC("input", {
             if (!args.empty()) {
-                EVALARGS(args, {});
+                FILLARGS(args, {});
                 printf("%s", TOSTR(args[0]));
             }
 
             string input;
             getline(std::cin, input);
-            END("input");
+            FEND("input", "%s",input.c_str());
             return newStr(input);
         }),
 
-        newFunc( "delay", {
-            BEGIN("delay args=%s", TLst(args).toStr().c_str());
-
+        DEFFUNC("delay", {
             if (!args.empty()) {
-                EVALARGS(args, {});
+                FILLARGS(args, {});
                 uint8_t type = getType(args[0]);
 
                 if (type == T_INT)
@@ -71,46 +73,38 @@ bool initBuiltins() {
                 else if (type == T_STR)
                     delay(stod2(getStr(args[0])));
             }
-            END("delay");
-            return V_NULL;
+            FEND("delay", "null");
+            return newNil();
         }),
 
-        newFunc( "clock", {
-            BEGIN("clock args=%s", TLst(args).toStr().c_str());
-            END("clock");
+        DEFFUNC("clock", {
+            FEND("clock", "%s", dtos2(clock() / 1000.0));
             return newFlt(clock() / 1000.0);
         }),
 
-        newFunc( "typeof", {
-            BEGIN("typeof args=%s", TLst(args).toStr().c_str());
-            END("typeof");
-
-            if (!args.empty()) {
-                EVALARGS(args, {V_NULL});
+        DEFFUNC("typeof", {
+            if (args.size() == 1) {
+                FILLARGS(args, {});
+                FEND("typeof", "%s", getTypeName(args[0]));
                 return newStr(getTypeName(args[0]));
             } else
-                return newStr(typeName(-1));
+                err_iac("typeof", args, 1);
         }),
 
-        newFunc( "toString", {
-            BEGIN("typeof args=%s", TLst(args).toStr().c_str());
-            END("toString");
-
-            if (!args.empty()) {
-                EVALARGS(args, {});
-                return newStr(escape(args[0]->toStr()));
+        DEFFUNC("toString", {
+            if (args.size() == 1) {
+                FILLARGS(args, {});
+                FEND("toString", "%s", args[0]->toString(true).c_str());
+                return newStr(args[0]->toString(true));
             } else
-                return newStr("");
+                err_iac("toString", args, 1);
         })
 
-
 #if ISBOT
-,
-        newFunc( "Bot_Write", {
-            BEGIN("Bot_write args=%s", TLst(args).toStr().c_str());
-
+        ,
+        DEFFUNC("Bot_Write", {
             if (!args.empty()) {
-                EVALARGS(args, {});
+                FILLARGS(args, {});
 
                 int size = args.size();
                 if(size == 3) {
@@ -121,13 +115,13 @@ bool initBuiltins() {
                 RaspiBot::Call("write", args);
             }
 
-            END("Bot_write");
-            return V_NULL;
+            FEND("Bot_write");
+            return newNil();
         })
 #endif
     };
 
-    END("-> false");
+    END("false");
     return false;
 }
 

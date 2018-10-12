@@ -2,14 +2,16 @@
 #include "builtins.hpp"
 #include "interpret.hpp"
 
+
 static const char digits[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+
 char* dtos2(long double num, uint8_t rad) {
-    BEGIN("num=%LF,r=%i", num, rad);
+    // BEGIN("num=%LF,r=%i", num, rad);
 
     if (!num) {
-        END("-> 0.0");
+        // END("0.0");
         return strdup("0.0");
     }
 
@@ -108,12 +110,12 @@ char* dtos2(long double num, uint8_t rad) {
     } else
         begin = res;
 
-    END("-> \"%s\"", begin);
+    // END("\"%s\"", begin);
     return strdup(begin);
 }
 
 long double stod2(const char* s) {
-    BEGIN("s=\"%s\"", s);
+    // BEGIN("s=\"%s\"", s);
 
     static char digits['z' + 1] = "";
     long double pot, res = 0;
@@ -161,7 +163,7 @@ long double stod2(const char* s) {
     }
 
     if (isneg) res = -res;
-    END("-> %Lf", res);
+    // END("%Lf", res);
     return res;
 }
 
@@ -184,7 +186,7 @@ string replace(string str, string src, string ovr) {
         str.replace(start, src.size(), ovr);
         start += ovr.size(); // case 'ovr' is substring of 'src'
     }
-    // END("-> %s", str.c_str());
+    // END("%s", str.c_str());
     return str;
 }
 

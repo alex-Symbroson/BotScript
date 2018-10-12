@@ -14,8 +14,8 @@
 #    include <wiringPi.h>
 #endif
 
-#define BEGIN(...) BEGIN_1("Pins", __VA_ARGS__)
-#define END(...) BEGIN_1("Pins", __VA_ARGS__)
+#define BEGIN(...) BEGIN_1("Pins::", __func__, __VA_ARGS__)
+#define END(...) BEGIN_1("Pins::", __func__, __VA_ARGS__)
 
 void Pins::setup() {
     BEGIN();

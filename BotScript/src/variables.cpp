@@ -4,26 +4,25 @@
 
 #include "interpret.hpp"
 
-#define BEGIN(...) BEGIN_1("Variables", __VA_ARGS__)
-#define END(...) END_1("Variables", __VA_ARGS__)
 
-#define FUNCTION (PVar a, PVar b)->PVar
+#define BEGIN(...) BEGIN_1("Variables::", __func__, __VA_ARGS__)
+#define END(...) END_1("Variables::", __func__, __VA_ARGS__)
+
+#define DEFOPR(NAME, ...) \
+    { NAME, [](PVar a, PVar b) -> PVar __VA_ARGS__ }
+
+
+list<PVar> collector = {};
 FuncMapOpr operations[TCNT];
-
 uint8_t VAR_Type[CCNT] = {T_INT, T_INT, T_INT, T_FLT, T_STR, T_LST,
                           T_OBJ, T_INT, T_LST, T_LST, T_STR, T_LST,
                           T_BFN, T_STR, T_NIL, T_INT, T_INT, T_LST,
                           T_LST, T_LST, T_LST, T_LST, T_LST};
 
-list<PVar> collector = {};
-
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
-    // BEGIN();
-    // END();
     switch (t) {
-        case T_NIL: return "null";
-        // case T_VAR: return "var";
+        case T_NIL: return "nil";
         case T_BIN: return "boolean";
         case T_INT: return "integer";
         case T_FLT: return "float";
@@ -55,25 +54,27 @@ const char* typeName(uint8_t t) {
     }
 }
 
+
 IVar::IVar() {
-    // BEGIN();
+    // INFO("append %p", this);
     collector.push_front(this);
     this->it = collector.begin();
-    // END("-> %p", this);
 }
 
 IVar::~IVar() {
-    // BEGIN("%p ~IVar<%s>", this, typeName(getType(this)));
+    // INFO("remove %p", this);
+    if (this->refcnt && status != S_FREE)
+        error(
+            "freeing %p with refcount %i during execution (=%s)", this, refcnt,
+            toString().c_str()),
+            getchar();
     collector.erase(this->it);
-    // END();
 }
 
-#define TypeClassDef(TMPL, TYPE, TYPEID)                                      \
-                                                                              \
+
+#define TypeClassConstructor(TMPL, TYPE, TYPEID)                              \
     template <TMPL>                                                           \
     TVar<TYPE>::TVar(TYPE v, uint8_t typeID, bool Const) {                    \
-        /* BEGIN(); */                                                        \
-                                                                              \
         if (typeID) {                                                         \
             if (baseType(typeID) != baseType(TYPEID)) {                       \
                 error_exit(                                                   \
@@ -88,78 +89,98 @@ IVar::~IVar() {
         value   = v;                                                          \
         isConst = Const;                                                      \
         pval    = &value;                                                     \
-        ptype   = &type;                                                      \
                                                                               \
-        /*END("-> %p : TVar<%s> %s", this, typeName(this->type),              \
-            TOSTR(this));*/                                                   \
-    }                                                                         \
-                                                                              \
-    template <TMPL>                                                           \
-    TVar<TYPE>::~TVar() {                                                     \
-        /*BEGIN(                                                              \
-            "%p ~TVar<%s> %s", this, typeName(this->type),                    \
-            TOSTR(this));*/                                                   \
-                                                                              \
-        /*END();*/                                                            \
+        /* INFO("create %p %s%s %s", this, isConst ? "const " : "",           \
+               typeName(type), toString().c_str());                        */ \
     }
 
-TypeClassDef(typename T, T, T_NIL);
-TypeClassDef(, var_nil, T_NIL);
-TypeClassDef(, var_int, T_INT);
-TypeClassDef(, var_flt, T_FLT);
-TypeClassDef(, var_str, T_STR);
-TypeClassDef(, var_lst, T_LST);
-TypeClassDef(, var_obj, T_OBJ);
-TypeClassDef(, var_bfn, T_BFN);
+#define TypeClassDestructor(TMPL, TYPE, TYPEID) \
+    template <TMPL>                             \
+    TVar<TYPE>::~TVar() {}
+
+TypeClassConstructor(typename T, T, T_NIL);
+TypeClassConstructor(, var_nil, T_NIL);
+TypeClassConstructor(, var_int, T_INT);
+TypeClassConstructor(, var_flt, T_FLT);
+TypeClassConstructor(, var_str, T_STR);
+TypeClassConstructor(, var_lst, T_LST);
+TypeClassConstructor(, var_obj, T_OBJ);
+TypeClassConstructor(, var_bfn, T_BFN);
+
+TypeClassDestructor(typename T, T, T_NIL);
+TypeClassDestructor(, var_nil, T_NIL);
+TypeClassDestructor(, var_int, T_INT);
+TypeClassDestructor(, var_flt, T_FLT);
+TypeClassDestructor(, var_str, T_STR);
+TypeClassDestructor(, var_bfn, T_BFN);
+
+
+template <>
+TVar<var_lst>::~TVar() {
+    /* INFO("delete %p %s%s %s", this, isConst ? "const " : "",
+            typeName(type), toString().c_str()); */
+
+    for (PVar& v: value) decRef(v);
+}
+
+template <>
+TVar<var_obj>::~TVar() {
+    /* INFO("delete %p %s%s %s", this, isConst ? "const " : "",
+            typeName(type), toString().c_str()); */
+
+    for (auto& v: value) decRef(v.second);
+}
+
 
 // clang-format off
 
+    // dont modify const values!
 bool initOperations() {
     BEGIN();
     operations[T_INT] = {
-        {"equal", [] FUNCTION {
+        DEFOPR("equal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getInt(a) == getInt(b));
                 case T_FLT: return newBin(getInt(a) == getFlt(b));
                 default   : return newBin(false);
             }
-        }},
-        {"nequal", [] FUNCTION {
+        }),
+        DEFOPR("nequal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getInt(a) != getInt(b));
                 case T_FLT: return newBin(getInt(a) != getFlt(b));
                 default   : return newBin(true);
             }
-        }},
-        {"add", [] FUNCTION {
+        }),
+        DEFOPR("add", {
             switch(getType(b)) {
                 case T_INT: return newInt(getInt(a) + getInt(b));
                 case T_FLT: return newFlt(getInt(a) + getFlt(b));
                 default   : err_iop("+", a, b);
             }
-        }},
-        {"sub", [] FUNCTION {
+        }),
+        DEFOPR("sub", {
             switch(getType(b)) {
                 case T_INT: return newInt(getInt(a) - getInt(b));
                 case T_FLT: return newFlt(getInt(a) - getFlt(b));
                 default   : err_iop("-", a, b);
             }
-        }},
-        {"mul", [] FUNCTION {
+        }),
+        DEFOPR("mul", {
             switch(getType(b)) {
                 case T_INT: return newInt(getInt(a) * getInt(b));
                 case T_FLT: return newFlt(getInt(a) * getFlt(b));
                 default   : err_iop("*", a, b);
             }
-        }},
-        {"div", [] FUNCTION {
+        }),
+        DEFOPR("div", {
             switch(getType(b)) {
                 case T_INT: return newInt(getInt(a) / getInt(b));
                 case T_FLT: return newFlt(getInt(a) / getFlt(b));
                 default   : err_iop("/", a, b);
             }
-        }},
-        {"mod", [] FUNCTION {
+        }),
+        DEFOPR("mod", {
             switch(getType(b)) {
                 case T_INT: return newInt(getInt(a) % getInt(b));
                 case T_FLT: {
@@ -168,65 +189,66 @@ bool initOperations() {
                 }
                 default   : err_iop("%", a, b);
             }
-        }},
-        {"toStr", [] FUNCTION {
+        }),
+        DEFOPR("toStr", {
             var_lst args = getLst(b);
 
             if(!args.empty()) {
-                EVALARGS(args, {});
-                if(getType(args[0]) == T_INT)
-                    return newStr(dtos2(getInt(a), getInt(args[0])));
-                else
+                FILLARGS(args, {});
+                if(getType(args[0]) == T_INT) {
+                    PVar res = newStr(dtos2(getInt(a), getInt(args[0])));
+                    return res;
+                } else
                     err_iat(a, args[0], "toString", T_INT);
             } else
                 return newStr(dtos2(getInt(a), 10));
-        }}
+        })
     },
 
     operations[T_FLT] = {
-        {"equal", [] FUNCTION {
+        DEFOPR("equal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getFlt(a) == getInt(b));
                 case T_FLT: return newBin(getFlt(a) == getFlt(b));
                 default   : return newBin(false);
             }
-        }},
-        {"nequal", [] FUNCTION {
+        }),
+        DEFOPR("nequal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getFlt(a) != getInt(b));
                 case T_FLT: return newBin(getFlt(a) != getFlt(b));
                 default   : return newBin(true);
             }
-        }},
-        {"add", [] FUNCTION {
+        }),
+        DEFOPR("add", {
             switch(getType(b)) {
                 case T_INT: return newFlt(getFlt(a) + getInt(b));
                 case T_FLT: return newFlt(getFlt(a) + getFlt(b));
                 default   : err_iop("+", a, b);
             }
-        }},
-        {"sub", [] FUNCTION {
+        }),
+        DEFOPR("sub", {
             switch(getType(b)) {
                 case T_INT: return newFlt(getFlt(a) - getInt(b));
                 case T_FLT: return newFlt(getFlt(a) - getFlt(b));
                 default   : err_iop("-", a, b);
             }
-        }},
-        {"mul", [] FUNCTION {
+        }),
+        DEFOPR("mul", {
             switch(getType(b)) {
                 case T_INT: return newFlt(getFlt(a) * getInt(b));
                 case T_FLT: return newFlt(getFlt(a) * getFlt(b));
                 default   : err_iop("*", a, b);
             }
-        }},
-        {"div", [] FUNCTION {
+        }),
+        DEFOPR("div", {
             switch(getType(b)) {
                 case T_INT: return newFlt(getFlt(a) / getInt(b));
                 case T_FLT: return newFlt(getFlt(a) / getFlt(b));
                 default   : err_iop("/", a, b);
             }
-        }},
-        {"mod", [] FUNCTION {
+        }),
+        DEFOPR("mod", {
             var_flt c = getFlt(a), d;
             switch(getType(b)) {
                 case T_INT: d = getInt(b);
@@ -234,160 +256,200 @@ bool initOperations() {
                 default   : err_iop("%", a, b);
             }
             return newFlt(c - d * floor(c / d));
-        }},
-        {"toStr", [] FUNCTION {
+        }),
+        DEFOPR("toStr", {
             var_lst args = getLst(b);
 
             if(!args.empty()) {
-                EVALARGS(args, {});
-                if(getType(args[0]) == T_INT)
-                    return newStr(dtos2(getFlt(a), getInt(args[0])));
-                else
+                FILLARGS(args, {});
+                if(getType(args[0]) == T_INT) {
+                    PVar res = newStr(dtos2(getFlt(a), getInt(args[0])));
+                    return res;
+                } else
                     err_iat(a, args[0], "toString", T_INT);
+
             } else
                 return newStr(dtos2(getFlt(a), 10));
-        }}
+        })
     };
 
     operations[T_STR] = {
-        {"equal", [] FUNCTION {
+        DEFOPR("equal", {
             if(getType(b) == T_STR)
                 return newBin(getStr(a) == getStr(b));
             else
                 return newBin(false);
-        }},
-        {"nequal", [] FUNCTION {
+        }),
+        DEFOPR("nequal", {
             if(getType(b) == T_STR)
                 return newBin(getStr(a) != getStr(b));
             else
                 return newBin(true);
-        }},
-        {"add", [] FUNCTION {
+        }),
+        DEFOPR("add", {
             if(getType(b) == T_STR)
                 return newStr(getStr(a) + getStr(b));
             else err_iop("+", a, b);
-        }},
-        {"toInt", [] FUNCTION {
+        }),
+        DEFOPR("toInt", {
             string s = getStr(a);
             int32_t pos = s.find('.');
             if(pos > -1) s[pos] = 0;
             return newInt(stod2(s));
-        }},
-        {"toFlt", [] FUNCTION {
+        }),
+        DEFOPR("toFlt", {
             return newFlt(stod2(getStr(a)));
-        }}
+        })
     };
 
     operations[T_BFN] = {
-        {"call", [] FUNCTION {
-            BEGIN("%s call %s", TOSTR(a), TOSTR(b));
-
+        DEFOPR("call", {
             if (getType(b) == T_ARG) {
                 PVar res = getBfn(a)->func(getLst(b));
-                END("%s", TOSTR(res));
                 return res;
             } else
                 err_iop("call", a, b);
-        }}
+        })
     };
 
     operations[T_LST] = {
-        {"push", [] FUNCTION {
-            getLst(a).push_back(b);
-            return newInt(getLst(a).size());
-        }},
-        {"pop", [] FUNCTION {
+        DEFOPR("push", {
+            if(a->isConst) error_exit("cannot call \"push\" on constant list");
+            else getLst(a).push_back(incRef(b));
+            return newInt(getLst(a).size() + a->isConst);
+        }),
+        DEFOPR("pop", {
+            if(a->isConst) error_exit("cannot call \"pop\" on constant list");
+            //else getLst(a).pop_back();
             PVar ret = getLst(a).back();
-            getLst(a).pop_back();
+            ret->refcnt--;
             return ret;
-        }},
-        {"at", [] FUNCTION {
+        }),
+        DEFOPR("at", {
             if(getType(b) == T_INT) {
                 var_int i = getInt(b);
-                uint32_t len = getLst(a).size();
+                var_lst lst = getLst(a);
+                uint32_t len = lst.size();
                 if(i < 0) i += len;
 
                 if(i < 0 || i >= len)
                     err_rng(a, b);
                 else
-                    return getLst(a)[i];
+                    return lst[i];
             } else
                 err_iop("at", a, b);
-        }},
-        {"join", [] FUNCTION {
+        }),
+        DEFOPR("join", {
             var_lst args = getLst(b);
 
             if(!args.empty()) {
-                EVALARGS(args, {});
+                FILLARGS(args, {});
                 string result = "", sep = "";
 
                 if(getType(args[0]) == T_STR) sep = getStr(args[0]);
                 else err_iat(a, args[0], "join", T_STR);
 
-                for (PVar& v: getLst(a)) result += v->toStr() + sep;
+                PVar tmp, last = getLst(a).back();
+                for (PVar& v: getLst(a)) {
+                    tmp = incRef(evalExpr(v, false));
+                    result += tmp->toString();
+                    if(v != last) result += sep;
+                    decRef(tmp);
+                }
 
                 return newStr(result);
             } else
-                err_iac(a, args, "join", 1);
-        }}
+                err_iac2(a, args, "join", 1);
+        })
     };
 
-    END("-> false");
+    END("false");
     return false;
 }
 
 // clang-format on
 
-PVar evalExpr(PVar& expr) {
-    switch (getType(expr)) {
-        case T_TRM: return handleLine(getLst(expr));
-        case T_ARG:
+PVar copyVar(PVar& var) {
+    // BEGIN("%s", TOSTR(var));
+    // END();
+    switch (getBaseType(var)) {
+        case T_NIL: return newNil();
+        case T_INT: return NEWVAR(TInt(getInt(var), getType(var)));
+        case T_FLT: return NEWVAR(TFlt(getFlt(var), getType(var)));
+        case T_STR: return NEWVAR(TStr(getStr(var), getType(var)));
+        case T_BFN: return NEWVAR(TBfn(getBfn(var), getType(var)));
         case T_LST: {
             var_lst lst;
-            for (PVar& v: getLst(expr)) lst.push_back(evalExpr(v));
-            return NEWVAR(TLst(lst, getType(expr)));
+            for (PVar& v: getLst(var)) {
+                if (v->isConst)
+                    lst.push_back(incRef(copyVar(v)));
+                else
+                    lst.push_back(incRef(v));
+            }
+            return NEWVAR(TLst(lst, getType(var)));
         }
         case T_OBJ: {
             var_obj obj;
-            for (auto& v: getObj(expr)) obj[v.first] = evalExpr(v.second);
-            return newObj(obj);
+            for (auto& v: getObj(var)) {
+                if (v.second->isConst)
+                    obj[v.first] = incRef(copyVar(v.second));
+                else
+                    obj[v.first] = incRef(v.second);
+            }
+            return NEWVAR(TObj(obj, getType(var)));
         }
 
-        default: return expr;
+        default: error_exit("couldn't copy %s\n", getTypeName(var));
     }
 }
 
-void setDefault(var_lst& args, const var_lst& dflt) {
-    int16_t i = 0, len = args.size();
-    var_lst fargs(len);
+PVar evalExpr(PVar& expr, bool copy) {
+    if (getType(expr) == T_TRM) return handleLine(getLst(expr));
 
-    // evaluate arguments
-    for (; i < len; i++) fargs[i] = evalExpr(args[i]);
+    if (getType(expr) == T_ARG || getType(expr) == T_LST) {
+        var_lst lst = getLst(expr);
+        int16_t i = 0, len = lst.size();
+        var_lst flst(len);
+
+        for (; i < len; i++) flst[i] = incRef(evalExpr(lst[i], true));
+        return NEWVAR(TLst(flst, getType(expr), false));
+
+    } else if (copy)
+        return copyVar(expr);
+    else
+        return expr;
+}
+
+void fillArgs(var_lst& args, var_lst& dflt) {
+    BEGIN();
+    int16_t i = 0, len = dflt.size();
 
     // fill arguments
-    i = dflt.size();
-    while (i-- > len) fargs.push_back(dflt[i]);
-
-    args = fargs;
+    for (i = args.size(); i < len; i++)
+        args.push_back(incRef(copyVar(dflt[i])));
+    END();
 }
 
 bool hasOperator(PVar& v, string o) {
     BEGIN("v=%s, op=%s", getTypeName(v), o.c_str());
     auto opr = operations[getType(v)];
     if (opr.find(o) != opr.end()) {
-        END("-> %i", 1);
+        END("true");
         return true;
     } else {
         auto pop = operators.find(o);
         if (pop != operators.end()) {
             o = pop->second.name;
-            END("-> %i", opr.find(o) != opr.end());
+            END("%i", opr.find(o) != opr.end());
             return opr.find(o) != opr.end();
         }
     }
-    END("-> %i", 0);
+    END("false");
     return false;
 }
+
+
+// freeing
 
 void cleanupCollector() {
     uint32_t n = 0;
@@ -405,19 +467,106 @@ void FreeVariables() {
     BEGIN();
     uint32_t n = 0;
     collector.remove_if([&n](PVar& v) {
-        n++;
         delete v;
         return false;
     });
-    INFO("freed %i variables", n);
-    /*
-    printf(
-        "sizes:\n"
-        "nil:%lu\nint:%lu\nflt:%lu\nstr:%lu\nlst:%lu\nobj:%lu\nbfn:%lu\n"
-        "IVar:%lu\n",
-        sizeof(TNil), sizeof(TInt), sizeof(TFlt), sizeof(TStr),
-    sizeof(TLst), sizeof(TObj), sizeof(TBfn) - sizeof(TBltFunc*) +
-    sizeof(TBltFunc), sizeof(IVar));
-        */
     END();
+}
+
+
+// toStr
+
+string toStr(PVar& v, uint8_t type) {
+    return v->toString();
+}
+
+string toStr(var_nil& v, uint8_t type) {
+    return "null";
+}
+
+string toStr(var_int& v, uint8_t type) {
+    if (type == T_PIN) return "Pin(" + to_string(v) + ")";
+    if (type == T_BIN) return v ? "true" : "false";
+    if (type >= TCNT) return typeName(type);
+    return to_string(v);
+}
+
+string toStr(var_flt& v, uint8_t type) {
+    return dtos2(v);
+}
+
+string toStr(var_str& v, uint8_t type) {
+    return v;
+}
+
+string toStr(var_lst& v, uint8_t type) {
+    string result;
+    char lstEnd;
+    switch ((int)type >= KCNT ? KWType[type - KCNT] : type) {
+        case (uint8_t)-1:
+        case T_LST:
+            result = "[";
+            lstEnd = ']';
+            break;
+
+        case T_FNC:
+            result = "{";
+            lstEnd = '}';
+            break;
+
+        case T_TRM:
+            result = "(";
+            lstEnd = ')';
+            break;
+
+        case T_ARG:
+            result = "<";
+            lstEnd = '>';
+            break;
+
+        default:
+            error_exit("unknown list type id %i - report", type);
+            // result = "|"; lstEnd = '|';
+    }
+
+    for (PVar& v: v) result += v->toString(true) + ",";
+
+    if (result.size() > 1)
+        result[result.size() - 1] = lstEnd;
+    else
+        result += lstEnd;
+
+    if (type >= TCNT) result = typeName(type) + (' ' + result);
+
+    return result;
+}
+
+string toStr(var_obj& v, uint8_t type) {
+    string result = "]";
+
+    // builds string reversed because every new unordered_map
+    // element is inserted at the front
+    for (auto& v: v)
+        result = ",\"" + v.first + "\":" + v.second->toString(true) + result;
+
+    if (!v.empty())
+        result[0] = '[';
+    else
+        result = result + "[";
+    return result;
+}
+
+string toStr(var_bfn& v, uint8_t type) {
+    string result = v->name;
+    /*
+    if (v->argc) {
+        result += "(";
+        for (uint16_t i = 1; i <= v->argc; i++)
+            result += "p" + to_string(i) + ",";
+        result[result.size() - 1] = ')';
+    } else
+        result += "()";
+    result += " { [builtin] }"
+    */
+    return result;
 }

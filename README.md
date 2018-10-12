@@ -1,5 +1,5 @@
 
-# BotScript
+# BotScript v1.00
 Script language with optimized PIN access features
 
 **Origin 3 - Stack:**

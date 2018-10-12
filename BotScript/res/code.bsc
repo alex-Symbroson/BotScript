@@ -31,22 +31,6 @@ print("[1,2.5,1.+.1] = ", [1,2.5,1.+.1], [-1], " = ", [1,2.5,1.+.1][-1], "\n");
 //typeof test
 println(typeof((5).toStr));
 
-//number conversion test
-println(
-    "\nconversion",
-     987654321.123456789,
-    "987654321.123456789".toInt(),
-    (987654321.123456789).toStr(16),
-    (987654321.123456789).toStr(16).toInt(),
-    (987654321.123456789).toStr(16).toFlt(), //!
-    16xB3A73CE2D79
-);
-
-println([101., (101.).toStr(6), (101.).toStr(6).toFlt()].join(" "));
-println([10.3, (10.3).toStr(6), (10.3).toStr(6).toFlt()].join(" "));
-println([15. , (15.).toStr(16), (15.).toStr(16).toFlt()].join(" "));
-println([ 1.5, (1.5).toStr(16), (1.5).toStr(16).toFlt()].join(" "));
-
 println("");
 
 //print float rounding test
@@ -54,8 +38,6 @@ println([
 "float rounding: ",
  99.9999999,  1299.999999,  1234.9999999,  12.349999999,  0.999999,  0.12999999,
 -99.9999999, -1299.999999, -1234.9999999, -12.349999999, -0.999999, -0.12999999
--0.04567].join("  "));
+-0.04567].join(" " + " "));
 
-println("type quit");
-
-while(input() != "quit")
+while(input("type quit: ") != "quit")
