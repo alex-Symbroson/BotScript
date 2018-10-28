@@ -4,25 +4,12 @@
 
 #include "headers.hpp"
 
-inline bool isAlphaNum(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-           (c >= '0' && c <= '9') || c == '_';
-}
-
-inline bool isSymbol(char c) {
-    return !isAlphaNum(c);
-}
-
-inline bool isWhitespace(char c) {
-    return c <= ' ';
-}
+#define isAlpha(c) (isalpha(c) || c == '_')
+#define isAlnum(c) (isalnum(c) || c == '_')
+#define isPunct(c) (ispunct(c) && c != '_')
 
 inline bool isOperator(char c) {
-    // BEGIN("%c", c);
-    // characters interpreted as operators
-    static const string s_operators("<>!%^&*|+=.-/");
-    // END();
-    return s_operators.find(c) + 1;
+    return strchr("=.+-|<>&!*/%^~", c);
 }
 
 // replace all in string

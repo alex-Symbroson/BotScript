@@ -19,14 +19,17 @@ delay(16x32);    println(clock());
 delay(2x110010); println(clock());
 
 // operator test
+// strings will be concatenated
 print(
-    "dec: 3+-5*-.4 = ", 3 + -5 * -.4, "\n" //strings will be concatenated
-    "hex: -16x1.8  = ", -16x1.8,
-    "\n"
+    "dec: 3+-5*-.4 = ", 3 + -5 * -.4, "\n" // cat
+    "hex: -16x1.8  = ", -16x1.8, "\n"
 );
 
 // list test
-print("[1,2.5,1.+.1] = ", [1,2.5,1.+.1], [-1], " = ", [1,2.5,1.+.1][-1], "\n");
+print(
+    "[1,2.5,1.+.1] = ", [1,2.5,1.+.1],
+    [-1], " = ", [1,2.5,1.+.1][-1], "\n"
+);
 
 //typeof test
 println(typeof((5).toStr));
@@ -35,9 +38,22 @@ println("");
 
 //print float rounding test
 println([
-"float rounding: ",
- 99.9999999,  1299.999999,  1234.9999999,  12.349999999,  0.999999,  0.12999999,
--99.9999999, -1299.999999, -1234.9999999, -12.349999999, -0.999999, -0.12999999
--0.04567].join(" " + " "));
+    "float rounding: ",
+     99.9999999,  1299.999999,  1234.9999999,
+     12.3499999,     0.999999,     0.1299999,
+    -99.9999999, -1299.999999, -1234.9999999,
+    -12.3499999,    -0.999999,    -0.1299999, -0.04567
+].join(" " + " "));
 
-while(input("type quit: ") != "quit")
+while(true) do {
+    if (input("type quit: ") == "quit")
+    do { break; }
+    else {
+        println("invalid");
+        return 1;
+    };
+    print("near end");
+};
+
+println("ok");
+return 0;

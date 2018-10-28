@@ -35,6 +35,10 @@ ispi
 isbot
 isdbg
 
+# test versions
+*.c_pp
+*.h_pp
+
 #   logs
 *.log
 

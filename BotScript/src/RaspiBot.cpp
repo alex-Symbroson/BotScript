@@ -98,9 +98,9 @@ namespace RaspiBot {
     PyObject *toPyVar(PVar &v) {
         switch (getType(v)) {
             case T_NIL: return Py_None;
-            case T_BIN: return getInt(v) ? Py_True : Py_False;
-            case T_INT:
-            case T_PIN: return PyLong_FromLong(getInt(v));
+            case T_BIN: return getBin(v) ? Py_True : Py_False;
+            case T_INT: return PyLong_FromLong(getInt(v));
+            case T_PIN: return PyLong_FromLong(getPin(v));
             case T_FLT: return PyFloat_FromDouble(getFlt(v));
             case T_STR: return PyString_FromString(getStr(v).c_str());
 
@@ -141,6 +141,7 @@ namespace RaspiBot {
         freeing = true;
         if (pFunc) {
             Call("cleanup", {});
+            if (res) decRef(res);
             Py_DECREF(pFunc);
         }
         if (pModule) Py_DECREF(pModule);

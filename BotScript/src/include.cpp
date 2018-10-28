@@ -2,17 +2,37 @@
 #include "builtins.hpp"
 #include "interpret.hpp"
 
-
-static const char digits[] =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
+#define INF (unsigned)!((var_flt)0)
 
 char* dtos2(long double num, uint8_t rad) {
-    // BEGIN("num=%LF,r=%i", num, rad);
+    // BEGIN("num=%Lf,r=%i", num, rad);
 
+    // check for zero
     if (!num) {
         // END("0.0");
         return strdup("0.0");
+    }
+
+    // check for infinite
+    if (num == num + 1) {
+        if (num > 0) {
+            // END("inf");
+            return strdup("inf");
+        } else {
+            // END("-inf");
+            return strdup("-inf");
+        }
+    }
+
+    // check for nan
+    if (num != num) {
+        if (num > 0) {
+            // END("nan");
+            return strdup("nan");
+        } else {
+            // END("-nan");
+            return strdup("-nan");
+        }
     }
 
     static const char* digits =
@@ -117,11 +137,17 @@ char* dtos2(long double num, uint8_t rad) {
 long double stod2(const char* s) {
     // BEGIN("s=\"%s\"", s);
 
-    static char digits['z' + 1] = "";
+    static char digits[] =
+        "------------------------------------------------"
+        "\x00\x01\x02\x03\x04\x05\x06\x07\x08\t-------"
+        "\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b"
+        "\x1c\x1d\x1e\x1f !\"#------"
+        "$%&\'()*+,-./0123456789:;<=";
+
     long double pot, res = 0;
-    uint16_t i = 0, rad = 0;
-    bool isneg = false;
-    int16_t d  = -1;
+    bool isneg   = false;
+    int16_t d    = -1;
+    uint16_t rad = 0;
     const char* c;
 
     if (*s == '-' || *s == '+') isneg = *s++ == '-';
@@ -129,7 +155,7 @@ long double stod2(const char* s) {
 
     while (*c && *c != 'x') rad = rad * 10 + *c++ - '0';
 
-    if (!*c) {
+    if (!*c) { //?
         if (s[0] == '0' && s[1] == 'b')
             s += rad = 2;
         else
@@ -143,12 +169,6 @@ long double stod2(const char* s) {
         s = c + 1;
     }
 
-    if (!*digits) {
-        for (i = '0'; i <= '9'; i++) digits[i] = i - '0';
-        for (i = 'A'; i <= 'Z'; i++) digits[i] = i - 'A' + 10;
-        for (i = 'a'; i <= 'z'; i++) digits[i] = i - 'Z' + 26;
-        *digits = 1;
-    }
 
     while (*s == '0') s++;
     c = s;
@@ -237,13 +257,13 @@ string readFile(const char* path, bool ignore) {
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
             // whitespace
-            if (isWhitespace(c)) {
+            if (isspace(c)) {
                 do
                     c = fgetc(f);
-                while (c != EOF && isWhitespace(c));
+                while (c != EOF && isspace(c));
 
                 // keep two words separated
-                if (!isSymbol(lc) && !isSymbol(c)) content += ' ';
+                if (isAlnum(lc) && isAlnum(c)) content += ' ';
             }
 
             // strings
@@ -273,11 +293,8 @@ string readFile(const char* path, bool ignore) {
                 continue;
             }
 
-            if (c == EOF)
-                break;
-            else
-                content += c;
-            lc = c;
+            if (c == EOF) break;
+            content += lc = c;
         }
     } else {
         while ((c = fgetc(f)) != EOF) content += c;

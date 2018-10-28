@@ -1,7 +1,6 @@
 
 #include "interpret.hpp"
 
-
 /*       priority
 .   at       6        []  at       6
 ()  call     5        **  pow      4
@@ -14,7 +13,7 @@
 #define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
 // clang-format on
 #define getKeyType(k) KWType[k - KCNT]
-
+#define getKeyTypeName(k) typeName(KWType[k - KCNT])
 
 // all operators
 unordered_map<string, Operator> operators = {
@@ -33,20 +32,22 @@ unordered_map<string, Operator> operators = {
 
 // type of the keyword itself
 unordered_map<string, const uint8_t> keywords = {
-    {"null", K_NIL}, {"true", K_TRU},  {"false", K_FLS},
-    {"if", C_CIF},   {"elif", C_EIF},  {"else", C_ELS},
-    {"do", C_CDO},   {"while", C_WHL}, {"until", C_UNT}};
+    {"null", K_NIL},   {"true", K_TRU},  {"false", K_FLS}, {"break", K_BRK},
+    {"return", K_RET}, {"if", C_CIF},    {"elif", C_EIF},  {"else", C_ELS},
+    {"do", C_CDO},     {"while", C_WHL}, {"until", C_UNT}};
 
 // type of the value after the keyword (nil - no value)
 uint8_t KWType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC, T_FNC, T_TRM, T_TRM};
 
+PVar funcResult;
 
 PVar handleLine(var_lst& line) {
     BEGIN("line=%s", TOSTR(line));
+    funcResult = incRef(newNil());
 
     if (line.empty()) {
-        END("null");
-        return newNil();
+        END("0 null");
+        return funcResult;
     }
 
     // res: variable, it[0]: base var, it[1]: sub func, it[2]: args
@@ -55,148 +56,165 @@ PVar handleLine(var_lst& line) {
     uint8_t type, firstType = T_NIL;
     var_lst::iterator it, begin, end;
 
-    size  = line.size();
-    begin = line.begin();
-    type  = getType(*begin);
+    it   = line.begin();
+    size = line.size();
+    type = getType(*it);
 
     if (size == 1) {
         if (type < TCNT) {
-            res = evalExpr(*begin, false);
-            END("%s", TOSTR(res));
-            return res;
-        } else if (type < KCNT) {
-            goto err_tok;
+            REPVAR(funcResult, evalExpr(*it, false));
+            END(" %s", TOSTR(funcResult));
+            return funcResult;
+        } else {
+            switch (type) {
+                // control statements
+                case C_CDO: handleScope(getFncRaw(*it)); break;
+
+                case C_WHL:
+                    do
+                        REPVAR(res, handleLine(getTrmRaw(*it)));
+                    while (getBin(res) && !BREAK);
+
+                    if (status == S_BREAK) status = S_EXEC;
+                    break;
+
+                case C_UNT:
+                    do
+                        REPVAR(res, handleLine(getTrmRaw(*it)));
+                    while (!getBin(res) && !BREAK);
+
+                    if (status == S_BREAK) status = S_EXEC;
+                    break;
+
+                // keywords
+                case K_BRK: status = S_BREAK; break;
+
+                case K_RET:
+                    if (size != 1) goto err_tok;
+                    status = S_RETURN;
+                    REPVAR(funcResult, evalExpr(*it, false));
+                    break;
+
+                default: goto err_tok;
+            }
+            END("%s", TOSTR(funcResult));
+            return funcResult;
         }
     }
 
-    it  = begin;
-    end = line.end();
+    begin = it;
+    end   = line.end();
 
     // handle control structures
     if (type >= KCNT) {
         res       = incRef(newNil());
         firstType = type;
+        type      = getType(it[1]);
 
         switch (firstType) {
             // if .. elif .. else
             case C_CIF:
+                // find statement where condition is true
                 do {
                     type = getType(*it);
                     if (type == C_CIF || type == C_EIF) {
-                        REPVAR(res, handleLine(getLst(*it)));
+                        // parse condition
+                        DEBUG("%s", TOSTR(*it));
+                        REPVAR(res, handleLine(getTrmRaw(*it)));
+                        DEBUG("%s -> %s", TOSTR(*it), TOSTR(res));
 
-                        if (getType(res) == T_BIN) {
-                            // go to next condition
-                            if (!getInt(res)) it++;
-                        } else {
-                            goto err_bin;
-                        }
-                    } else if (type == C_ELS) {
+                        it++; // go to next block
+
+                        // execute block
+                        if (getBin(res)) break;
+                    } else if (type == C_ELS)
                         break;
-                    } else {
+                    else
                         goto err_tok;
-                    }
 
                     if (it == end) break;
-                    // go to next block
-                    it++;
+                    it++; // go to next block
                 } while (it != end);
 
+                // execute scope
                 if (it != end) {
-                    if (getType(*it) == C_CDO || getType(*it) == C_ELS) {
-                        handleScope(getLst(*it));
-                        it++;
-                    } else {
-                        type = getType(*it);
-                        goto err_tok;
-                    }
-                }
-
-                if (it != end) {
+                    DEBUG("%s", TOSTR(*it));
                     type = getType(*it);
-                    goto err_tok;
+                    if (type == C_CDO || type == C_ELS)
+                        handleScope(getFncRaw(*it));
+                    else
+                        goto err_tok;
                 }
+
                 break;
 
+            // do [ .. while | until ]
             case C_CDO:
-                if (size == 1) { // do
-                    handleScope(getLst(*it));
-                } else {
-                    type = getType(it[1]);
-                    switch (type) {
-                        case C_WHL: // do .. while
-                            do {
-                                handleScope(getLst(*it));
-                                REPVAR(res, handleLine(getLst(it[1])));
-                                if (getType(res) != T_BIN) goto err_bin;
-                            } while (getInt(res));
-                            break;
+                switch (type) {
+                    // do .. while
+                    case C_WHL:
+                        do {
+                            handleScope(getFncRaw(*it));
+                            if (BREAK) break;
+                            REPVAR(res, handleLine(getTrmRaw(it[1])));
+                        } while (getBin(res) && !BREAK);
+                        break;
 
-                        case C_UNT: // do .. until
-                            do {
-                                handleScope(getLst(*it));
-                                REPVAR(res, handleLine(getLst(it[1])));
-                                if (getType(res) != T_BIN) goto err_bin;
-                            } while (!getInt(res));
-                            break;
+                    // do .. until
+                    case C_UNT:
+                        do {
+                            handleScope(getFncRaw(*it));
+                            if (BREAK) break;
+                            REPVAR(res, handleLine(getTrmRaw(it[1])));
+                        } while (!getBin(res) && !BREAK);
+                        break;
 
-                        default: goto err_tok;
-                    }
+                    default: goto err_tok;
                 }
+
                 break;
 
+            // while .. do
             case C_WHL:
-                if (size == 1) { // while
-                    do {
-                        REPVAR(res, handleLine(getLst(*it)));
-                        if (getType(res) != T_BIN) goto err_bin;
-                    } while (getInt(res));
-                } else {
-                    type = getType(it[1]);
 
-                    if (type == C_CDO) { // while .. do
-                        REPVAR(res, handleLine(getLst(*it)));
-                        if (getType(res) != T_BIN) goto err_bin;
+                if (type != C_CDO) goto err_tok;
+                goto whl_do;
 
-                        while (getInt(res)) {
-                            handleScope(getLst(*it));
-                            REPVAR(res, handleLine(getLst(*it)));
-                            if (getType(res) != T_BIN) goto err_bin;
-                        }
-                    } else {
-                        goto err_tok;
-                    }
+                while (getBin(res) && !BREAK) {
+                    handleScope(getFncRaw(it[1]));
+                    if (BREAK) break;
+                whl_do:
+                    REPVAR(res, handleLine(getTrmRaw(*it)));
                 }
+
+                if (status == S_BREAK) status = S_EXEC;
                 break;
 
+            // until .. do
             case C_UNT:
-                if (size == 1) { // until
-                    do {
-                        REPVAR(res, handleLine(getLst(*it)));
-                        if (getType(res) != T_BIN) goto err_bin;
-                    } while (!getInt(res));
-                } else {
-                    type = getType(it[1]);
+                if (type == C_CDO) {
+                    goto unt_do;
 
-                    if (type == C_CDO) { // until .. do
-                        REPVAR(res, handleLine(getLst(*it)));
-                        if (getType(res) != T_BIN) goto err_bin;
-
-                        while (!getInt(res)) {
-                            handleScope(getLst(*it));
-                            REPVAR(res, handleLine(getLst(*it)));
-                            if (getType(res) != T_BIN) goto err_bin;
-                        }
-                    } else {
-                        goto err_tok;
+                    while (!getBin(res) && !BREAK) {
+                        handleScope(getFncRaw(it[1]));
+                        if (BREAK) break;
+                    unt_do:
+                        REPVAR(res, handleLine(getTrmRaw(*it)));
                     }
-                }
+                } else
+                    goto err_tok;
+
+                if (status == S_BREAK) status = S_EXEC;
                 break;
 
-            default: error_exit("invalid line %s", TOSTR(line)); return res;
+            default: error_exit("invalid line %s", TOSTR(line));
         }
-    } else {
-        // other statements
+
+        END(" %s", TOSTR(funcResult));
+        return funcResult;
+
+    } // other statements
+    else {
         it++;
         PVar args;
         res = incRef(evalExpr(*begin, false));
@@ -204,36 +222,29 @@ PVar handleLine(var_lst& line) {
         do {
             if (size > 2) {
                 // check wether operator available
-                if (!hasOperator(res, getStr(it[0])))
+                if (!hasOperator(res, getOprRaw(it[0])))
                     error_exit(
                         "%s has no operator %s", getTypeName(res),
                         TOSTR(it[0]));
 
                 args      = incRef(evalExpr(it[1], true)); // get 2nd arg
                 PVar tRes = res; // for safe overriding & freeing
-                res       = incRef(CALLOPR(res, getStr(it[0]), args));
+                res       = incRef(CALLOPR(res, getOprRaw(it[0]), args));
 
                 decRef(tRes); // delete previous result
                 decRef(args); // delete copied args
             } else {
-                decRef(res);
-                END("%s", TOSTR(it[0]));
-                return it[0];
+                REPVAR(res, it[0]);
+                break;
             }
 
             it += 2;
             size -= 2;
-
         } while (it != end);
-    }
 
-    if (res) {
-        END("%s", TOSTR(res));
-        return res;
+        END(" %s", TOSTR(res));
+        return REPVAR(funcResult, res);
     }
-
-    error_exit("no result of line %s", TOSTR(line));
-    return newNil();
 
 
 err_tok:
@@ -244,24 +255,21 @@ err_tok:
             "unexpected token %s in %s statement", typeName(type),
             typeName(firstType));
     return newNil();
-
-err_bin:
-    error_exit(
-        "expected boolean in %s condition, got %s", typeName(type),
-        getTypeName(res));
-    return newNil();
 }
 
 // scope interpreter
 void handleScope(var_lst& scope) {
     BEGIN("var_lst*scope");
-    for (auto& line: scope) decRef(handleLine(getLst(line)));
+    for (auto& line: scope) {
+        handleLine(getTrm(line));
+        if (BREAK) break;
+    }
     END();
 }
 
 // converts scope string to term
 var_lst toFunction(string::iterator& c, char separator, char end) {
-    BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
+    // BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
 
     var_lst block;
     var_lst line;
@@ -271,10 +279,10 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
     auto addVar = [&line, &lastType](PVar v, bool dbg = true) {
         if (!v->refcnt) incRef(v);
-        if (!v->isConst) printf("err!\n"), getchar();
+        if (!v->isConst) error_exit("err!\n"), getchar();
         lastType = getType(v);
         line.push_back(v);
-        if (dbg) DEBUG("%s: %s", TOSTR(v), typeName(lastType));
+        // if (dbg) DEBUG("\033[1;33m%s: %s", TOSTR(v), typeName(lastType));
     };
 
     while (*c != end && *c != ')' && *c != ']' && *c != '}') {
@@ -283,13 +291,13 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
         switch (*c) {
             case '"': {
                 while (*++c != '"' && *c != end) word += *c;
+                // DEBUG("\"%s\": %s", word.c_str(), typeName(T_STR));
 
                 if (lastType == T_STR)
                     getStr(line.back()) += unescape(word);
                 else
                     addVar(newStrC(unescape(word)));
 
-                DEBUG("\"%s\": %s", word.c_str(), typeName(T_STR));
             } break;
 
             case '[':
@@ -319,7 +327,7 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     type = T_ARG;
                 } else if (type == T_TRM && lastType == T_BFN) {
                     type = T_ARG;
-                    addVar(newStrC("call"));
+                    addVar(newOprC("call"));
                 } else if (
                     type == T_LST && (lastType == T_LST || lastType == T_OBJ)) {
                     type = T_TRM;
@@ -329,13 +337,16 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     if (type == getKeyType(lastType))
                         type = lastType;
                     else
-                        error_exit("ignored %s control", typeName(lastType));
+                        error_exit(
+                            "expected %s got %s\nignored %s control",
+                            typeName(type), getKeyTypeName(lastType),
+                            typeName(lastType));
                 }
 
-                DEBUG("%c: %s begin", *c, typeName(type));
+                // DEBUG("%c: %s begin", *c, typeName(type));
                 ++c;
                 var_lst list = toFunction(c, sep, end);
-                DEBUG("%c: %s end", *c, typeName(type));
+                // DEBUG("%c: %s end", *c, typeName(type));
 
                 if (type == T_TRM && list.size() == 1 &&
                     getType(list[0]) < TCNT)
@@ -346,83 +357,91 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
             } break;
 
             default: {
+                // separator -> end current line, begin new
                 if (*c == separator) {
-                    if (line.size() == 1 && getType(line[0]) < TCNT) {
+                    if (line.size() == 1 && getType(line[0]) < TCNT)
                         block.push_back(line[0]);
-                    } else {
+                    else
                         block.push_back(incRef(newTrmC(line)));
-                    }
 
                     line.clear();
                     lastType = T_NIL;
                     word += *c++;
-
-                } else if (
+                }
+                // operators
+                else if (
                     !line.empty() && (getType(line.back()) != T_OPR) &&
                     isOperator(*c) &&
-                    (*c != '.' || ((c[-1] < '0' || c[-1] > '9') &&
-                                   (c[01] < '0' || c[01] > '9')))) {
+                    (*c != '.' || !(isdigit(c[-1]) || isdigit(c[1]))))
+                // exclude +-.numbers. from operators
+                {
                     do {
                         word += *c;
                     } while (isOperator(word + *++c) && *c != end);
 
                     addVar(newOprC(operators.at(word).name));
-                } else {
-                    // clang-format off
+                }
+                // keywords, (builtin) functions, vars, control statements, ...
+                else {
                     do {
                         word += *c++;
                     } while (
                         *c != end &&
-                            (isAlphaNum(*c) ||
-                                // prevent floating point to be "at" operator
-                                (*c == '.' && (
-                                    (c[-1] >= '0' && c[-1] <= '9') ||
-                                    (c[01] >= '0' && c[01] <= '9')
-                                ))
-                            )
-                        );
+                        (isAlnum(*c) ||
+                         // prevent floating point to be "at" operator
+                         (*c == '.' && (isdigit(c[-1]) || isdigit(c[1])))));
 
                     if (*c == ' ') *c++;
-                    // clang-format on
 
-                    auto kwtype = keywords.find(word);
-                    if (kwtype != keywords.end()) {
-                        switch (kwtype->second) {
-                            case K_NIL: addVar(newNilC()); break;
-                            case K_TRU: addVar(newBinC(true)); break;
-                            case K_FLS: addVar(newBinC(false)); break;
-                            default:
-                                lastType = kwtype->second;
-                                DEBUG("keyword %i", lastType);
-                        }
-                        continue;
-                    } // else ..
-
-                    // operator
-                    if (lastType == T_OPR && getStr(line.back()) == "at") {
-                        getStr(line.back()) = word;
-                        setType(line.back(), T_MFN);
-                        lastType = T_MFN;
-
-                        // builtin
-                    } else if (isBuiltin(word.c_str())) {
-                        addVar(newBfnC(getBltin(word)));
-
-                        // number
-                    } else if (
-                        (word[0] >= '0' && word[0] <= '9') ||
-                        (word[0] == '.' || word[0] == '-' || word[0] == '+')) {
+                    // number
+                    if (!isAlpha(word[0])) {
                         if ((long)word.find(".") == -1)
                             addVar(newIntC(stod2(word)));
                         else
                             addVar(newFltC(stod2(word)));
+                    }
+                    // subfunction
+                    else if (lastType == T_OPR && getOpr(line.back()) == "at") {
+                        getOpr(line.back()) = word;
+                        setType(line.back(), T_MFN);
+                        lastType = T_MFN;
+                    }
+                    // builtin
+                    else if (isBuiltin(word.c_str())) {
+                        addVar(newBfnC(getBltin(word)));
+                    }
+                    // keyword
+                    else {
+                        auto kwtype = keywords.find(word);
+                        // invalid
+                        if (kwtype == keywords.end())
+                            error_exit("unexpected token %s", word.c_str());
 
-                    } else {
-                        error_exit("unexpected token %s", word.c_str());
+                        switch (kwtype->second) {
+                            case K_NIL: addVar(newNilC()); break;
+                            case K_TRU: addVar(newBinC(true)); break;
+                            case K_FLS: addVar(newBinC(false)); break;
+                            case K_BRK:
+                                addVar(NEWVAR(TChr(0, K_BRK, true)));
+                                break;
+                            case K_RET: {
+                                // DEBUG("return begin");
+                                var_lst list = toFunction(c, ',', ';');
+                                // DEBUG("return end");
+                                addVar(NEWVAR(TLst(list, K_RET, true)));
+                                break;
+                            }
+                            default: {
+                                lastType = kwtype->second;
+                                /* DEBUG("keyword %i %s",
+                                    lastType, typeName(lastType)); */
+                            }
+                        }
                     }
                 }
+
                 // if (lastType != T_NIL)
-                //    DEBUG("%s: %s", word.c_str(), typeName(lastType));
+                // //    DEBUG("%s: %s", word.c_str(), typeName(lastType));
                 continue;
             }
         }
@@ -431,20 +450,23 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
 
     if (*c != end) {
         block.clear();
-        END();
+        // END();
         if (!end)
             error_exit("invalid token '%c' - expected EOF", *c);
         else
             error_exit("invalid token '%c' - expected '%c'", *c, end);
     }
 
+    // if single value dont push list
     if (line.size() == 1 && getType(line[0]) < TCNT) {
         block.push_back(line[0]);
-    } else if (!line.empty()) {
+    }
+    // dont push if empty line
+    else if (!line.empty()) {
         block.push_back(incRef(newTrmC(line)));
     }
 
-    END("%s", TOSTR(block));
+    // END("%s", TOSTR(block));
     return block;
 }
 

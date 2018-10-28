@@ -1,20 +1,23 @@
 
-// TODO:
-//      handle while(); or repeat(); statements (without do)
-//      toFunction(): keywords, control statements
-//      all isOperator to prev.hasOperator
-//      operator precedence
-//      RaspiBot functions
+/* TODO:
+    toFunction(): keywords, control statements
+    all isOperator to prev.hasOperator
+    operator precedence
+    RaspiBot functions
+    REPVAR -> Funktion typencheck
+    copy const on modify
+    check stod2 //?
+*/
 
 #include "include.hpp"
 #include "interpret.hpp"
+//#include "variables.hpp"
 #if ISBOT
 #    include "RaspiBot.hpp"
 #endif
 
-
-uint debug_depth = 0;
 bool debg        = false;
+uint debug_depth = 0;
 uint8_t status   = 0;
 
 
@@ -38,18 +41,18 @@ void Free() {
     BEGIN();
     status = S_FREE;
 #if _DEBUG_
-    uint alloc = collector.size();
+    int alloc = collector.size();
 #endif
 
 #if ISBOT
     INFO("freeing RaspiBot");
     RaspiBot::Free();
-    INFO("freed %lu vars", alloc - collector.size());
+    INFO("freed %li vars", alloc - collector.size());
 #endif
 
-    INFO("freeing collector (%u)", alloc);
+    INFO("freeing collector (%i)", alloc);
     FreeVariables();
-    INFO("freed %lu of %u vars", alloc - collector.size(), alloc);
+    INFO("freed %li of %i vars", alloc - collector.size(), alloc);
     END();
 }
 
@@ -95,6 +98,26 @@ int main(int argc, char* argv[]) {
     INFO("executing code");
     status = S_EXEC;
     handleScope(main);
+    int res = 0;
+
+    switch (getBaseType(funcResult)) {
+        case T_INT:
+            INFO("ret 1");
+            res = getInt(funcResult);
+            break;
+
+        case T_FLT:
+            INFO("ret 2");
+            res = getFlt(funcResult);
+            break;
+
+        case T_NIL: INFO("ret 3"); break;
+
+        default:
+            error_exit("expected numeric exit code. got %s", baseTypeName(res));
+            break;
+    }
+    decRef(funcResult);
 
     // free all allocated variables
     INFO("freeing code (%u)", alloc);
@@ -111,7 +134,7 @@ int main(int argc, char* argv[]) {
     Free();
 
     INFO("end.");
-    END();
+    END("%i", res);
 
-    return 0;
+    return res;
 }

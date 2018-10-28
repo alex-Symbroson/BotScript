@@ -12,7 +12,7 @@ class TVar;
 typedef IVar* PVar;
 
 
-// type id's  (requires addition in variables.cpp: VAR_Type[])
+// type id's  (! add VAR_Type[], typeName())
 #define T_NIL 0  // null
 #define T_BIN 1  // boolean
 #define T_INT 2  // integer
@@ -29,25 +29,27 @@ typedef IVar* PVar;
 #define T_MFN 13 // member function
 #define TCNT 14
 
-// keywords  (! add in interpret.cpp/ctrl_types and CTRL_Type)
+// keywords  (! add VAR_Type[], keywords{}, typeName())
 #define K_NIL 14 // true
 #define K_TRU 15 // true
 #define K_FLS 16 // false
-#define KCNT 17
+#define K_BRK 17 // break
+#define K_RET 18 // return [(value)]
+#define KCNT 19
 
-// control statements
-#define C_CIF 17 // if ()
-#define C_EIF 18 // elif ()
-#define C_ELS 19 // else ()
-#define C_CDO 20 // do {}
-#define C_WHL 21 // while ()
-#define C_UNT 22 // until ()
-#define CCNT 23
+// control statements (! add VAR_Type[], KWType[], keywords{}, typeName())
+#define C_CIF 19 // if ()
+#define C_EIF 20 // elif ()
+#define C_ELS 21 // else ()
+#define C_CDO 22 // do {}
+#define C_WHL 23 // while ()
+#define C_UNT 24 // until ()
+#define CCNT 25
 
 
 // new variables
-#define newNil() NEWVAR(TNil(0, T_NIL, false))
-#define newBin(v) NEWVAR(TInt(v, T_BIN, false))
+#define newNil() NEWVAR(TChr(0, T_NIL, false))
+#define newBin(v) NEWVAR(TChr(v, T_BIN, false))
 #define newInt(v) NEWVAR(TInt(v, T_INT, false))
 #define newPin(v) NEWVAR(TInt(v, T_PIN, false))
 #define newFlt(v) NEWVAR(TFlt(v, T_FLT, false))
@@ -61,8 +63,8 @@ typedef IVar* PVar;
 #define newBfn(v) NEWVAR(TBfn(v, T_BFN, false))
 
 // new constants
-#define newNilC() NEWVAR(TNil(0, T_NIL, false))
-#define newBinC(v) NEWVAR(TInt(v, T_BIN, true))
+#define newNilC() NEWVAR(TChr(0, T_NIL, true))
+#define newBinC(v) NEWVAR(TChr(v, T_BIN, true))
 #define newIntC(v) NEWVAR(TInt(v, T_INT, true))
 #define newPinC(v) NEWVAR(TInt(v, T_PIN, true))
 #define newFltC(v) NEWVAR(TFlt(v, T_FLT, true))
@@ -75,20 +77,33 @@ typedef IVar* PVar;
 #define newArgC(v) NEWVAR(TLst(v, T_ARG, true))
 #define newBfnC(v) NEWVAR(TBfn(v, T_BFN, true))
 
-// macros for getting var instance values
-#define getInt(var) (*(var_int*)(var)->pval)
-#define getFlt(var) (*(var_flt*)(var)->pval)
-#define getStr(var) (*(var_str*)(var)->pval)
-#define getLst(var) (*(var_lst*)(var)->pval)
-#define getObj(var) (*(var_obj*)(var)->pval)
-#define getBfn(var) (*(var_bfn*)(var)->pval)
 
-#define getIntP(var) ((var_int*)(var)->pval)
-#define getFltP(var) ((var_flt*)(var)->pval)
-#define getStrP(var) ((var_str*)(var)->pval)
-#define getLstP(var) ((var_lst*)(var)->pval)
-#define getObjP(var) ((var_obj*)(var)->pval)
-#define getBfnP(var) ((var_bfn*)(var)->pval)
+// get raw var value instance
+#define getChrRaw(var) (*(var_chr*)(var)->pval)
+#define getIntRaw(var) (*(var_int*)(var)->pval)
+#define getFltRaw(var) (*(var_flt*)(var)->pval)
+#define getStrRaw(var) (*(var_str*)(var)->pval)
+#define getLstRaw(var) (*(var_lst*)(var)->pval)
+#define getObjRaw(var) (*(var_obj*)(var)->pval)
+#define getBfnRaw(var) (*(var_bfn*)(var)->pval)
+#define getOprRaw(var) getStrRaw(var)
+#define getTrmRaw(var) getLstRaw(var)
+#define getFncRaw(var) getLstRaw(var)
+
+// get var value instance with type assertion
+#define getNil(var) getChrRaw(assertT(var, T_NIL))
+#define getBin(var) getChrRaw(assertT(var, T_BIN))
+#define getInt(var) getIntRaw(assertT(var, T_INT))
+#define getPin(var) getIntRaw(assertT(var, T_PIN))
+#define getFlt(var) getFltRaw(assertT(var, T_FLT))
+#define getStr(var) getStrRaw(assertT(var, T_STR))
+#define getLst(var) getLstRaw(assertT(var, T_LST))
+#define getTrm(var) getLstRaw(assertT(var, T_TRM))
+#define getFnc(var) getLstRaw(assertT(var, T_FNC))
+#define getObj(var) getObjRaw(assertT(var, T_OBJ))
+#define getOpr(var) getStrRaw(assertT(var, T_OPR))
+#define getArg(var) getLstRaw(assertT(var, T_ARG))
+#define getBfn(var) getBfnRaw(assertT(var, T_BFN))
 
 
 // macros for type related values
@@ -101,7 +116,7 @@ typedef IVar* PVar;
 #define getBaseTypeName(var) typeName(getBaseType(var))
 
 
-// pther variable related macros
+// other variable related macros
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
 #define REPVAR(var, v) (decRef(var), incRef(var = v))
 #define TOSTR(val, ...) toStr(val, ##__VA_ARGS__).c_str()
@@ -110,10 +125,16 @@ typedef IVar* PVar;
     static var_lst _dflt = DFLT; \
     fillArgs(ARGS, _dflt)
 
+/*
+inline void REPVAR(PVar a, PVar b) {
+    if (var->refcnt == 1) {
+        if (getType(a) == getType(b)) a.value = b.value;
+    }
+}*/
 
 // typedefs
 
-typedef char var_nil;
+typedef char var_chr;
 typedef long long var_int;
 typedef long double var_flt;
 typedef string var_str;
@@ -138,7 +159,7 @@ typedef struct {
 
 typedef TBltFunc* var_bfn;
 
-typedef TVar<var_nil> TNil;
+typedef TVar<var_chr> TChr;
 typedef TVar<var_int> TInt;
 typedef TVar<var_flt> TFlt;
 typedef TVar<var_str> TStr;
@@ -158,7 +179,7 @@ PVar copyVar(PVar& v);
 const char* typeName(uint8_t t);
 
 string toStr(PVar& v, uint8_t type = T_NIL);
-string toStr(var_nil& v, uint8_t type = T_NIL);
+string toStr(var_chr& v, uint8_t type = T_NIL);
 string toStr(var_int& v, uint8_t type = T_INT);
 string toStr(var_flt& v, uint8_t type = T_FLT);
 string toStr(var_str& v, uint8_t type = T_STR);
@@ -173,6 +194,7 @@ extern uint8_t KWType[CCNT - KCNT];    // keyword types
 extern uint8_t VAR_Type[CCNT];         // base type of types
 extern list<PVar> collector;           // garbage collector
 extern uint8_t status;                 // current program status
+extern PVar funcResult;                // latest returned value
 
 
 // Variable interface class
@@ -214,7 +236,7 @@ inline string TVar<T>::toString(bool) {
 
 template <>
 inline string TVar<var_str>::toString(bool escapeStr) {
-    if (escapeStr)
+    if (escapeStr && type == T_STR)
         return "\"" + escape(value) + "\"";
     else
         return value;
@@ -224,15 +246,28 @@ inline string TVar<var_str>::toString(bool escapeStr) {
 // inline functions
 
 inline PVar incRef(PVar v) {
-    // INFO("incRef %p %s", v, getTypeName(v));
+    // INFO("incRef %p %s %i", v, getTypeName(v), v->refcnt + 1);
     ++v->refcnt;
     return v;
 }
 
 inline PVar decRef(PVar v) {
-    // INFO("decRef %p %s", v, getTypeName(v));
+    // INFO("decRef %p %s %i", v, getTypeName(v), v->refcnt - 1);
     if (v->refcnt <= 0) error("refcnt=%i", v->refcnt - 1), getchar();
     if (!--v->refcnt) delete v;
+    return v;
+}
+
+#define assertT(var, type) _assertT(var, type, __func__, __FILE__, __LINE__)
+
+inline PVar _assertT(
+    PVar v, uint8_t type, const char* func, const char* file, uint line) {
+    if (getType(v) != type)
+        error_exit(
+            "error %s%s line %4i %s:\n"
+            "incompatible types: expected %s got %s",
+            file, "                    " + strlen(file), line, func,
+            getTypeName(v), typeName(type));
     return v;
 }
 
