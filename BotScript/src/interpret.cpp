@@ -12,8 +12,6 @@
 // clang-format off
 #define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
 // clang-format on
-#define getKeyType(k) KWType[k - KCNT]
-#define getKeyTypeName(k) typeName(KWType[k - KCNT])
 
 // all operators
 unordered_map<string, Operator> operators = {
@@ -32,12 +30,12 @@ unordered_map<string, Operator> operators = {
 
 // type of the keyword itself
 unordered_map<string, const uint8_t> keywords = {
-    {"null", K_NIL},   {"true", K_TRU},  {"false", K_FLS}, {"break", K_BRK},
-    {"return", K_RET}, {"if", C_CIF},    {"elif", C_EIF},  {"else", C_ELS},
-    {"do", C_CDO},     {"while", C_WHL}, {"until", C_UNT}};
+    {"null", K_NIL},     {"true", K_TRU},   {"false", K_FLS}, {"break", K_BRK},
+    {"continue", K_CNT}, {"return", K_RET}, {"if", C_CIF},    {"elif", C_EIF},
+    {"else", C_ELS},     {"do", C_CDO},     {"while", C_WHL}, {"until", C_UNT}};
 
 // type of the value after the keyword (nil - no value)
-uint8_t KWType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC, T_FNC, T_TRM, T_TRM};
+uint8_t CtrlType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC, T_FNC, T_TRM, T_TRM};
 
 PVar funcResult;
 
@@ -71,17 +69,19 @@ PVar handleLine(var_lst& line) {
                 case C_CDO: handleScope(getFncRaw(*it)); break;
 
                 case C_WHL:
-                    do
+                    do {
                         REPVAR(res, handleLine(getTrmRaw(*it)));
-                    while (getBin(res) && !BREAK);
+                        if (status == S_CONTINUE) status = S_EXEC;
+                    } while (getBin(res) && !BREAK);
 
                     if (status == S_BREAK) status = S_EXEC;
                     break;
 
                 case C_UNT:
-                    do
+                    do {
                         REPVAR(res, handleLine(getTrmRaw(*it)));
-                    while (!getBin(res) && !BREAK);
+                        if (status == S_CONTINUE) status = S_EXEC;
+                    } while (!getBin(res) && !BREAK);
 
                     if (status == S_BREAK) status = S_EXEC;
                     break;
@@ -94,6 +94,8 @@ PVar handleLine(var_lst& line) {
                     status = S_RETURN;
                     REPVAR(funcResult, evalExpr(*it, false));
                     break;
+
+                case K_CNT: status = S_CONTINUE; break;
 
                 default: goto err_tok;
             }
@@ -155,8 +157,10 @@ PVar handleLine(var_lst& line) {
                     case C_WHL:
                         do {
                             handleScope(getFncRaw(*it));
+                            if (status == S_CONTINUE) status = S_EXEC;
                             if (BREAK) break;
                             REPVAR(res, handleLine(getTrmRaw(it[1])));
+                            if (status == S_CONTINUE) status = S_EXEC;
                         } while (getBin(res) && !BREAK);
                         break;
 
@@ -164,8 +168,10 @@ PVar handleLine(var_lst& line) {
                     case C_UNT:
                         do {
                             handleScope(getFncRaw(*it));
+                            if (status == S_CONTINUE) status = S_EXEC;
                             if (BREAK) break;
                             REPVAR(res, handleLine(getTrmRaw(it[1])));
+                            if (status == S_CONTINUE) status = S_EXEC;
                         } while (!getBin(res) && !BREAK);
                         break;
 
@@ -182,9 +188,11 @@ PVar handleLine(var_lst& line) {
 
                 while (getBin(res) && !BREAK) {
                     handleScope(getFncRaw(it[1]));
+                    if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
                 whl_do:
                     REPVAR(res, handleLine(getTrmRaw(*it)));
+                    if (status == S_CONTINUE) status = S_EXEC;
                 }
 
                 if (status == S_BREAK) status = S_EXEC;
@@ -197,9 +205,11 @@ PVar handleLine(var_lst& line) {
 
                     while (!getBin(res) && !BREAK) {
                         handleScope(getFncRaw(it[1]));
+                        if (status == S_CONTINUE) status = S_EXEC;
                         if (BREAK) break;
                     unt_do:
                         REPVAR(res, handleLine(getTrmRaw(*it)));
+                        if (status == S_CONTINUE) status = S_EXEC;
                     }
                 } else
                     goto err_tok;
@@ -297,7 +307,6 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     getStr(line.back()) += unescape(word);
                 else
                     addVar(newStrC(unescape(word)));
-
             } break;
 
             case '[':
@@ -333,13 +342,14 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                     type = T_TRM;
                     addVar(newOprC("at"));
                 }
+
                 if (lastType >= KCNT) {
-                    if (type == getKeyType(lastType))
+                    if (type == keyType(lastType))
                         type = lastType;
                     else
                         error_exit(
                             "expected %s got %s\nignored %s control",
-                            typeName(type), getKeyTypeName(lastType),
+                            typeName(type), keyTypeName(lastType),
                             typeName(lastType));
                 }
 
@@ -423,6 +433,9 @@ var_lst toFunction(string::iterator& c, char separator, char end) {
                             case K_FLS: addVar(newBinC(false)); break;
                             case K_BRK:
                                 addVar(NEWVAR(TChr(0, K_BRK, true)));
+                                break;
+                            case K_CNT:
+                                addVar(NEWVAR(TChr(0, K_CNT, true)));
                                 break;
                             case K_RET: {
                                 // DEBUG("return begin");

@@ -12,7 +12,7 @@ class TVar;
 typedef IVar* PVar;
 
 
-// type id's  (! add VAR_Type[], typeName())
+// type id's  (! add VAR_Type[], typeName(), toFunction())
 #define T_NIL 0  // null
 #define T_BIN 1  // boolean
 #define T_INT 2  // integer
@@ -29,22 +29,24 @@ typedef IVar* PVar;
 #define T_MFN 13 // member function
 #define TCNT 14
 
-// keywords  (! add VAR_Type[], keywords{}, typeName())
-#define K_NIL 14 // true
+// keywords  (! add VAR_Type[], typeName(), keywords{}, toFunction())
+#define K_NIL 14 // null
 #define K_TRU 15 // true
 #define K_FLS 16 // false
 #define K_BRK 17 // break
-#define K_RET 18 // return [(value)]
-#define KCNT 19
+#define K_CNT 18 // continue
+#define K_RET 19 // return [(value)]
+#define KCNT 20
 
-// control statements (! add VAR_Type[], KWType[], keywords{}, typeName())
-#define C_CIF 19 // if ()
-#define C_EIF 20 // elif ()
-#define C_ELS 21 // else ()
-#define C_CDO 22 // do {}
-#define C_WHL 23 // while ()
-#define C_UNT 24 // until ()
-#define CCNT 25
+// control statements (! add VAR_Type[], CtrlType[], typeName(), keywords{},
+// toFunction())
+#define C_CIF 20 // if ()
+#define C_EIF 21 // elif ()
+#define C_ELS 22 // else ()
+#define C_CDO 23 // do {}
+#define C_WHL 24 // while ()
+#define C_UNT 25 // until ()
+#define CCNT 26
 
 
 // new variables
@@ -109,9 +111,11 @@ typedef IVar* PVar;
 // macros for type related values
 #define getType(var) ((var)->type)
 #define baseType(type) VAR_Type[type]
+#define keyType(type) CtrlType[type - KCNT]
 #define setType(var, t) ((var)->type = t)
 #define getBaseType(var) VAR_Type[getType(var)]
 #define getTypeName(var) typeName(getType(var))
+#define keyTypeName(type) typeName(CtrlType[type - KCNT])
 #define baseTypeName(type) typeName(baseType(type))
 #define getBaseTypeName(var) typeName(getBaseType(var))
 
@@ -190,7 +194,7 @@ string toStr(var_bfn& v, uint8_t type = T_BFN);
 // extern functions and variables
 extern PVar handleLine(var_lst& line); // execute code line
 extern FuncMapOpr operations[TCNT];    // type operators
-extern uint8_t KWType[CCNT - KCNT];    // keyword types
+extern uint8_t CtrlType[CCNT - KCNT];  // keyword types
 extern uint8_t VAR_Type[CCNT];         // base type of types
 extern list<PVar> collector;           // garbage collector
 extern uint8_t status;                 // current program status

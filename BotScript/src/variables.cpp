@@ -24,7 +24,7 @@ uint8_t VAR_Type[CCNT] = {
     T_NIL, T_NIL, T_INT, T_FLT, T_STR, T_LST, T_OBJ,
     T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR,
 // K
-    T_NIL, T_INT, T_INT, T_NIL, T_LST,
+    T_NIL, T_INT, T_INT, T_NIL, T_NIL, T_LST,
 // C
     T_LST, T_LST, T_LST, T_LST, T_LST, T_LST
 };
@@ -53,6 +53,7 @@ const char* typeName(uint8_t t) {
         case K_TRU: return "true";
         case K_FLS: return "false";
         case K_BRK: return "break";
+        case K_CNT: return "continue";
         case K_RET: return "return";
 
         case C_CIF: return "if";
@@ -552,7 +553,7 @@ string toStr(var_str& v, uint8_t type) {
 string toStr(var_lst& v, uint8_t type) {
     string result;
     char lstEnd;
-    switch ((int)type >= KCNT ? KWType[type - KCNT] : type) {
+    switch ((int)type >= KCNT ? keyType(type) : type) {
         case (uint8_t)-1:
         case T_LST:
             result = "[";

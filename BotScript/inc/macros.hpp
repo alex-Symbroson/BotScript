@@ -17,10 +17,15 @@
 #define S_EXEC 3
 #define S_BREAK 4
 #define S_RETURN 5
-#define S_ERROR 6
-#define S_FREE 7
+#define S_CONTINUE 6
+#define S_ERROR 7
+#define S_FREE 8
 
-#define BREAK (status == S_BREAK || status == S_RETURN || status == S_ERROR)
+//#define BREAK ("\0\0\0\0\1\1\1\1\0"[status])
+//#define RETURN ("\0\0\0\0\0\1\0\1\0")[status])
+#define BREAK                                                        \
+    (status == S_BREAK || status == S_RETURN || status == S_ERROR || \
+     status == S_CONTINUE)
 #define RETURN (status == S_RETURN || status == S_ERROR)
 
 

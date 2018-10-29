@@ -1,12 +1,23 @@
 
 /* TODO:
-    toFunction(): keywords, control statements
-    all isOperator to prev.hasOperator
-    operator precedence
-    RaspiBot functions
-    REPVAR -> Funktion typencheck
+!   toFunction():
+        keywords: var
+        control statements: for
+    functions:
+        arguments as objects / variables
+        argument type assertion
+    variables:
+        saving
+        + access to parent scope
+    RaspiBot functions:
+        drive, rotate, curve, accumulateTo, accumulateBy,
+        getIRSensors, getButtonStates,
+        setButtonColors, writeLCD
+    REPVAR -> check type and refcnt -> ovrride instead of del/create
     copy const on modify
+    operator precedence
     check stod2 //?
+    // all isOperator to prev.hasOperator
 */
 
 #include "include.hpp"
