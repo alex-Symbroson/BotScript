@@ -80,4 +80,4 @@ run: all
 
 clean:
 	@printf "\n#### cleaning project\n"
-	rm -f $(DIR_BUILD)*.o $(DIR_INC)*.gch $(OUTPUT).out
+	rm -f $(DIR_BUILD)*.o $(DIR_INC)*.gch $(OUTPUT).out */*.pyc */*/*.pyc

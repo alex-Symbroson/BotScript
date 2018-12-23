@@ -7,8 +7,8 @@
 #include <string.h>
 
 // Toggles
-// 1<<2:BEGIN,END macro;  1<<1:DEBUG;  1<<0:INFO;
-#define _DEBUG_ 0b000
+// 1<<3:parent error lines;  1<<2:BEGIN,END macro;  1<<1:DEBUG;  1<<0:INFO;
+#define _DEBUG_ 0b1111
 #define _ERR_EXIT_ 1 // exit on error
 
 // Statuses
@@ -58,8 +58,13 @@ extern bool debg;
 #define COMMA ,
 #define ONCE(...) do { __VA_ARGS__ } while (0)
 #define NORMCOL "\033[0;37m\n"
-#define FILESPACE "                    " + strlen(__FILE__)
+#define FILESPACE(name) ("                    " + strlen(name))
 
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define FMT_SIZE "%lu" // 64 bit
+#elif UINTPTR_MAX == 0xffffffff
+#define FMT_SIZE "%u" // 32 bit
+#endif
 
 // macros for error mesages
 #define err_iop(o, a, b) error_exit( \
@@ -73,11 +78,11 @@ extern bool debg;
     getTypeName(a), (f), typeName(t))
 
 #define err_iac(f, a, c) error_exit( \
-    "invalid argument count for %s: got %lu; expected %i", (f), \
+    "invalid argument count for %s: got " FMT_SIZE "; expected %i", (f), \
     (a).size(), (c))
 
 #define err_iac2(a, b, f, c) error_exit( \
-    "invalid argument count for %s.%s: got %lu; expected %i", \
+    "invalid argument count for %s.%s: got " FMT_SIZE "; expected %i", \
     getTypeName(a), (f), (b).size(), (c))
 
 #define err_rng(a, b) error_exit( \
@@ -86,12 +91,12 @@ extern bool debg;
 // bold red error
 #define error(a, ...) fprintf(stderr, \
     "%5i\033[1;31m %s%s line %4i %s\n" a NORMCOL, debug_depth, \
-    __FILE__, FILESPACE, __LINE__, __func__, ##__VA_ARGS__)
+    __FILE__, FILESPACE(__FILE__), __LINE__, __func__, ##__VA_ARGS__)
 
 // bold yellow info
 #define warning(a, ...) fprintf(stderr, \
     "%5i\033[1;33m %s%s line %4i %s\n" a NORMCOL, debug_depth, \
-    __FILE__, FILESPACE, __LINE__, __func__, ##__VA_ARGS__)
+    __FILE__, FILESPACE(__FILE__), __LINE__, __func__, ##__VA_ARGS__)
 
 #define Exit() (status != S_FREE && (Free(), exit(1), 1))
 
@@ -104,6 +109,18 @@ extern bool debg;
 
 
 #define wait_enter() ONCE(stdin = freopen(NULL, "r", stdin); getchar();)
+
+#if _DEBUG_ & 1 << 3
+#define ERR_PARAM , const char* func , const char* file , uint line
+#define ERR_ARGS , __func__ , __FILE__ , __LINE__
+#define ERR_STR "error %s%s line %4i %s:\n"
+#define ERR_VALS file , FILESPACE(file) , line , func
+#else
+#define ERR_PARAM
+#define ERR_ARGS
+#define ERR_STR "%s"
+#define ERR_VALS ""
+#endif
 
 // green info
 #if _DEBUG_ & 1 << 0
@@ -124,20 +141,20 @@ extern bool debg;
 
 // grey begin / end
 #if _DEBUG_ & 1 << 2
-#    define _BEGIN(func_fmt, func, s, ...)           \
-        if (!debg && (debg = true)) fprintf(stderr,  \
-            "\033[0;93m%5i\033[0;90m %s%s line %4i " \
-            func_fmt "(" s ")" NORMCOL,              \
-            ++debug_depth, __FILE__, FILESPACE,      \
-            __LINE__, func, ##__VA_ARGS__),          \
+#    define _BEGIN(func_fmt, func, s, ...)                \
+        if (!debg && (debg = true)) fprintf(stderr,       \
+            "\033[0;93m%5i\033[0;90m %s%s line %4i "      \
+            func_fmt "(" s ")" NORMCOL,                   \
+            ++debug_depth, __FILE__, FILESPACE(__FILE__), \
+            __LINE__, func, ##__VA_ARGS__),               \
             debg = false
 
-#    define _END(func_fmt, func, s, ...)                  \
-        if (!debg && (debg = true)) fprintf(stderr,       \
-            "\033[0;91m%5i\033[0;90m %s%s line %4i "      \
-            func_fmt "() %s" s NORMCOL,                   \
-            debug_depth--, __FILE__, FILESPACE, __LINE__, \
-            func, (s + 0) ? "-> " : "", ##__VA_ARGS__),   \
+#    define _END(func_fmt, func, s, ...)                          \
+        if (!debg && (debg = true)) fprintf(stderr,               \
+            "\033[0;91m%5i\033[0;90m %s%s line %4i "              \
+            func_fmt "() %s" s NORMCOL,                           \
+            debug_depth--, __FILE__, FILESPACE(__FILE__),         \
+            __LINE__, func, (s + 0) ? "-> " : "", ##__VA_ARGS__), \
             debg = false
 #else
 #    define _BEGIN(...) ++debug_depth

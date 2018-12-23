@@ -8,21 +8,20 @@
 #define BEGIN(...) BEGIN_1("Variables::", __func__, __VA_ARGS__)
 #define END(...) END_1("Variables::", __func__, __VA_ARGS__)
 
-#define DEFOPR(NAME, ...)                                                 \
-    {                                                                     \
-        NAME, [](PVar a, PVar b) -> PVar { __VA_ARGS__ return newNil(); } \
-    }
-
-
 // clang-format off
-list<PVar> collector = {};
-FuncMapOpr operations[TCNT];
+#define DEFOPR(NAME, ...) {            \
+    NAME, [](PVar& a, PVar& b) -> PVar { \
+        __VA_ARGS__ return newNil();   \
+}   }
+
+
+extern const uint8_t CtrlType[CCNT - KCNT]; // keyword types
 
 // base types
-uint8_t VAR_Type[CCNT] = {
+const uint8_t VAR_Type[CCNT] = {
 // T
     T_NIL, T_NIL, T_INT, T_FLT, T_STR, T_LST, T_OBJ,
-    T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR,
+    T_INT, T_LST, T_LST, T_STR, T_LST, T_BFN, T_STR, T_STR,
 // K
     T_NIL, T_INT, T_INT, T_NIL, T_NIL, T_LST,
 // C
@@ -31,42 +30,49 @@ uint8_t VAR_Type[CCNT] = {
 // clang-format on
 
 
+extern PVar funcResult; // latest returned value
+
+list<PVar> collector = {};
+FuncMapOpr operations[TCNT];
+
+
+extern PVar handleLine(var_lst& line); // execute code line
+
 // returns the name of the type of a Variable
 const char* typeName(uint8_t t) {
     switch (t) {
-        case T_NIL: return "nil";
-        case T_BIN: return "boolean";
-        case T_INT: return "integer";
-        case T_FLT: return "float";
-        case T_STR: return "string";
-        case T_LST: return "list";
-        case T_OBJ: return "object";
-        case T_PIN: return "pin";
-        case T_TRM: return "term";
-        case T_FNC: return "function";
-        case T_OPR: return "operator";
-        case T_ARG: return "arguments";
-        case T_BFN: return "builtin_function";
-        case T_MFN: return "member_function";
+    case T_NIL: return "nil";
+    case T_BIN: return "boolean";
+    case T_INT: return "integer";
+    case T_FLT: return "float";
+    case T_STR: return "string";
+    case T_LST: return "list";
+    case T_OBJ: return "object";
+    case T_PIN: return "pin";
+    case T_TRM: return "term";
+    case T_FNC: return "function";
+    case T_OPR: return "operator";
+    case T_ARG: return "arguments";
+    case T_BFN: return "builtin_function";
+    case T_MFN: return "member_function";
+    case T_VAR: return "variable";
 
-        case K_NIL: return "null";
-        case K_TRU: return "true";
-        case K_FLS: return "false";
-        case K_BRK: return "break";
-        case K_CNT: return "continue";
-        case K_RET: return "return";
+    case K_NIL: return "null";
+    case K_TRU: return "true";
+    case K_FLS: return "false";
+    case K_BRK: return "break";
+    case K_CNT: return "continue";
+    case K_RET: return "return";
 
-        case C_CIF: return "if";
-        case C_EIF: return "elif";
-        case C_ELS: return "else";
-        case C_CDO: return "do";
-        case C_WHL: return "while";
-        case C_UNT: return "until";
+    case C_CIF: return "if";
+    case C_EIF: return "elif";
+    case C_ELS: return "else";
+    case C_CDO: return "do";
+    case C_WHL: return "while";
+    case C_UNT: return "until";
 
 
-        default:
-            error_exit("unknown type id %i - report", t);
-            return "undefined";
+    default: error_exit("unknown type id %i - report", t); return "undefined";
     }
 }
 
@@ -80,7 +86,7 @@ IVar::IVar() {
 IVar::~IVar() {
     // INFO("remove %p %p", this, this->it);
     if (this->refcnt && status != S_FREE)
-        error(
+        error( // DEBUG
             "freeing %p with refcount %i during execution (=%s)", this, refcnt,
             toString().c_str()),
             getchar();
@@ -91,7 +97,6 @@ IVar::~IVar() {
 #define TypeClassConstructor(TMPL, TYPE, TYPEID)                              \
     template <TMPL>                                                           \
     TVar<TYPE>::TVar(TYPE v, uint8_t typeID, bool Const) {                    \
-        /*BEGIN();*/                                                          \
         if (typeID) {                                                         \
             if (baseType(typeID) != baseType(TYPEID)) {                       \
                 error_exit(                                                   \
@@ -106,20 +111,11 @@ IVar::~IVar() {
         value   = v;                                                          \
         isConst = Const;                                                      \
         pval    = &value;                                                     \
-                                                                              \
-        /*INFO(                                                               \
-            "create %p %s%s %s", this, isConst ? "const " : "",               \
-            typeName(type), toString().c_str());  */                          \
-        /*END();*/                                                            \
     }
 
-#define TypeClassDestructor(TMPL, TYPE, TYPEID)                 \
-    template <TMPL>                                             \
-    TVar<TYPE>::~TVar() {                                       \
-        /*INFO(                                                 \
-            "delete %p %s%s %s", this, isConst ? "const " : "", \
-            typeName(type), toString().c_str());*/              \
-    }
+#define TypeClassDestructor(TMPL, TYPE, TYPEID) \
+    template <TMPL>                             \
+    TVar<TYPE>::~TVar() {}
 
 TypeClassConstructor(typename T, T, T_NIL);
 TypeClassConstructor(, var_chr, T_NIL);
@@ -129,6 +125,7 @@ TypeClassConstructor(, var_str, T_STR);
 TypeClassConstructor(, var_lst, T_LST);
 TypeClassConstructor(, var_obj, T_OBJ);
 TypeClassConstructor(, var_bfn, T_BFN);
+TypeClassConstructor(, var_fnc, T_FNC);
 
 TypeClassDestructor(typename T, T, T_NIL);
 TypeClassDestructor(, var_chr, T_NIL);
@@ -136,6 +133,7 @@ TypeClassDestructor(, var_int, T_INT);
 TypeClassDestructor(, var_flt, T_FLT);
 TypeClassDestructor(, var_str, T_STR);
 TypeClassDestructor(, var_bfn, T_BFN);
+TypeClassDestructor(, var_fnc, T_FNC);
 
 
 template <>
@@ -167,7 +165,24 @@ TVar<var_obj>::~TVar() {
     // dont modify const values!
 bool initOperations() {
     BEGIN();
+
+    operations[T_NIL] = {};
+
+    operations[T_BIN] = {
+        DEFOPR("equal", { return newBin(getBin(a) == getBin(b)); }),
+        DEFOPR("and", { return newBin(getBin(a) == getBin(b)); }),
+        DEFOPR("or", { return newBin(getBin(a) || getBin(b)); }),
+        DEFOPR("xor", { return newBin(getBin(a) ^ getBin(b)); }),
+    };
+
     operations[T_INT] = {
+        DEFOPR("assign", {
+            switch(getType(b)) {
+                case T_INT: getInt(a) = getInt(b); return a;
+                case T_FLT: getInt(a) = getFlt(b); return a;
+                default   : err_iat(a, b, "assign", T_INT);
+            }
+        }),
         DEFOPR("equal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getInt(a) == getInt(b));
@@ -180,6 +195,20 @@ bool initOperations() {
                 case T_INT: return newBin(getInt(a) != getInt(b));
                 case T_FLT: return newBin(getInt(a) != getFlt(b));
                 default   : return newBin(true);
+            }
+        }),
+        DEFOPR("smaller", {
+            switch(getType(b)) {
+                case T_INT: return newBin(getInt(a) < getInt(b));
+                case T_FLT: return newBin(getInt(a) < getFlt(b));
+                default   : return newBin(false);
+            }
+        }),
+        DEFOPR("bigger", {
+            switch(getType(b)) {
+                case T_INT: return newBin(getInt(a) > getInt(b));
+                case T_FLT: return newBin(getInt(a) > getFlt(b));
+                default   : return newBin(false);
             }
         }),
         DEFOPR("add", {
@@ -233,13 +262,34 @@ bool initOperations() {
             }
             else return newStr(dtos2(getInt(a), 10));
         })
-    },
+    };
 
     operations[T_FLT] = {
+        DEFOPR("assign", {
+            switch(getType(b)) {
+                case T_INT: getFlt(a) = getInt(b); return a;
+                case T_FLT: getFlt(a) = getFlt(b); return a;
+                default   : err_iat(a, b, "assign", T_FLT);
+            }
+        }),
         DEFOPR("equal", {
             switch(getType(b)) {
                 case T_INT: return newBin(getFlt(a) == getInt(b));
                 case T_FLT: return newBin(getFlt(a) == getFlt(b));
+                default   : return newBin(false);
+            }
+        }),
+        DEFOPR("smaller", {
+            switch(getType(b)) {
+                case T_INT: return newBin(getFlt(a) < getInt(b));
+                case T_FLT: return newBin(getFlt(a) < getFlt(b));
+                default   : return newBin(false);
+            }
+        }),
+        DEFOPR("bigger", {
+            switch(getType(b)) {
+                case T_INT: return newBin(getFlt(a) > getInt(b));
+                case T_FLT: return newBin(getFlt(a) > getFlt(b));
                 default   : return newBin(false);
             }
         }),
@@ -304,6 +354,13 @@ bool initOperations() {
     };
 
     operations[T_STR] = {
+        DEFOPR("assign", {
+            if(getType(b) == T_STR) {
+                getStr(a) = getStr(b);
+                return a;
+            } else
+                err_iat(a, b, "assign", T_FLT);
+        }),
         DEFOPR("equal", {
             if(getType(b) == T_STR)
                 return newBin(getStr(a) == getStr(b));
@@ -333,10 +390,9 @@ bool initOperations() {
     };
 
     operations[T_FNC] = {
-        // TODO: assign parameters
         DEFOPR("call", {
             if (getType(b) == T_ARG) {
-                handleScope(getLst(a));
+                handleScope(getFnc(a));
                 if (status == S_RETURN) status = S_EXEC;
                 return funcResult;
             }
@@ -371,8 +427,8 @@ bool initOperations() {
         DEFOPR("at", {
             if(getType(b) == T_INT) {
                 var_int i = getInt(b);
-                var_lst lst = getLst(a);
-                uint32_t len = lst.size();
+                var_lst& lst = getLst(a);
+                int len = lst.size();
                 if(i < 0) i += len;
 
                 if(i < 0 || i >= len)
@@ -407,6 +463,7 @@ bool initOperations() {
         })
     };
 
+
     END("false");
     return false;
 }
@@ -417,56 +474,58 @@ PVar copyVar(PVar& var) {
     // BEGIN("%s", TOSTR(var));
     // END();
     switch (getBaseType(var)) {
-        case T_NIL: return newNil();
-        case T_INT: return NEWVAR(TInt(getIntRaw(var), getType(var)));
-        case T_FLT: return NEWVAR(TFlt(getFltRaw(var), getType(var)));
-        case T_STR: return NEWVAR(TStr(getStrRaw(var), getType(var)));
-        case T_BFN: return NEWVAR(TBfn(getBfnRaw(var), getType(var)));
-        case T_LST: {
-            var_lst lst;
-            for (PVar& v: getLstRaw(var)) {
-                if (v->isConst)
-                    lst.push_back(incRef(copyVar(v)));
-                else
-                    lst.push_back(incRef(v));
-            }
-            return NEWVAR(TLst(lst, getType(var)));
+    case T_NIL: return newNil();
+    case T_INT: return NEWVAR(TInt(getIntRaw(var), getType(var)));
+    case T_FLT: return NEWVAR(TFlt(getFltRaw(var), getType(var)));
+    case T_STR: return NEWVAR(TStr(getStrRaw(var), getType(var)));
+    case T_BFN: return NEWVAR(TBfn(getBfnRaw(var), getType(var)));
+    case T_LST: {
+        var_lst lst;
+        for (PVar& v: getLstRaw(var)) {
+            if (v->isConst)
+                lst.push_back(incRef(copyVar(v)));
+            else
+                lst.push_back(incRef(v));
         }
-        case T_OBJ: {
-            var_obj obj;
-            for (auto& v: getObjRaw(var)) {
-                if (v.second->isConst)
-                    obj[v.first] = incRef(copyVar(v.second));
-                else
-                    obj[v.first] = incRef(v.second);
-            }
-            return NEWVAR(TObj(obj, getType(var)));
+        return NEWVAR(TLst(lst, getType(var)));
+    }
+    case T_OBJ: {
+        var_obj obj;
+        for (auto& v: getObjRaw(var)) {
+            if (v.second->isConst)
+                obj[v.first] = incRef(copyVar(v.second));
+            else
+                obj[v.first] = incRef(v.second);
         }
-        default:
-            error_exit("couldn't copy %s\n", getTypeName(var));
-            return newNil();
+        return NEWVAR(TObj(obj, getType(var)));
+    }
+    default:
+        error_exit("couldn't copy %s\n", getTypeName(var));
+        return newNil();
     }
 }
 
 PVar evalExpr(PVar& expr, bool copy) {
     switch (getType(expr)) {
-        case T_TRM:
-        case K_RET: return handleLine(getLstRaw(expr));
+    case T_TRM:
+    case K_RET: return handleLine(getLstRaw(expr));
 
-        case T_ARG:
-        case T_LST: {
-            var_lst lst = getLstRaw(expr);
-            int16_t i = 0, len = lst.size();
-            var_lst flst(len);
+    case T_VAR: return findVar(getVarRaw(expr), curScope);
 
-            for (; i < len; i++) flst[i] = incRef(evalExpr(lst[i], true));
-            return NEWVAR(TLst(flst, getType(expr), false));
-        }
-        default:
-            if (copy)
-                return copyVar(expr);
-            else
-                return expr;
+    case T_ARG:
+    case T_LST: {
+        var_lst lst = getLstRaw(expr);
+        int16_t i = 0, len = lst.size();
+        var_lst flst(len);
+
+        for (; i < len; i++) flst[i] = incRef(evalExpr(lst[i], true));
+        return NEWVAR(TLst(flst, getType(expr), false));
+    }
+    default:
+        if (copy)
+            return copyVar(expr);
+        else
+            return expr;
     }
 }
 
@@ -484,7 +543,7 @@ bool hasOperator(PVar& v, string o) {
     BEGIN("v=%s, op=%s", getTypeName(v), o.c_str());
     auto& opr = operations[getType(v)];
     bool res  = opr.find(o) != opr.end();
-    if (!res) warning("operator not found"), getchar();
+    if (!res) warning("operator not found");
     END("%s", typeName(res ? K_TRU : K_FLS));
     return res;
     /*
@@ -529,6 +588,7 @@ void FreeVariables() {
 // toStr
 
 string toStr(PVar& v, uint8_t type) {
+    INFO("1");
     return v->toString();
 }
 
@@ -554,34 +614,34 @@ string toStr(var_lst& v, uint8_t type) {
     string result;
     char lstEnd;
     switch ((int)type >= KCNT ? keyType(type) : type) {
-        case (uint8_t)-1:
-        case T_LST:
-            result = "[";
-            lstEnd = ']';
-            break;
+    case (uint8_t)-1:
+    case T_LST:
+        result = "[";
+        lstEnd = ']';
+        break;
 
-        case T_FNC:
-            result = "{";
-            lstEnd = '}';
-            break;
+    case T_FNC:
+        result = "{";
+        lstEnd = '}';
+        break;
 
-        case K_RET:
-        case T_TRM:
-            result = "(";
-            lstEnd = ')';
-            break;
+    case K_RET:
+    case T_TRM:
+        result = "(";
+        lstEnd = ')';
+        break;
 
-        case T_ARG:
-            result = "<";
-            lstEnd = '>';
-            break;
+    case T_ARG:
+        result = "<";
+        lstEnd = '>';
+        break;
 
-        default:
-            error_exit("unknown list type id %i", type);
-            // result = "|"; lstEnd = '|';
+    default:
+        error_exit("unknown list type id %i", type);
+        // result = "|"; lstEnd = '|';
     }
 
-    for (PVar& v: v) result += v->toString(true) + ",";
+    for (PVar& var: v) result += var->toString(true) + ",";
 
     if (result.size() > 1)
         result[result.size() - 1] = lstEnd;
@@ -598,8 +658,9 @@ string toStr(var_obj& v, uint8_t type) {
 
     // builds string reversed because every new unordered_map
     // element is inserted at the front
-    for (auto& v: v)
-        result = ",\"" + v.first + "\":" + v.second->toString(true) + result;
+    for (auto& var: v)
+        result =
+            ",\"" + var.first + "\":" + var.second->toString(true) + result;
 
     if (!v.empty())
         result[0] = '[';
@@ -610,6 +671,22 @@ string toStr(var_obj& v, uint8_t type) {
 
 string toStr(var_bfn& v, uint8_t type) {
     string result = v->name;
+    /*
+    if (v->argc) {
+        result += "(";
+        for (uint16_t i = 1; i <= v->argc; i++)
+            result += "p" + to_string(i) + ",";
+        result[result.size() - 1] = ')';
+    }
+    else
+        result += "()";
+    result += " { [builtin] }"
+    */
+    return result;
+}
+
+string toStr(var_fnc& v, uint8_t type) {
+    string result = v.name;
     /*
     if (v->argc) {
         result += "(";

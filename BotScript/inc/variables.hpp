@@ -27,26 +27,27 @@ typedef IVar* PVar;
 #define T_ARG 11 // arguments
 #define T_BFN 12 // builtin function
 #define T_MFN 13 // member function
-#define TCNT 14
+#define T_VAR 14 // variable
+#define TCNT 15
 
 // keywords  (! add VAR_Type[], typeName(), keywords{}, toFunction())
-#define K_NIL 14 // null
-#define K_TRU 15 // true
-#define K_FLS 16 // false
-#define K_BRK 17 // break
-#define K_CNT 18 // continue
-#define K_RET 19 // return [(value)]
-#define KCNT 20
+#define K_NIL 15 // null
+#define K_TRU 16 // true
+#define K_FLS 17 // false
+#define K_BRK 18 // break
+#define K_CNT 19 // continue
+#define K_RET 20 // return [(value)]
+#define KCNT 21
 
 // control statements (! add VAR_Type[], CtrlType[], typeName(), keywords{},
 // toFunction())
-#define C_CIF 20 // if ()
-#define C_EIF 21 // elif ()
-#define C_ELS 22 // else ()
-#define C_CDO 23 // do {}
-#define C_WHL 24 // while ()
-#define C_UNT 25 // until ()
-#define CCNT 26
+#define C_CIF 21 // if ()
+#define C_EIF 22 // elif ()
+#define C_ELS 23 // else ()
+#define C_CDO 24 // do {}
+#define C_WHL 25 // while ()
+#define C_UNT 26 // until ()
+#define CCNT 27
 
 
 // new variables
@@ -63,6 +64,7 @@ typedef IVar* PVar;
 #define newOpr(v) NEWVAR(TStr(v, T_OPR, false))
 #define newArg(v) NEWVAR(TLst(v, T_ARG, false))
 #define newBfn(v) NEWVAR(TBfn(v, T_BFN, false))
+#define newVar(v) NEWVAR(TStr(v, T_VAR, false))
 
 // new constants
 #define newNilC() NEWVAR(TChr(0, T_NIL, true))
@@ -78,6 +80,7 @@ typedef IVar* PVar;
 #define newOprC(v) NEWVAR(TStr(v, T_OPR, true))
 #define newArgC(v) NEWVAR(TLst(v, T_ARG, true))
 #define newBfnC(v) NEWVAR(TBfn(v, T_BFN, true))
+#define newVarC(v) NEWVAR(TStr(v, T_VAR, true))
 
 
 // get raw var value instance
@@ -88,24 +91,28 @@ typedef IVar* PVar;
 #define getLstRaw(var) (*(var_lst*)(var)->pval)
 #define getObjRaw(var) (*(var_obj*)(var)->pval)
 #define getBfnRaw(var) (*(var_bfn*)(var)->pval)
+#define getFncRaw(var) (*(var_fnc*)(var)->pval)
 #define getOprRaw(var) getStrRaw(var)
+#define getArgRaw(var) getLstRaw(var)
 #define getTrmRaw(var) getLstRaw(var)
-#define getFncRaw(var) getLstRaw(var)
+#define getPinRaw(var) getIntRaw(var)
+#define getVarRaw(var) getStrRaw(var)
 
 // get var value instance with type assertion
 #define getNil(var) getChrRaw(assertT(var, T_NIL))
 #define getBin(var) getChrRaw(assertT(var, T_BIN))
 #define getInt(var) getIntRaw(assertT(var, T_INT))
-#define getPin(var) getIntRaw(assertT(var, T_PIN))
+#define getPin(var) getPinRaw(assertT(var, T_PIN))
 #define getFlt(var) getFltRaw(assertT(var, T_FLT))
 #define getStr(var) getStrRaw(assertT(var, T_STR))
 #define getLst(var) getLstRaw(assertT(var, T_LST))
-#define getTrm(var) getLstRaw(assertT(var, T_TRM))
-#define getFnc(var) getLstRaw(assertT(var, T_FNC))
+#define getTrm(var) getTrmRaw(assertT(var, T_TRM))
+#define getFnc(var) getFncRaw(assertT(var, T_FNC))
 #define getObj(var) getObjRaw(assertT(var, T_OBJ))
-#define getOpr(var) getStrRaw(assertT(var, T_OPR))
-#define getArg(var) getLstRaw(assertT(var, T_ARG))
+#define getOpr(var) getOprRaw(assertT(var, T_OPR))
+#define getArg(var) getArgRaw(assertT(var, T_ARG))
 #define getBfn(var) getBfnRaw(assertT(var, T_BFN))
+#define getVar(var) getVarRaw(assertT(var, T_VAR))
 
 
 // macros for type related values
@@ -129,32 +136,28 @@ typedef IVar* PVar;
     static var_lst _dflt = DFLT; \
     fillArgs(ARGS, _dflt)
 
-/*
-inline void REPVAR(PVar a, PVar b) {
-    if (var->refcnt == 1) {
-        if (getType(a) == getType(b)) a.value = b.value;
-    }
-}*/
-
 // typedefs
 
 typedef char var_chr;
-typedef long long var_int;
-typedef long double var_flt;
+typedef int var_int;
+typedef double var_flt;
 typedef string var_str;
 typedef vector<PVar> var_lst;
 typedef unordered_map<string, PVar> var_obj;
 
+// function
+typedef struct var_fnc var_fnc;
+struct var_fnc {
+    const char* name;
+    var_obj vars; // variables
+    var_lst func; // content
+    var_fnc* parent;
+};
+
 typedef function<PVar(var_lst)> TFuncSmp;
-typedef function<PVar(PVar, PVar)> TFuncOpr;
+typedef function<PVar(PVar&, PVar&)> TFuncOpr;
 // typedef unordered_map<string, TFuncSmp> FuncMapSmp;
 typedef unordered_map<string, TFuncOpr> FuncMapOpr;
-
-typedef struct {
-    const char* name;
-    forward_list<var_obj> vars; // list for recursive calls
-    var_lst func;               // content
-} TFunc;
 
 typedef struct {
     const char* name;
@@ -163,11 +166,13 @@ typedef struct {
 
 typedef TBltFunc* var_bfn;
 
+// class types
 typedef TVar<var_chr> TChr;
 typedef TVar<var_int> TInt;
 typedef TVar<var_flt> TFlt;
 typedef TVar<var_str> TStr;
 typedef TVar<var_lst> TLst;
+typedef TVar<var_fnc> TFnc;
 typedef TVar<var_obj> TObj;
 typedef TVar<var_bfn> TBfn;
 
@@ -182,6 +187,7 @@ PVar evalExpr(PVar& expr, bool copy);
 PVar copyVar(PVar& v);
 const char* typeName(uint8_t t);
 
+
 string toStr(PVar& v, uint8_t type = T_NIL);
 string toStr(var_chr& v, uint8_t type = T_NIL);
 string toStr(var_int& v, uint8_t type = T_INT);
@@ -190,29 +196,26 @@ string toStr(var_str& v, uint8_t type = T_STR);
 string toStr(var_lst& v, uint8_t type = T_LST);
 string toStr(var_obj& v, uint8_t type = T_OBJ);
 string toStr(var_bfn& v, uint8_t type = T_BFN);
+string toStr(var_fnc& v, uint8_t type = T_FNC);
+
 
 // extern functions and variables
-extern PVar handleLine(var_lst& line); // execute code line
-extern FuncMapOpr operations[TCNT];    // type operators
-extern uint8_t CtrlType[CCNT - KCNT];  // keyword types
-extern uint8_t VAR_Type[CCNT];         // base type of types
-extern list<PVar> collector;           // garbage collector
-extern uint8_t status;                 // current program status
-extern PVar funcResult;                // latest returned value
+extern list<PVar> collector; // garbage collector
+extern uint8_t status;       // current program status
 
 
 // Variable interface class
 class IVar {
   public:
     uint32_t refcnt = 0;    // reference counter
-    uint8_t type    = 0;    // pointer to value type
-    bool isConst    = true; // is constant bool
+    uint8_t type    = 0;    // value type
+    bool isConst    = true; // is constant state
     void* pval      = NULL; // pointer to value
-    // PVar ret        = NULL;  // return value when used (ie. functions)
+
     list<PVar>::iterator it; // iterator from collector
 
-    IVar();
-    virtual ~IVar();
+    IVar();          // Constructor
+    virtual ~IVar(); // Destructor
 
     virtual string toString(bool escape = false) {
         return "null";
@@ -235,11 +238,13 @@ class TVar : public IVar {
 
 template <typename T>
 inline string TVar<T>::toString(bool) {
+    if (type == T_STR) INFO("3 %s", (*(string*)(void*)&value).c_str());
     return toStr(value, type);
 }
 
 template <>
 inline string TVar<var_str>::toString(bool escapeStr) {
+    INFO("2");
     if (escapeStr && type == T_STR)
         return "\"" + escape(value) + "\"";
     else
@@ -255,24 +260,23 @@ inline PVar incRef(PVar v) {
     return v;
 }
 
-inline PVar decRef(PVar v) {
+#define decRef(var) _decRef(var ERR_ARGS)
+inline PVar _decRef(PVar v ERR_PARAM) {
     // INFO("decRef %p %s %i", v, getTypeName(v), v->refcnt - 1);
-    if (v->refcnt <= 0) error("refcnt=%i", v->refcnt - 1), getchar();
+    if (v->refcnt <= 0)
+        error(ERR_STR "refcnt=%i", ERR_VALS, v->refcnt - 1), getchar();
     if (!--v->refcnt) delete v;
     return v;
 }
 
-#define assertT(var, type) _assertT(var, type, __func__, __FILE__, __LINE__)
-
-inline PVar _assertT(
-    PVar v, uint8_t type, const char* func, const char* file, uint line) {
+#define assertT(var, type) _assertT(var, type ERR_ARGS)
+inline PVar _assertT(PVar v, uint8_t type ERR_PARAM) {
     if (getType(v) != type)
         error_exit(
-            "error %s%s line %4i %s:\n"
-            "incompatible types: expected %s got %s",
-            file, "                    " + strlen(file), line, func,
-            getTypeName(v), typeName(type));
+            ERR_STR "incompatible types %s and %s", ERR_VALS, getTypeName(v),
+            typeName(type));
     return v;
 }
+
 
 #endif //_VARIABLES_HPP_

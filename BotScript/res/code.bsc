@@ -1,9 +1,32 @@
 
-println(("Hello ") + ("World" + "!"));
+string a = "Hello ";
+print("a:", a, "\n");
+a = (a + "test ");
+print("a:", a, "\n");
+
+println((a) + ("World" + "!"));
 println();
+return 0;
 
 Bot_Write("Hello World");
 Bot_Write("Hello World", 2, 1);
+
+while(clock() < 3000) do {
+    if(clock() < 1000) do {
+        Bot_SetRedLED(1, clock() / 10);
+    };
+
+    if(clock() > 1000 && (clock() < 2000)) do {
+        Bot_SetRedLED(2, clock() / 10 - 100);
+        Bot_SetGreenLED(2, clock() / 10 - 100);
+    };
+
+    if(clock() > 2000) do {
+        Bot_SetGreenLED(3, clock() / 10 - 200);
+    };
+
+    delay(500);
+}
 
 if  (false) do { println(" is true");  }
 elif(false) do { println("eis true"); }
@@ -11,6 +34,9 @@ else { println("is false"); };
 
 /* input test */
 // print("you typed:", input("type smth: "));
+
+
+return 0;
 
 // timing test
 print("timing:\n", clock(), "\n");

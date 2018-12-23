@@ -1,28 +1,34 @@
 
 /* TODO:
 !   toFunction():
-        keywords: var
         control statements: for
     functions:
         arguments as objects / variables
         argument type assertion
-    variables:
-        saving
-        + access to parent scope
-    RaspiBot functions:
+        assign args in func::call
+!   RaspiBot functions:
         drive, rotate, curve, accumulateTo, accumulateBy,
         getIRSensors, getButtonStates,
         setButtonColors, writeLCD
-    REPVAR -> check type and refcnt -> ovrride instead of del/create
+
     copy const on modify
     operator precedence
     check stod2 //?
+    simplify argument type assertion
+    type casts, int<>float automatic?
     // all isOperator to prev.hasOperator
+
+Raspibot:
+    LED PWM brightness
+    access different (3) buttons
+
+cur:
+    inc/variables.hpp    line  260 decRef: refcnt=-1
 */
 
 #include "include.hpp"
 #include "interpret.hpp"
-//#include "variables.hpp"
+
 #if ISBOT
 #    include "RaspiBot.hpp"
 #endif
@@ -34,6 +40,7 @@ uint8_t status   = 0;
 
 bool Init() {
     status = S_INIT;
+
     INFO("init operations");
     if (initOperations()) return true;
 
@@ -58,12 +65,12 @@ void Free() {
 #if ISBOT
     INFO("freeing RaspiBot");
     RaspiBot::Free();
-    INFO("freed %li vars", alloc - collector.size());
+    INFO("freed " FMT_SIZE " vars", alloc - collector.size());
 #endif
 
     INFO("freeing collector (%i)", alloc);
     FreeVariables();
-    INFO("freed %li of %i vars", alloc - collector.size(), alloc);
+    INFO("freed " FMT_SIZE " of %i vars", alloc - collector.size(), alloc);
     END();
 }
 
@@ -86,7 +93,7 @@ int main(int argc, char* argv[]) {
         Exit();
         return 1;
     }
-    INFO("variables: %lu", collector.size());
+    INFO("variables: " FMT_SIZE, collector.size());
 
     INFO("reading file");
     const char* path = argc > 1 ? argv[1] : "res/code.bsc";
@@ -100,46 +107,40 @@ int main(int argc, char* argv[]) {
     // create code scope of content from default or argument file path
     INFO("formatting code");
     status       = S_FORMAT;
-    var_lst main = toCode(code);
+    var_fnc main = toCode(code);
     INFO("allocated %u variables", alloc = collector.size() - alloc);
 
     INFO("\nmain: %s\n", toStr(main, T_FNC).c_str());
 
     // execute code
     INFO("executing code");
-    status = S_EXEC;
+    status     = S_EXEC;
+    funcResult = incRef(newNil());
     handleScope(main);
     int res = 0;
 
     switch (getBaseType(funcResult)) {
-        case T_INT:
-            INFO("ret 1");
-            res = getInt(funcResult);
-            break;
-
-        case T_FLT:
-            INFO("ret 2");
-            res = getFlt(funcResult);
-            break;
-
-        case T_NIL: INFO("ret 3"); break;
-
-        default:
-            error_exit("expected numeric exit code. got %s", baseTypeName(res));
-            break;
+    case T_INT: res = getInt(funcResult); break;
+    case T_FLT: res = getFlt(funcResult); break;
+    case T_NIL: break;
+    default:
+        error_exit("expected numeric exit code. got %s", baseTypeName(res));
+        break;
     }
     decRef(funcResult);
 
     // free all allocated variables
     INFO("freeing code (%u)", alloc);
     status = S_FREE;
+
 #if _DEBUG_
     delloc = collector.size();
-#endif
-    for (PVar& v: main) delete v;
-#if _DEBUG_
+    for (PVar& v: main.func) delete v;
     delloc -= collector.size();
+#else
+    for (PVar& v: main.func) delete v;
 #endif
+
     INFO("freed %u of %u code vars", delloc, alloc);
 
     Free();

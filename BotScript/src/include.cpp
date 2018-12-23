@@ -101,9 +101,9 @@ char* dtos2(long double num, uint8_t rad) {
                         c[1] = 0;
 
                     switch (*c) {
-                        case '9': *c = 'A'; break;
-                        case 'z': *c = 'a'; break;
-                        default: (*c)++;
+                    case '9': *c = 'A'; break;
+                    case 'z': *c = 'a'; break;
+                    default: (*c)++;
                     }
 
                     break;
@@ -256,6 +256,7 @@ string readFile(const char* path, bool ignore) {
     string content = "";
     if (ignore) {
         while ((c = fgetc(f)) != EOF) {
+        check:
             // whitespace
             if (isspace(c)) {
                 do
@@ -288,7 +289,13 @@ string readFile(const char* path, bool ignore) {
                         if (brk && c == '/') break;
                         brk = (c == '*');
                     }
+                } else if (c == EOF)
+                    break;
+                else {
+                    content += '/';
+                    goto check;
                 }
+
                 lc = c;
                 continue;
             }

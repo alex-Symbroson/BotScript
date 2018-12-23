@@ -18,10 +18,13 @@ namespace RaspiBot {
     PVar res     = NULL;
     bool freeing = false;
 
+    PVar &getRes() {
+        return res;
+    }
+
     bool Init() {
         BEGIN();
         PyObject *pName;
-
         Py_Initialize();
 
         PyObject *sys  = PyImport_ImportModule("sys");
@@ -40,6 +43,7 @@ namespace RaspiBot {
         }
 
         pFunc = PyObject_GetAttrString(pModule, "callMethod");
+        res   = incRef(newNil());
 
         if (pFunc == NULL || !PyCallable_Check(pFunc)) {
             if (PyErr_Occurred()) PyErr_Print();
@@ -97,21 +101,21 @@ namespace RaspiBot {
 
     PyObject *toPyVar(PVar &v) {
         switch (getType(v)) {
-            case T_NIL: return Py_None;
-            case T_BIN: return getBin(v) ? Py_True : Py_False;
-            case T_INT: return PyLong_FromLong(getInt(v));
-            case T_PIN: return PyLong_FromLong(getPin(v));
-            case T_FLT: return PyFloat_FromDouble(getFlt(v));
-            case T_STR: return PyString_FromString(getStr(v).c_str());
+        case T_NIL: return Py_None;
+        case T_BIN: return getBin(v) ? Py_True : Py_False;
+        case T_INT: return PyLong_FromLong(getInt(v));
+        case T_PIN: return PyLong_FromLong(getPin(v));
+        case T_FLT: return PyFloat_FromDouble(getFlt(v));
+        case T_STR: return PyString_FromString(getStr(v).c_str());
 
-            case K_NIL: return Py_None;
-            case K_TRU: return Py_True;
-            case K_FLS: return Py_False;
+        case K_NIL: return Py_None;
+        case K_TRU: return Py_True;
+        case K_FLS: return Py_False;
 
-            default:
-                error_exit(
-                    "cannot pass %s to python variable", typeName(getType(v)));
-                return NULL;
+        default:
+            error_exit(
+                "cannot pass %s to python variable", typeName(getType(v)));
+            return NULL;
         }
     }
 
