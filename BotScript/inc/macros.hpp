@@ -8,7 +8,7 @@
 
 // Toggles
 // 1<<3:parent error lines;  1<<2:BEGIN,END macro;  1<<1:DEBUG;  1<<0:INFO;
-#define _DEBUG_ 0b1111
+#define _DEBUG_ 0b1001
 #define _ERR_EXIT_ 1 // exit on error
 
 // Statuses
@@ -18,15 +18,16 @@
 #define S_BREAK 4
 #define S_RETURN 5
 #define S_CONTINUE 6
-#define S_ERROR 7
-#define S_FREE 8
+#define S_STOP 7
+#define S_ERROR 8
+#define S_FREE 9
 
 //#define BREAK ("\0\0\0\0\1\1\1\1\0"[status])
 //#define RETURN ("\0\0\0\0\0\1\0\1\0")[status])
 #define BREAK                                                        \
     (status == S_BREAK || status == S_RETURN || status == S_ERROR || \
-     status == S_CONTINUE)
-#define RETURN (status == S_RETURN || status == S_ERROR)
+     status == S_CONTINUE || status == S_STOP)
+#define RETURN (status == S_RETURN || status == S_ERROR || status == S_STOP)
 
 
 #ifndef ISPI

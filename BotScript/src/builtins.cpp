@@ -48,7 +48,7 @@ bool initBuiltins() {
         DEFFUNC( "println", {
             if (!args.empty())
                 for (PVar& v: args) printf("%s", TOSTR(v));
-            else printf("\n");
+            printf("\n");
 
             FEND("println", "null");
         }),
@@ -96,6 +96,13 @@ bool initBuiltins() {
                 return newStr(args[0]->toString(true));
             }
             else err_iac("toString", args, 1);
+        }),
+
+        DEFFUNC( "stop", {
+            status = S_STOP;
+            if (args.size() == 1)
+                return args[0];
+            else return newInt(0);
         })
 
 #if ISBOT

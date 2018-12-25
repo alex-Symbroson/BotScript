@@ -40,7 +40,7 @@ const unordered_map<string, const uint8_t> keywords = {
     {"pin", T_PIN},   {"func", T_FNC} /*, {"var", T_NIL}*/
 };
 
-// type of the value after the keyword (nil - no value)
+// type of the value after the keyword
 uint8_t const CtrlType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC,
                                        T_FNC, T_TRM, T_TRM};
 
@@ -65,7 +65,7 @@ PVar handleLine(var_lst& line) {
 
     // handle control structures
     if (size == 1) {
-        if (type < TCNT)
+        if (IDisType(type))
             REPVAR(funcResult, evalExpr(*it, false));
         else {
             switch (type) {
@@ -104,7 +104,6 @@ ctrl:
                 type = getType(*it);
                 if (type == C_CIF || type == C_EIF) {
                     // parse condition
-                    DEBUG("%s", TOSTR(*it));
                     REPVAR(res, handleLine(getTrmRaw(*it)));
                     DEBUG("%s -> %s", TOSTR(*it), TOSTR(res));
 
@@ -123,7 +122,7 @@ ctrl:
 
             // execute scope
             if (it != end) {
-                DEBUG("%s", TOSTR(*it));
+                // DEBUG("%s", TOSTR(*it));
                 type = getType(*it);
                 if (type == C_CDO || type == C_ELS)
                     handleScope(getFncRaw(*it));
@@ -226,9 +225,9 @@ ctrl:
 
                 args      = incRef(evalExpr(it[1], true)); // get 2nd arg
                 PVar tRes = res; // for safe overriding & freeing
-                // DEBUG("%s %s %s", TOSTR(tRes), TOSTR(it[0]), TOSTR(args));
+                DEBUG("(%s %s %s)", TOSTR(tRes), TOSTR(it[0]), TOSTR(args));
                 res = incRef(CALLOPR(res, getOprRaw(it[0]), args));
-                // DEBUG("%s %s %s", TOSTR(tRes), TOSTR(it[0]), TOSTR(res));
+                DEBUG("(... %s ...) -> %s", TOSTR(it[0]), TOSTR(res));
 
                 decRef(tRes); // delete previous result
                 decRef(args); // delete copied args
@@ -260,6 +259,7 @@ err_tok:
 void handleScope(var_fnc& func) {
     BEGIN("var_lst*scope");
     curScope = &func;
+
     for (auto& line: func.func) {
         handleLine(getTrm(line));
         if (BREAK) break;
@@ -315,6 +315,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             uint8_t type;
             char sep, end;
 
+            // select list properties
             if (*c == '(') {
                 type = T_TRM;
                 sep  = ',';
@@ -332,17 +333,22 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                 error_exit("unexpected token %c", *c);
             }
 
-            if (type == T_TRM && lastType == T_MFN) {
-                type = T_ARG;
-            } else if (type == T_TRM && lastType == T_BFN) {
-                type = T_ARG;
-                addVar(newOprC("call"));
+            if (type == T_TRM) {
+                // lastType func -> add 'call' opr
+                if (lastType == T_FNC || lastType == T_VAR ||
+                    lastType == T_BFN || lastType == T_MFN) {
+                    type = T_ARG;
+                    if (lastType != T_MFN) addVar(newOprC("call"));
+                }
+                // lastType list/obj -> add 'at' opr
             } else if (
-                type == T_LST && (lastType == T_LST || lastType == T_OBJ)) {
+                type == T_LST && (lastType == T_LST || lastType == T_OBJ ||
+                                  lastType == T_ARG || lastType == T_VAR)) {
                 type = T_TRM;
                 addVar(newOprC("at"));
             }
 
+            // lastType control -> curType = expected keyType
             if (lastType >= KCNT) {
                 if (type == keyType(lastType))
                     type = lastType;
@@ -353,18 +359,20 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                         typeName(lastType));
             }
 
-            // DEBUG("%c: %s begin", *c, typeName(type));
+            // scan functions
             c++;
-
-            if (type == T_FNC) {
+            if (type == T_FNC || (type > KCNT && keyType(type) == T_FNC)) {
                 var_fnc scope = {NULL, {}, {}, &parent};
                 scope.func    = toFunction(c, sep, end, scope);
                 addVar(NEWVAR(TFnc(scope, type, true)));
+
+                // scan lists
             } else {
+                // DEBUG("%c: %s begin", *c, typeName(type));
                 var_lst lst = toFunction(c, sep, end, parent);
                 // DEBUG("%c: %s end", *c, typeName(type));
 
-                if (type == T_TRM && lst.size() == 1 && getType(lst[0]) < TCNT)
+                if (type == T_TRM && lst.size() == 1 && VARisType(lst[0]))
                     addVar(lst[0]);
                 else
                     addVar(NEWVAR(TLst(lst, type, true)));
@@ -376,7 +384,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             // INFO("0 %.*s", 20, c);
             // separator -> end current line, begin new
             if (*c == separator) {
-                if (line.size() == 1 && getType(line[0]) < TCNT)
+                if (line.size() == 1 && VARisType(line[0]))
                     block.push_back(line[0]);
                 else
                     block.push_back(incRef(newTrmC(line)));
@@ -430,18 +438,8 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                     auto kwtype = keywords.find(word);
                     // invalid
                     if (kwtype == keywords.end()) {
-                        if (lastType == T_VAR) {
-                            parent.vars[word] = funcResult;
-                            addVar(newVarC(word));
-                        } else {
-                            INFO("1");
-                            if (findVar(word, &parent))
-                                addVar(newVarC(word));
-                            else
-                                error_exit("unexpected token %s", word.c_str());
-
-                            INFO("2");
-                        }
+                        if (lastType == T_VAR) parent.vars[word] = funcResult;
+                        addVar(newVarC(word));
                         continue;
                     }
 
@@ -464,7 +462,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                         break;
 
                     default:
-                        if (kwtype->second < TCNT) {
+                        if (IDisType(kwtype->second)) {
                             switch (kwtype->second) {
                             // case T_NIL: funcResult = newNil(); break;
                             case T_BIN: funcResult = newBin(0); break;
@@ -476,6 +474,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                             case T_FNC: funcResult = newFnc({}); break;
                             case T_PIN: funcResult = newPin(0); break;
                             }
+
                             incRef(funcResult);
                             lastType = T_VAR;
                         } else
@@ -502,7 +501,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
     }
 
     // if single value dont push list
-    if (line.size() == 1 && getType(line[0]) < TCNT) {
+    if (line.size() == 1 && VARisType(line[0])) {
         block.push_back(line[0]);
     }
     // dont push if line empty
@@ -519,6 +518,7 @@ PVar findVar(string name, var_fnc* scope) {
         auto var = scope->vars.find(name);
         if (var != scope->vars.end()) return var->second;
     } while ((scope = scope->parent));
+
     return NULL;
 }
 

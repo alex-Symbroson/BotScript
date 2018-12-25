@@ -1,12 +1,42 @@
 
+println("args: ", args);
 string a = "Hello ";
-print("a:", a, "\n");
-a = (a + "test ");
-print("a:", a, "\n");
+if(args.getLength() >= 2) do {
+    a = (a + (args[2]));
+};
+print("a = " + a + "\n");
 
-println((a) + ("World" + "!"));
-println();
-return 0;
+return;
+stop();
+
+func foo = {
+    println("Hello from foo!");
+    println("a = ", a);
+};
+
+func init = {
+    a = (a + "test ");
+    foo();
+};
+
+func main = {
+    println((a) + ("World" + "!"));
+    return 0;
+};
+
+int i = 0;
+
+func loop = {
+    i = (i + 1);
+    println("loop ", i);
+    if(i >= 10) do { stop(0); };
+    delay(1000);
+};
+
+return;
+
+
+// Bot tests
 
 Bot_Write("Hello World");
 Bot_Write("Hello World", 2, 1);

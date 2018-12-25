@@ -21,9 +21,6 @@
 Raspibot:
     LED PWM brightness
     access different (3) buttons
-
-cur:
-    inc/variables.hpp    line  260 decRef: refcnt=-1
 */
 
 #include "include.hpp"
@@ -110,15 +107,36 @@ int main(int argc, char* argv[]) {
     var_fnc main = toCode(code);
     INFO("allocated %u variables", alloc = collector.size() - alloc);
 
-    INFO("\nmain: %s\n", toStr(main, T_FNC).c_str());
+    INFO("\nmain: %s\n", TOSTR(main.func));
+
+    var_lst vargs = {};
+    for (int i = 0; i < argc; i++) vargs.push_back(incRef(newStrC(argv[i])));
+    main.vars["args"] = incRef(newArgC(vargs));
 
     // execute code
-    INFO("executing code");
+    INFO("execute global");
     status     = S_EXEC;
     funcResult = incRef(newNil());
     handleScope(main);
-    int res = 0;
 
+    INFO("execute init");
+    status    = S_EXEC;
+    PVar func = findVar("init", &main);
+    if (func && getType(func) == T_FNC) handleScope(getFncRaw(func));
+
+    INFO("execute global");
+    status = S_EXEC;
+    func   = findVar("main", &main);
+    if (func && getType(func) == T_FNC) handleScope(getFncRaw(func));
+
+    INFO("execute loop");
+    status = S_EXEC;
+    func   = findVar("loop", &main);
+    if (func && getType(func) == T_FNC)
+        while (status < S_STOP) handleScope(getFncRaw(func));
+
+    INFO("stop program");
+    int res = 0;
     switch (getBaseType(funcResult)) {
     case T_INT: res = getInt(funcResult); break;
     case T_FLT: res = getFlt(funcResult); break;

@@ -43,12 +43,18 @@ typedef IVar* PVar;
 // toFunction())
 #define C_CIF 21 // if ()
 #define C_EIF 22 // elif ()
-#define C_ELS 23 // else ()
+#define C_ELS 23 // else {}
 #define C_CDO 24 // do {}
 #define C_WHL 25 // while ()
 #define C_UNT 26 // until ()
 #define CCNT 27
 
+#define IDisType(id) (id < TCNT)
+#define IDisKeyw(id) (id < KCNT)
+#define IDisCtrl(id) (id < CCNT)
+#define VARisType(var) (getType(var) < TCNT)
+#define VARisKeyw(var) (getType(var) < KCNT)
+#define VARisCtrl(var) (getType(var) < CCNT)
 
 // new variables
 #define newNil() NEWVAR(TChr(0, T_NIL, false))
@@ -59,7 +65,7 @@ typedef IVar* PVar;
 #define newStr(v) NEWVAR(TStr(v, T_STR, false))
 #define newLst(v) NEWVAR(TLst(v, T_LST, false))
 #define newTrm(v) NEWVAR(TLst(v, T_TRM, false))
-#define newFnc(v) NEWVAR(TLst(v, T_FNC, false))
+#define newFnc(v) NEWVAR(TFnc(v, T_FNC, false))
 #define newObj(v) NEWVAR(TObj(v, T_OBJ, false))
 #define newOpr(v) NEWVAR(TStr(v, T_OPR, false))
 #define newArg(v) NEWVAR(TLst(v, T_ARG, false))
@@ -75,7 +81,7 @@ typedef IVar* PVar;
 #define newStrC(v) NEWVAR(TStr(v, T_STR, true))
 #define newLstC(v) NEWVAR(TLst(v, T_LST, true))
 #define newTrmC(v) NEWVAR(TLst(v, T_TRM, true))
-#define newFncC(v) NEWVAR(TLst(v, T_FNC, true))
+#define newFncC(v) NEWVAR(TFnc(v, T_FNC, true))
 #define newObjC(v) NEWVAR(TObj(v, T_OBJ, true))
 #define newOprC(v) NEWVAR(TStr(v, T_OPR, true))
 #define newArgC(v) NEWVAR(TLst(v, T_ARG, true))
@@ -97,10 +103,11 @@ typedef IVar* PVar;
 #define getTrmRaw(var) getLstRaw(var)
 #define getPinRaw(var) getIntRaw(var)
 #define getVarRaw(var) getStrRaw(var)
+#define getBinRaw(var) getChrRaw(var)
 
 // get var value instance with type assertion
 #define getNil(var) getChrRaw(assertT(var, T_NIL))
-#define getBin(var) getChrRaw(assertT(var, T_BIN))
+#define getBin(var) getBinRaw(assertT(var, T_BIN))
 #define getInt(var) getIntRaw(assertT(var, T_INT))
 #define getPin(var) getPinRaw(assertT(var, T_PIN))
 #define getFlt(var) getFltRaw(assertT(var, T_FLT))
@@ -119,17 +126,17 @@ typedef IVar* PVar;
 #define getType(var) ((var)->type)
 #define baseType(type) VAR_Type[type]
 #define keyType(type) CtrlType[type - KCNT]
-#define setType(var, t) ((var)->type = t)
+#define setType(var, t) ((var)->type = (t))
 #define getBaseType(var) VAR_Type[getType(var)]
 #define getTypeName(var) typeName(getType(var))
-#define keyTypeName(type) typeName(CtrlType[type - KCNT])
+#define keyTypeName(type) typeName(CtrlType[(type)-KCNT])
 #define baseTypeName(type) typeName(baseType(type))
 #define getBaseTypeName(var) typeName(getBaseType(var))
 
 
 // other variable related macros
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
-#define REPVAR(var, v) (decRef(var), incRef(var = v))
+#define REPVAR(var, v) (decRef(var), incRef(var = (v)))
 #define TOSTR(val, ...) toStr(val, ##__VA_ARGS__).c_str()
 #define CALLOPR(a, o, b) (operations[a->type]).at(o)((a), (b))
 #define FILLARGS(ARGS, DFLT)     \
@@ -238,13 +245,11 @@ class TVar : public IVar {
 
 template <typename T>
 inline string TVar<T>::toString(bool) {
-    if (type == T_STR) INFO("3 %s", (*(string*)(void*)&value).c_str());
     return toStr(value, type);
 }
 
 template <>
 inline string TVar<var_str>::toString(bool escapeStr) {
-    INFO("2");
     if (escapeStr && type == T_STR)
         return "\"" + escape(value) + "\"";
     else
@@ -269,6 +274,7 @@ inline PVar _decRef(PVar v ERR_PARAM) {
     return v;
 }
 
+#include <macros.hpp>
 #define assertT(var, type) _assertT(var, type ERR_ARGS)
 inline PVar _assertT(PVar v, uint8_t type ERR_PARAM) {
     if (getType(v) != type)
