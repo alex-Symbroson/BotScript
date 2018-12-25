@@ -125,7 +125,7 @@ ctrl:
                 // DEBUG("%s", TOSTR(*it));
                 type = getType(*it);
                 if (type == C_CDO || type == C_ELS)
-                    handleScope(getFncRaw(*it));
+                    handleScope(*it);
                 else
                     goto err_tok;
             }
@@ -136,12 +136,12 @@ ctrl:
         case C_CDO:
             switch (type) {
             // while
-            case 0: handleScope(getFncRaw(*it)); break;
+            case 0: handleScope(*it); break;
 
             // do .. while
             case C_WHL:
                 do {
-                    handleScope(getFncRaw(*it));
+                    handleScope(*it);
                     if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
                     REPVAR(res, handleLine(getTrmRaw(it[1])));
@@ -152,7 +152,7 @@ ctrl:
             // do .. until
             case C_UNT:
                 do {
-                    handleScope(getFncRaw(*it));
+                    handleScope(*it);
                     if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
                     REPVAR(res, handleLine(getTrmRaw(it[1])));
@@ -172,7 +172,7 @@ ctrl:
 
             while (getBin(res) && !BREAK) {
                 if (type) {
-                    handleScope(getFncRaw(it[1]));
+                    handleScope(it[1]);
                     if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
                 }
@@ -191,7 +191,7 @@ ctrl:
 
             while (!getBin(res) && !BREAK) {
                 if (type) {
-                    handleScope(getFncRaw(it[1]));
+                    handleScope(it[1]);
                     if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
                 }
@@ -225,6 +225,7 @@ ctrl:
 
                 args      = incRef(evalExpr(it[1], true)); // get 2nd arg
                 PVar tRes = res; // for safe overriding & freeing
+
                 DEBUG("(%s %s %s)", TOSTR(tRes), TOSTR(it[0]), TOSTR(args));
                 res = incRef(CALLOPR(res, getOprRaw(it[0]), args));
                 DEBUG("(... %s ...) -> %s", TOSTR(it[0]), TOSTR(res));
@@ -256,15 +257,30 @@ err_tok:
 }
 
 // scope interpreter
-void handleScope(var_fnc& func) {
+void handleScope(PVar scope) {
     BEGIN("var_lst*scope");
-    curScope = &func;
-
-    for (auto& line: func.func) {
+    for (auto& line: getFncRaw(scope).func) {
         handleLine(getTrm(line));
         if (BREAK) break;
     }
-    curScope = func.parent;
+    END();
+}
+
+// scope interpreter
+void handleFunc(PVar func, PVar args) {
+    BEGIN("var_lst*scope");
+    var_fnc* lastScope = curScope;
+    curScope           = &getFnc(func);
+
+    if (curScope->vars["args"])
+        REPVAR(curScope->vars["args"], args);
+    else
+        curScope->vars["args"] = incRef(args);
+
+    handleScope(func);
+    decRef(args);
+    // DEBUG
+    curScope = lastScope;
     END();
 }
 
@@ -516,7 +532,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
 PVar findVar(string name, var_fnc* scope) {
     do {
         auto var = scope->vars.find(name);
-        if (var != scope->vars.end()) return var->second;
+        if (var != scope->vars.end() && var->second) return var->second;
     } while ((scope = scope->parent));
 
     return NULL;

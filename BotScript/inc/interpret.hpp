@@ -28,7 +28,8 @@ inline bool isOperator(string s) {
 
 PVar handleLine(var_lst& line);
 
-void handleScope(var_fnc& scope);
+void handleScope(PVar scope);
+void handleFunc(PVar func, PVar args);
 
 // converts scope string to term
 var_lst toFunction(char*& c, char separator, char end, var_fnc& parent);

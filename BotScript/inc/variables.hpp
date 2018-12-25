@@ -136,7 +136,7 @@ typedef IVar* PVar;
 
 // other variable related macros
 #define NEWVAR(v) (dynamic_cast<PVar>(new v))
-#define REPVAR(var, v) (decRef(var), incRef(var = (v)))
+//#define REPVAR(var, v) (var->refcnt && decRef(var), incRef(var = (v)))
 #define TOSTR(val, ...) toStr(val, ##__VA_ARGS__).c_str()
 #define CALLOPR(a, o, b) (operations[a->type]).at(o)((a), (b))
 #define FILLARGS(ARGS, DFLT)     \
@@ -259,19 +259,22 @@ inline string TVar<var_str>::toString(bool escapeStr) {
 
 // inline functions
 
-inline PVar incRef(PVar v) {
-    // INFO("incRef %p %s %i", v, getTypeName(v), v->refcnt + 1);
-    ++v->refcnt;
+inline PVar incRef(PVar v, int n = 1) {
+    v->refcnt += n;
     return v;
 }
 
 #define decRef(var) _decRef(var ERR_ARGS)
 inline PVar _decRef(PVar v ERR_PARAM) {
-    // INFO("decRef %p %s %i", v, getTypeName(v), v->refcnt - 1);
     if (v->refcnt <= 0)
         error(ERR_STR "refcnt=%i", ERR_VALS, v->refcnt - 1), getchar();
     if (!--v->refcnt) delete v;
     return v;
+}
+
+inline PVar REPVAR(PVar& var, PVar v) {
+    if (var->refcnt) decRef(var);
+    return incRef(var = v);
 }
 
 #include <macros.hpp>

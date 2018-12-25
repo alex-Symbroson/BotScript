@@ -109,31 +109,31 @@ int main(int argc, char* argv[]) {
 
     INFO("\nmain: %s\n", TOSTR(main.func));
 
-    var_lst vargs = {};
-    for (int i = 0; i < argc; i++) vargs.push_back(incRef(newStrC(argv[i])));
-    main.vars["args"] = incRef(newArgC(vargs));
+    var_lst vargs = {incRef(newStrC(path), 2)};
+    for (int i = 2; i < argc; i++) vargs.push_back(incRef(newStrC(argv[i]), 2));
 
     // execute code
     INFO("execute global");
     status     = S_EXEC;
     funcResult = incRef(newNil());
-    handleScope(main);
+    handleFunc(newFnc(main), newArgC(vargs));
 
     INFO("execute init");
     status    = S_EXEC;
     PVar func = findVar("init", &main);
-    if (func && getType(func) == T_FNC) handleScope(getFncRaw(func));
+    if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
 
-    INFO("execute global");
+    INFO("execute main");
     status = S_EXEC;
     func   = findVar("main", &main);
-    if (func && getType(func) == T_FNC) handleScope(getFncRaw(func));
+    if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
 
     INFO("execute loop");
     status = S_EXEC;
     func   = findVar("loop", &main);
     if (func && getType(func) == T_FNC)
-        while (status < S_STOP) handleScope(getFncRaw(func));
+        while (status < S_STOP) handleFunc(func, newArgC({}));
+
 
     INFO("stop program");
     int res = 0;

@@ -28,8 +28,8 @@ ifeq ($(ISBOT),true)
 endif
 
 ifeq ($(ISDBG),true)
-	CFLAGS += -Invwa -g
-	LDFLAGS += nvwa/debug_new.cpp
+	CFLAGS += -g # -Invwa
+	LDFLAGS += #nvwa/debug_new.cpp
 endif
 
 	# clean extensions
@@ -76,7 +76,7 @@ $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR) $(GLOBDEP)
 
 run: all
 	@printf "\n#### executing $(OUTPUT).out\n"
-	./$(OUTPUT).out
+	./$(OUTPUT).out $(ARGS)
 
 clean:
 	@printf "\n#### cleaning project\n"

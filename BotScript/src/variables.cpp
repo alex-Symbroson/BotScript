@@ -78,13 +78,11 @@ const char* typeName(uint8_t t) {
 
 
 IVar::IVar() {
-    // INFO("append %p", this);
     collector.push_front(this);
     this->it = collector.begin();
 }
 
 IVar::~IVar() {
-    // INFO("remove %p %p", this, this->it);
     if (this->refcnt && status != S_FREE)
         error( // DEBUG
             "freeing %p with refcount %i during execution (=%s)", this, refcnt,
@@ -138,11 +136,6 @@ TypeClassDestructor(, var_fnc, T_FNC);
 
 template <>
 TVar<var_lst>::~TVar() {
-    /*INFO(
-        "delete %p %s%s %s", this, isConst ? "const " : "", typeName(type),
-        toString().c_str());*/
-
-
     if (status != S_FREE)
         for (PVar& v: value) decRef(v);
     // value.clear();
@@ -150,10 +143,6 @@ TVar<var_lst>::~TVar() {
 
 template <>
 TVar<var_obj>::~TVar() {
-    // INFO(
-    //     "delete %p %s%s %s", this, isConst ? "const " : "", typeName(type),
-    //     toString().c_str());
-
     if (status != S_FREE)
         for (auto& v: value) decRef(v.second);
     // value.clear();
@@ -162,7 +151,7 @@ TVar<var_obj>::~TVar() {
 
 // clang-format off
 
-    // dont modify const values!
+// dont modify const values!
 bool initOperations() {
     BEGIN();
 
@@ -177,388 +166,350 @@ bool initOperations() {
 
     operations[T_INT] = {
         DEFOPR("assign", {
-            switch(getType(b)) {
-                case T_INT: getIntRaw(a) = getInt(b); return a;
-                case T_FLT: getIntRaw(a) = getFlt(b); return a;
-                default   : err_iat(a, b, "assign", T_INT);
+            switch (getType(b)) {
+            case T_INT: getIntRaw(a) = getIntRaw(b); return a;
+            case T_FLT: getIntRaw(a) = getFltRaw(b); return a;
+            default: err_iat(a, b, "assign", T_INT);
             }
         }),
         DEFOPR("equal", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) == getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) == getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) == getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) == getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("nequal", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) != getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) != getFlt(b));
-                default   : return newBin(true);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) != getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) != getFltRaw(b));
+            default: return newBin(true);
             }
         }),
         DEFOPR("smaller", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) < getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) < getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) < getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) < getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("smalleq", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) <= getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) <= getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) <= getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) <= getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("bigger", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) > getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) > getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) > getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) > getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("bigeq", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getIntRaw(a) >= getInt(b));
-                case T_FLT: return newBin(getIntRaw(a) >= getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getIntRaw(a) >= getIntRaw(b));
+            case T_FLT: return newBin(getIntRaw(a) >= getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("add", {
-            switch(getType(b)) {
-                case T_INT: return newInt(getIntRaw(a) + getInt(b));
-                case T_FLT: return newFlt(getIntRaw(a) + getFlt(b));
-                default   : err_iop("+", a, b);
+            switch (getType(b)) {
+            case T_INT: return newInt(getIntRaw(a) + getIntRaw(b));
+            case T_FLT: return newFlt(getIntRaw(a) + getFltRaw(b));
+            default: err_iop("+", a, b);
             }
         }),
         DEFOPR("sub", {
-            switch(getType(b)) {
-                case T_INT: return newInt(getIntRaw(a) - getInt(b));
-                case T_FLT: return newFlt(getIntRaw(a) - getFlt(b));
-                default   : err_iop("-", a, b);
+            switch (getType(b)) {
+            case T_INT: return newInt(getIntRaw(a) - getIntRaw(b));
+            case T_FLT: return newFlt(getIntRaw(a) - getFltRaw(b));
+            default: err_iop("-", a, b);
             }
         }),
         DEFOPR("mul", {
-            switch(getType(b)) {
-                case T_INT: return newInt(getIntRaw(a) * getInt(b));
-                case T_FLT: return newFlt(getIntRaw(a) * getFlt(b));
-                default   : err_iop("*", a, b);
+            switch (getType(b)) {
+            case T_INT: return newInt(getIntRaw(a) * getIntRaw(b));
+            case T_FLT: return newFlt(getIntRaw(a) * getFltRaw(b));
+            default: err_iop("*", a, b);
             }
         }),
         DEFOPR("div", {
-            switch(getType(b)) {
-                case T_INT: return newInt(getIntRaw(a) / getInt(b));
-                case T_FLT: return newFlt(getIntRaw(a) / getFlt(b));
-                default   : err_iop("/", a, b);
+            switch (getType(b)) {
+            case T_INT: return newInt(getIntRaw(a) / getIntRaw(b));
+            case T_FLT: return newFlt(getIntRaw(a) / getFltRaw(b));
+            default: err_iop("/", a, b);
             }
         }),
         DEFOPR("mod", {
-            switch(getType(b)) {
-                case T_INT: return newInt(getIntRaw(a) % getInt(b));
-                case T_FLT: {
-                    var_flt c = getIntRaw(a), d = getFlt(b);
-                    return newFlt(c - d * floor(c / d));
-                }
-                default   : err_iop("%", a, b);
+            switch (getType(b)) {
+            case T_INT: return newInt(getIntRaw(a) % getIntRaw(b));
+            case T_FLT: {
+                var_flt c = getIntRaw(a), d = getFltRaw(b);
+                return newFlt(c - d * floor(c / d));
+            }
+            default: err_iop("%", a, b);
             }
         }),
         DEFOPR("pow", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(pow(getIntRaw(a), getInt(b)));
-                case T_FLT: return newFlt(pow(getIntRaw(a), getFlt(b)));
-                default   : err_iop("**", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(pow(getIntRaw(a), getIntRaw(b)));
+            case T_FLT: return newFlt(pow(getIntRaw(a), getFltRaw(b)));
+            default: err_iop("**", a, b);
             }
         }),
-        DEFOPR("shl", {
-            if(getType(b) == T_INT)
-                return newInt(getIntRaw(a) << getInt(b));
-            else err_iop("<<", a, b);
-        }),
-        DEFOPR("shr", {
-            if(getType(b) == T_INT)
-                return newInt(getIntRaw(a) >> getInt(b));
-            else err_iop(">>", a, b);
-        }),
-        DEFOPR("band", {
-            if(getType(b) == T_INT)
-                return newInt(getIntRaw(a) & getInt(b));
-            else err_iop("&", a, b);
-        }),
-        DEFOPR("bor", {
-            if(getType(b) == T_INT)
-                return newInt(getIntRaw(a) | getInt(b));
-            else err_iop("|", a, b);
-        }),
-        DEFOPR("bxor", {
-            if(getType(b) == T_INT)
-                return newInt(getIntRaw(a) ^ getInt(b));
-            else err_iop("^", a, b);
-        }),
+        DEFOPR("shl", { return newInt(getIntRaw(a) << getInt(b)); }),
+        DEFOPR("shr", { return newInt(getIntRaw(a) >> getInt(b)); }),
+        DEFOPR("band", { return newInt(getIntRaw(a) & getInt(b)); }),
+        DEFOPR("bor", { return newInt(getIntRaw(a) | getInt(b)); }),
+        DEFOPR("bxor", { return newInt(getIntRaw(a) ^ getInt(b)); }),
         DEFOPR("toStr", {
             var_lst args = getArg(b);
 
-            if(!args.empty()) {
+            if (!args.empty()) {
                 FILLARGS(args, {});
-                if(getType(args[0]) == T_INT) {
-                    PVar res = newStr(dtos2(getIntRaw(a), getInt(args[0])));
-                    return res;
-                }
-                else err_iat(a, args[0], "toString", T_INT);
-            }
-            else return newStr(dtos2(getIntRaw(a), 10));
+                PVar res = newStr(dtos2(getIntRaw(a), getInt(args[0])));
+                return res;
+            } else
+                return newStr(dtos2(getIntRaw(a), 10));
         })
     };
 
     operations[T_FLT] = {
         DEFOPR("assign", {
-            switch(getType(b)) {
-                case T_INT: getFltRaw(a) = getInt(b); return a;
-                case T_FLT: getFltRaw(a) = getFlt(b); return a;
-                default   : err_iat(a, b, "assign", T_FLT);
+            switch (getType(b)) {
+            case T_INT: getFltRaw(a) = getIntRaw(b); return a;
+            case T_FLT: getFltRaw(a) = getFltRaw(b); return a;
+            default: err_iat(a, b, "assign", T_FLT);
             }
         }),
         DEFOPR("equal", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) == getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) == getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) == getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) == getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("smaller", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) < getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) < getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) < getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) < getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("smalleq", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) <= getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) <= getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) <= getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) <= getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("bigger", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) > getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) > getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) > getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) > getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("bigeq", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) >= getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) >= getFlt(b));
-                default   : return newBin(false);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) >= getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) >= getFltRaw(b));
+            default: return newBin(false);
             }
         }),
         DEFOPR("nequal", {
-            switch(getType(b)) {
-                case T_INT: return newBin(getFltRaw(a) != getInt(b));
-                case T_FLT: return newBin(getFltRaw(a) != getFlt(b));
-                default   : return newBin(true);
+            switch (getType(b)) {
+            case T_INT: return newBin(getFltRaw(a) != getIntRaw(b));
+            case T_FLT: return newBin(getFltRaw(a) != getFltRaw(b));
+            default: return newBin(true);
             }
         }),
         DEFOPR("add", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(getFltRaw(a) + getInt(b));
-                case T_FLT: return newFlt(getFltRaw(a) + getFlt(b));
-                default   : err_iop("+", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(getFltRaw(a) + getIntRaw(b));
+            case T_FLT: return newFlt(getFltRaw(a) + getFltRaw(b));
+            default: err_iop("+", a, b);
             }
         }),
         DEFOPR("sub", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(getFltRaw(a) - getInt(b));
-                case T_FLT: return newFlt(getFltRaw(a) - getFlt(b));
-                default   : err_iop("-", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(getFltRaw(a) - getIntRaw(b));
+            case T_FLT: return newFlt(getFltRaw(a) - getFltRaw(b));
+            default: err_iop("-", a, b);
             }
         }),
         DEFOPR("mul", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(getFltRaw(a) * getInt(b));
-                case T_FLT: return newFlt(getFltRaw(a) * getFlt(b));
-                default   : err_iop("*", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(getFltRaw(a) * getIntRaw(b));
+            case T_FLT: return newFlt(getFltRaw(a) * getFltRaw(b));
+            default: err_iop("*", a, b);
             }
         }),
         DEFOPR("div", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(getFltRaw(a) / getInt(b));
-                case T_FLT: return newFlt(getFltRaw(a) / getFlt(b));
-                default   : err_iop("/", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(getFltRaw(a) / getIntRaw(b));
+            case T_FLT: return newFlt(getFltRaw(a) / getFltRaw(b));
+            default: err_iop("/", a, b);
             }
         }),
         DEFOPR("mod", {
             var_flt c = getFltRaw(a), d;
-            switch(getType(b)) {
-                case T_INT: d = getInt(b);
-                case T_FLT: d = getFlt(b);
-                default   : err_iop("%", a, b);
+            switch (getType(b)) {
+            case T_INT: d = getIntRaw(b);
+            case T_FLT: d = getFltRaw(b);
+            default: err_iop("%", a, b);
             }
             return newFlt(c - d * floor(c / d));
         }),
         DEFOPR("pow", {
-            switch(getType(b)) {
-                case T_INT: return newFlt(pow(getFltRaw(a), getInt(b)));
-                case T_FLT: return newFlt(pow(getFltRaw(a), getFlt(b)));
-                default   : err_iop("**", a, b);
+            switch (getType(b)) {
+            case T_INT: return newFlt(pow(getFltRaw(a), getIntRaw(b)));
+            case T_FLT: return newFlt(pow(getFltRaw(a), getFltRaw(b)));
+            default: err_iop("**", a, b);
             }
         }),
         DEFOPR("toStr", {
             var_lst args = getArg(b);
 
-            if(!args.empty()) {
+            if (!args.empty()) {
                 FILLARGS(args, {});
-                if(getType(args[0]) == T_INT) {
-                    PVar res = newStr(dtos2(getFltRaw(a), getInt(args[0])));
-                    return res;
-                }
-                else err_iat(a, args[0], "toString", T_INT);
-
-            }
-            else return newStr(dtos2(getFltRaw(a), 10));
+                PVar res = newStr(dtos2(getFltRaw(a), getInt(args[0])));
+                return res;
+            } else
+                return newStr(dtos2(getFltRaw(a), 10));
         })
     };
 
     operations[T_STR] = {
         DEFOPR("assign", {
-            if(getType(b) == T_STR) {
-                getStrRaw(a) = getStr(b);
-                return a;
-            } else
-                err_iat(a, b, "assign", T_FLT);
+            getStrRaw(a) = getStr(b);
+            return a;
         }),
         DEFOPR("equal", {
-            if(getType(b) == T_STR)
-                return newBin(getStrRaw(a) == getStr(b));
+            if (getType(b) == T_STR)
+                return newBin(getStrRaw(a) == getStrRaw(b));
             else
                 return newBin(false);
         }),
         DEFOPR("nequal", {
-            if(getType(b) == T_STR)
-                return newBin(getStrRaw(a) != getStr(b));
+            if (getType(b) == T_STR)
+                return newBin(getStrRaw(a) != getStrRaw(b));
             else
                 return newBin(true);
         }),
-        DEFOPR("add", {
-            if(getType(b) == T_STR)
-                return newStr(getStrRaw(a) + getStr(b));
-            else err_iop("+", a, b);
-        }),
+        DEFOPR("add", { return newStr(getStrRaw(a) + getStr(b)); }),
         DEFOPR("toInt", {
-            string s = getStrRaw(a);
+            string s    = getStrRaw(a);
             int32_t pos = s.find('.');
-            if(pos > -1) s[pos] = 0;
+            if (pos > -1) s[pos] = 0;
             return newInt(stod2(s));
         }),
-        DEFOPR("toFlt", {
-            return newFlt(stod2(getStrRaw(a)));
-        })
+        DEFOPR("toFlt", { return newFlt(stod2(getStrRaw(a))); })
     };
 
     operations[T_FNC] = {
         DEFOPR("assign", {
-            if(!a->isConst) getFncRaw(a) = getFnc(b);
-            return a;
-        }),
+             if (!a->isConst) getFncRaw(a) = getFnc(b);
+             return a;
+         }),
         DEFOPR("call", {
             if (getType(b) == T_ARG) {
-                handleScope(getFncRaw(a));
+                handleFunc(a, b);
                 if (status == S_RETURN) status = S_EXEC;
                 return funcResult;
-            }
-            else err_iop("call", a, b);
+            } else
+                err_iop("call", a, b);
         })
     };
 
     operations[T_BFN] = {
         DEFOPR("call", {
-            if (getType(b) == T_ARG) {
-                PVar res = getBfnRaw(a)->func(getArg(b));
-                return res;
-            }
-            else err_iop("call", a, b);
+            PVar res = getBfnRaw(a)->func(getArg(b));
+            return res;
         })
     };
 
     operations[T_LST] = {
         DEFOPR("assign", {
-            if(!a->isConst) getLstRaw(a) = getLst(b);
+            if (!a->isConst) getLstRaw(a) = getLst(b);
             return a;
         }),
         DEFOPR("push", {
-            if(a->isConst) warning("cannot \"push\" to constant list");
-            else getLstRaw(a).push_back(incRef(b));
+            if (a->isConst)
+                warning("cannot \"push\" to constant list");
+            else
+                getLstRaw(a).push_back(incRef(b));
             return newInt(getLstRaw(a).size() + a->isConst);
         }),
         DEFOPR("pop", {
             var_lst& lst = getLstRaw(a);
-            if(a->isConst) warning("cannot \"pop\" from constant list");
-            else lst.pop_back();
+            if (a->isConst)
+                warning("cannot \"pop\" from constant list");
+            else
+                lst.pop_back();
             PVar ret = lst.back();
             ret->refcnt--;
             return ret;
         }),
         DEFOPR("at", {
-            if(getType(b) == T_INT) {
-                var_int i = getInt(b);
+            if (getType(b) == T_INT) {
+                var_int i    = getInt(b);
                 var_lst& lst = getLstRaw(a);
-                int len = lst.size();
-                if(i < 0) i += len;
+                int len      = lst.size();
+                if (i < 0) i += len;
 
-                if(i < 0 || i >= len)
+                if (i < 0 || i >= len)
                     err_rng(a, b);
                 else
                     return lst[i];
-            }
-            else err_iop("at", a, b);
+            } else
+                err_iop("at", a, b);
         }),
         DEFOPR("join", {
             var_lst args = getArg(b);
 
-            if(!args.empty()) {
+            if (!args.empty()) {
                 FILLARGS(args, {});
                 string result = "", sep = "";
 
-                if(getType(args[0]) == T_STR) sep = getStr(args[0]);
-                else err_iat(a, args[0], "join", T_STR);
+                if (getType(args[0]) == T_STR)
+                    sep = getStr(args[0]);
+                else
+                    err_iat(a, args[0], "join", T_STR);
 
                 PVar tmp, last = getLstRaw(a).back();
                 for (PVar& v: getLstRaw(a)) {
                     tmp = incRef(evalExpr(v, false));
                     result += tmp->toString();
-                    if(v != last) result += sep;
+                    if (v != last) result += sep;
                     decRef(tmp);
                 }
 
                 return newStr(result);
-            }
-            else
+            } else
                 err_iac2(a, args, "join", 1);
         }),
-        DEFOPR("getLength", {
-            return newInt(getLstRaw(a).size());
-        })
+        DEFOPR("getLength", { return newInt(getLstRaw(a).size()); })
     };
 
     operations[T_ARG] = {
         DEFOPR("at", {
-            if(getType(b) == T_INT) {
-                var_int i = getInt(b);
+            if (getType(b) == T_INT) {
+                var_int i    = getInt(b);
                 var_lst& lst = getArgRaw(a);
-                int len = lst.size();
-                if(i < 0) i += len;
+                int len      = lst.size();
+                if (i < 0) i += len;
 
-                if(i < 0 || i >= len)
+                if (i < 0 || i >= len)
                     err_rng(a, b);
                 else
                     return lst[i];
-            }
-            else err_iop("at", a, b);
+            } else
+                err_iop("at", a, b);
         }),
-        DEFOPR("getLength", {
-            return newInt(getArgRaw(a).size());
-        })
+        DEFOPR("getLength", { return newInt(getArgRaw(a).size()); })
     };
 
     END("false");
@@ -608,7 +559,11 @@ PVar evalExpr(PVar& expr, bool copy) {
     case T_TRM:
     case K_RET: return handleLine(getLstRaw(expr));
 
-    case T_VAR: return findVar(getVarRaw(expr), curScope);
+    case T_VAR: {
+        PVar res = findVar(getVarRaw(expr), curScope);
+        if (!res) error_exit("unknown variable '%s'", TOSTR(expr));
+        return res;
+    }
 
     case T_ARG:
     case T_LST: {
@@ -674,8 +629,6 @@ void FreeVariables() {
     BEGIN();
     uint32_t n = 0;
     collector.remove_if([&n](PVar& v) {
-        // INFO("del    %p", v);
-        // INFO("del it %p", v->it);
         delete v;
         return false;
     });

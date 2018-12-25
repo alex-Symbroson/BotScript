@@ -1,26 +1,23 @@
 
-println("args: ", args);
-string a = "Hello ";
-if(args.getLength() >= 2) do {
-    a = (a + (args[2]));
-};
-print("a = " + a + "\n");
-
-return;
-stop();
-
-func foo = {
-    println("Hello from foo!");
-    println("a = ", a);
-};
+println("sysargs: ", args);
+string a = "";
 
 func init = {
-    a = (a + "test ");
-    foo();
+    a = "Hello ";
+    if(args.getLength() >= 2) do {
+        a = (a + (args[1]) + "!");
+    } else {
+        a = (a + "World!");
+    };
+};
+
+func doPrint = {
+    println("Hello from foo!");
+    println(args[0]);
 };
 
 func main = {
-    println((a) + ("World" + "!"));
+    doPrint(a);
     return 0;
 };
 
@@ -30,7 +27,7 @@ func loop = {
     i = (i + 1);
     println("loop ", i);
     if(i >= 10) do { stop(0); };
-    delay(1000);
+    delay(200);
 };
 
 return;
