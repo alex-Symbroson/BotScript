@@ -1,26 +1,31 @@
 
 /* TODO:
-!   toFunction():
+    toFunction():
         control statements: for
-    functions:
-        arguments as objects / variables
-        argument type assertion
-        assign args in func::call
+
+    allow `while condition do function;` with variables
+        add term type (dont eval terms on assignment)
+
+    function args:
+        declaration, type assertion
+
+    Variables:
+        IDis... not, >=
+        decl var without initialisation
+
 !   RaspiBot functions:
         drive, rotate, curve, accumulateTo, accumulateBy,
         getIRSensors, getButtonStates,
-        setButtonColors, writeLCD
+        setButtonColors
+!    Python part AttinyProtocol
+
+!   T_PIN operators & WiringPi
 
     copy const on modify
     operator precedence
     check stod2 //?
-    simplify argument type assertion
     type casts, int<>float automatic?
     // all isOperator to prev.hasOperator
-
-Raspibot:
-    LED PWM brightness
-    access different (3) buttons
 */
 
 #include "include.hpp"
@@ -54,10 +59,8 @@ bool Init() {
 
 void Free() {
     BEGIN();
-    status = S_FREE;
-#if _DEBUG_
+    status    = S_FREE;
     int alloc = collector.size();
-#endif
 
 #if ISBOT
     INFO("freeing RaspiBot");
@@ -72,7 +75,6 @@ void Free() {
 }
 
 void interrupt(int sig) {
-    // free all allocated variables
     error("\nkeyboard interrupt");
     Exit();
     printf("\n");
@@ -109,6 +111,7 @@ int main(int argc, char* argv[]) {
 
     INFO("\nmain: %s\n", TOSTR(main.func));
 
+    // create var_lst of program (sys)args
     var_lst vargs = {incRef(newStrC(path), 2)};
     for (int i = 2; i < argc; i++) vargs.push_back(incRef(newStrC(argv[i]), 2));
 
@@ -160,7 +163,6 @@ int main(int argc, char* argv[]) {
 #endif
 
     INFO("freed %u of %u code vars", delloc, alloc);
-
     Free();
 
     INFO("end.");

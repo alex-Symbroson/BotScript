@@ -4,7 +4,7 @@ string a = "";
 
 func init = {
     a = "Hello ";
-    if(args.getLength() >= 2) do {
+    if(args.getLength() >= 2) {
         a = (a + (args[1]) + "!");
     } else {
         a = (a + "World!");
@@ -21,12 +21,12 @@ func main = {
     return 0;
 };
 
-int i = 0;
+int i;
 
 func loop = {
     i = (i + 1);
     println("loop ", i);
-    if(i >= 10) do { stop(0); };
+    if(i >= 10) { stop(0); };
     delay(200);
 };
 

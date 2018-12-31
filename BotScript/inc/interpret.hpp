@@ -5,7 +5,7 @@
 #include "include.hpp"
 #include "variables.hpp"
 
-
+// operator type
 typedef struct {
     const char* name;
     uint8_t priority;
@@ -17,18 +17,21 @@ extern const unordered_map<string, Operator> operators; // operators
 extern const uint8_t CtrlType[CCNT - KCNT];             // keyword types
 extern const uint8_t VAR_Type[CCNT];                    // base type of types
 
-extern var_fnc* curScope;           // current sxscureted scope
+extern var_fnc* curScope;           // current executed scope
 extern PVar funcResult;             // func return value
 extern FuncMapOpr operations[TCNT]; // type operators
 
-//#define isOperator(s) (operators.find(s) != operators.end())
 inline bool isOperator(string s) {
     return operators.find(s) != operators.end();
 }
 
+// execute single code line
 PVar handleLine(var_lst& line);
 
+// calls handleLine on each scope line
 void handleScope(PVar scope);
+
+// set curScope for variable access and calls handleScope
 void handleFunc(PVar func, PVar args);
 
 // converts scope string to term

@@ -8,8 +8,8 @@
 
 // Toggles
 // 1<<3:parent error lines;  1<<2:BEGIN,END macro;  1<<1:DEBUG;  1<<0:INFO;
-#define _DEBUG_ 0b1001
-#define _ERR_EXIT_ 1 // exit on error
+#define _DEBUG_ 0b0000 // 0b1001
+#define _ERR_EXIT_ 1   // exit on error
 
 // Statuses
 #define S_INIT 1

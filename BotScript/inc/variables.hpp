@@ -31,15 +31,18 @@ typedef IVar* PVar;
 #define TCNT 15
 
 // keywords  (! add VAR_Type[], typeName(), keywords{}, toFunction())
+// values
 #define K_NIL 15 // null
 #define K_TRU 16 // true
 #define K_FLS 17 // false
+
+// control statements / commands
 #define K_BRK 18 // break
 #define K_CNT 19 // continue
 #define K_RET 20 // return [(value)]
 #define KCNT 21
 
-// control statements (! add VAR_Type[], CtrlType[], typeName(), keywords{},
+// control structures (! add VAR_Type[], CtrlType[], typeName(), keywords{},
 // toFunction())
 #define C_CIF 21 // if ()
 #define C_EIF 22 // elif ()
@@ -49,6 +52,7 @@ typedef IVar* PVar;
 #define C_UNT 26 // until ()
 #define CCNT 27
 
+// check type category
 #define IDisType(id) (id < TCNT)
 #define IDisKeyw(id) (id < KCNT)
 #define IDisCtrl(id) (id < CCNT)
@@ -144,16 +148,15 @@ typedef IVar* PVar;
     fillArgs(ARGS, _dflt)
 
 // typedefs
-
-typedef char var_chr;
-typedef int var_int;
-typedef double var_flt;
-typedef string var_str;
-typedef vector<PVar> var_lst;
-typedef unordered_map<string, PVar> var_obj;
+typedef char var_chr;         // nil, bool
+typedef int var_int;          // int, pin
+typedef double var_flt;       // float
+typedef string var_str;       // string, variable, operator, member func
+typedef vector<PVar> var_lst; // list, args, term
+typedef unordered_map<string, PVar> var_obj; // obj
 
 // function
-typedef struct var_fnc var_fnc;
+typedef struct var_fnc var_fnc; // func
 struct var_fnc {
     const char* name;
     var_obj vars; // variables
@@ -161,17 +164,20 @@ struct var_fnc {
     var_fnc* parent;
 };
 
-typedef function<PVar(var_lst)> TFuncSmp;
+// operator func
 typedef function<PVar(PVar&, PVar&)> TFuncOpr;
-// typedef unordered_map<string, TFuncSmp> FuncMapSmp;
 typedef unordered_map<string, TFuncOpr> FuncMapOpr;
+
+// builtin func
+typedef function<PVar(var_lst)> TFuncSmp;
+// typedef unordered_map<string, TFuncSmp> FuncMapSmp;
 
 typedef struct {
     const char* name;
     TFuncSmp func;
 } TBltFunc;
 
-typedef TBltFunc* var_bfn;
+typedef TBltFunc* var_bfn; // builtin func
 
 // class types
 typedef TVar<var_chr> TChr;
@@ -194,7 +200,7 @@ PVar evalExpr(PVar& expr, bool copy);
 PVar copyVar(PVar& v);
 const char* typeName(uint8_t t);
 
-
+// stringify functions
 string toStr(PVar& v, uint8_t type = T_NIL);
 string toStr(var_chr& v, uint8_t type = T_NIL);
 string toStr(var_int& v, uint8_t type = T_INT);
@@ -264,6 +270,7 @@ inline PVar incRef(PVar v, int n = 1) {
     return v;
 }
 
+// decrease reference counter; throws error if refcnt < 0
 #define decRef(var) _decRef(var ERR_ARGS)
 inline PVar _decRef(PVar v ERR_PARAM) {
     if (v->refcnt <= 0)
@@ -272,12 +279,15 @@ inline PVar _decRef(PVar v ERR_PARAM) {
     return v;
 }
 
+// replace variable by decreasing refcnt of old and increase on new variable
 inline PVar REPVAR(PVar& var, PVar v) {
     if (var->refcnt) decRef(var);
     return incRef(var = v);
 }
 
 #include <macros.hpp>
+
+// compare variable with expected type -> throw error if mismatch
 #define assertT(var, type) _assertT(var, type ERR_ARGS)
 inline PVar _assertT(PVar v, uint8_t type ERR_PARAM) {
     if (getType(v) != type)

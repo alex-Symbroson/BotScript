@@ -71,8 +71,6 @@ bool initBuiltins() {
                     delay(getInt(args[0]));
                 else if (type == T_FLT)
                     delay(getFlt(args[0]));
-                else if (type == T_STR)
-                    delay(stod2(getStr(args[0])));
             }
             FEND("delay", "null");
         }),

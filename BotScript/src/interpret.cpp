@@ -1,14 +1,6 @@
 
 #include "interpret.hpp"
 
-/*       priority
-.   at       6        []  at       6
-()  call     5        **  pow      4
-*   mul      3        /   div      3
-%   mod      3        +   add      2
--   sub      2        =   assign   1
-*/
-
 // clang-format off
 #define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
 // clang-format on
@@ -28,28 +20,29 @@ const unordered_map<string, Operator> operators = {
     Op("&&", "and", 12, 'R'),   Op("||", "or", 13, 'R'),
     Op("=", "assign", 14, 'L')};
 
-// type of the keyword itself
+// keyword types
 const unordered_map<string, const uint8_t> keywords = {
-    {"null", K_NIL},  {"true", K_TRU},     {"false", K_FLS},
-    {"break", K_BRK}, {"continue", K_CNT}, {"return", K_RET},
-    {"if", C_CIF},    {"elif", C_EIF},     {"else", C_ELS},
-    {"do", C_CDO},    {"while", C_WHL},    {"until", C_UNT},
+    {"null", K_NIL},     {"true", K_TRU},   {"false", K_FLS},  {"break", K_BRK},
+    {"continue", K_CNT}, {"return", K_RET}, {"if", C_CIF},     {"elif", C_EIF},
+    {"else", C_ELS},     {"do", C_CDO},     {"while", C_WHL},  {"until", C_UNT},
 
-    {"bool", T_BIN},  {"int", T_INT},      {"float", T_FLT},
-    {"list", T_LST},  {"object", T_OBJ},   {"string", T_STR},
-    {"pin", T_PIN},   {"func", T_FNC} /*, {"var", T_NIL}*/
+    {"bool", T_BIN},     {"int", T_INT},    {"float", T_FLT}, // datatypes
+    {"list", T_LST},     {"object", T_OBJ}, {"string", T_STR}, {"pin", T_PIN},
+    {"func", T_FNC} /* , {"var", T_NIL} */
 };
 
-// type of the value after the keyword
-uint8_t const CtrlType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC,
+// value type after keyword
+const uint8_t CtrlType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC,
                                        T_FNC, T_TRM, T_TRM};
 
 // func return value
 PVar funcResult;
 var_fnc* curScope;
 
+// execute single code line
 PVar handleLine(var_lst& line) {
     BEGIN("line=%s", TOSTR(line));
+    // reset return value
     REPVAR(funcResult, incRef(newNil()));
 
     if (line.empty()) {
@@ -57,27 +50,27 @@ PVar handleLine(var_lst& line) {
         return funcResult;
     }
 
-    // res: variable, it[0]: base var, it[1]: sub func, it[2]: args
+    // res: cur val, it[0]: 1st operand, it[1]: operator, it[2]: 2nd operand
     PVar res;
     uint32_t size           = line.size();
     var_lst::iterator begin = line.begin(), it = begin, end = line.end();
     uint8_t type = getType(*it), firstType = T_NIL;
 
-    // handle control structures
+    // handle single-parted control structures
     if (size == 1) {
         if (IDisType(type))
             REPVAR(funcResult, evalExpr(*it, false));
         else {
             switch (type) {
             // keywords
-            case K_BRK: status = S_BREAK; break;
-            case K_RET:
+            case K_BRK: status = S_BREAK; break; // break
+            case K_RET:                          // return
                 if (size != 1) goto err_tok;
                 status = S_RETURN;
                 REPVAR(funcResult, evalExpr(*it, false));
                 break;
 
-            case K_CNT: status = S_CONTINUE; break;
+            case K_CNT: status = S_CONTINUE; break; // continue
             default:
                 // handle multi-part control statements
                 if (type == C_WHL || type == C_UNT || type == C_CDO) goto ctrl;
@@ -90,11 +83,11 @@ PVar handleLine(var_lst& line) {
     }
 
 ctrl:
-    // handle control structures
+    // handle multi-parted control structures
     if (type >= KCNT) {
         res       = incRef(newNil());
         firstType = type;
-        type      = size == 1 ? 0 : getType(it[1]);
+        type      = size == 1 ? T_NIL : getType(it[1]);
 
         switch (firstType) {
         // if .. elif .. else
@@ -102,6 +95,7 @@ ctrl:
             // find statement where condition is true
             do {
                 type = getType(*it);
+                // handle if and elif
                 if (type == C_CIF || type == C_EIF) {
                     // parse condition
                     REPVAR(res, handleLine(getTrmRaw(*it)));
@@ -109,9 +103,9 @@ ctrl:
 
                     it++; // go to next block
 
-                    // execute block
+                    // if condition true -> break
                     if (getBin(res)) break;
-                } else if (type == C_ELS)
+                } else if (type == C_ELS) // else
                     break;
                 else
                     goto err_tok;
@@ -135,15 +129,17 @@ ctrl:
         // do [ .. while | until ]
         case C_CDO:
             switch (type) {
-            // while
-            case 0: handleScope(*it); break;
+            // do
+            case T_NIL: handleScope(*it); break;
 
             // do .. while
             case C_WHL:
                 do {
-                    handleScope(*it);
+                    handleScope(*it); // execute do{} block
+                    // reset control flags
                     if (status == S_CONTINUE) status = S_EXEC;
                     if (BREAK) break;
+                    // get condition result
                     REPVAR(res, handleLine(getTrmRaw(it[1])));
                     if (status == S_CONTINUE) status = S_EXEC;
                 } while (getBin(res) && !BREAK);
@@ -171,6 +167,7 @@ ctrl:
             goto whl_do;
 
             while (getBin(res) && !BREAK) {
+                // allow while() without do{} block
                 if (type) {
                     handleScope(it[1]);
                     if (status == S_CONTINUE) status = S_EXEC;
@@ -213,19 +210,21 @@ ctrl:
     else {
         it++;
         PVar args;
+        // get first operand
         res = incRef(evalExpr(*begin, false));
 
         do {
             if (size > 2) {
-                // check wether operator available
+                // check whether operator available
                 if (!hasOperator(res, getOprRaw(it[0])))
                     error_exit(
                         "%s has no operator %s", getTypeName(res),
                         TOSTR(it[0]));
 
-                args      = incRef(evalExpr(it[1], true)); // get 2nd arg
+                args      = incRef(evalExpr(it[1], true)); // get 2nd operand
                 PVar tRes = res; // for safe overriding & freeing
 
+                // execute operator
                 DEBUG("(%s %s %s)", TOSTR(tRes), TOSTR(it[0]), TOSTR(args));
                 res = incRef(CALLOPR(res, getOprRaw(it[0]), args));
                 DEBUG("(... %s ...) -> %s", TOSTR(it[0]), TOSTR(res));
@@ -279,7 +278,7 @@ void handleFunc(PVar func, PVar args) {
 
     handleScope(func);
     decRef(args);
-    // DEBUG
+
     curScope = lastScope;
     END();
 }
@@ -288,16 +287,17 @@ void handleFunc(PVar func, PVar args) {
 var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
     BEGIN("string::it*c='%c',sep='%c',end='%c'", *c, separator, end);
 
-    var_lst block, line;
+    var_lst scope, line;
 
     uint8_t lastType = T_NIL;
-    bool stop        = false; // earlier interruption on break,return,...
+    bool decl = false, stop = false; // stop: interrupt on break,return,...
     string word;
 
-    // push value to line
-    auto addVar = [&line, &lastType](PVar v, bool dbg = true) {
+    // lambda func to push value to line
+    auto addVar = [&line, &lastType, &decl](PVar v, bool dbg = true) {
         if (!v->refcnt) incRef(v);
         lastType = getType(v);
+        if (decl && lastType != T_VAR) decl = false;
         line.push_back(v);
         INFO("\033[1;32m%s: %s", TOSTR(v), typeName(lastType));
     };
@@ -310,16 +310,17 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             break;
         }
 
-        word = "";
+        word = ""; // reset buffer
 
         // select type depending on start sequence
         switch (*c) {
         case '"': {
             char* begin = ++c;
             while (*c != '"' && *c != end) c++;
+            // create string by start, length
             word = unescape(string(begin, c - begin));
 
-            if (lastType == T_STR)
+            if (lastType == T_STR) // concat strings
                 getStr(line.back()) += word;
             else
                 addVar(newStrC(word));
@@ -328,8 +329,8 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
         case '[':
         case '(':
         case '{': {
-            uint8_t type;
-            char sep, end;
+            uint8_t type = 0;
+            char sep = 0, end = 0;
 
             // select list properties
             if (*c == '(') {
@@ -368,7 +369,11 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             if (lastType >= KCNT) {
                 if (type == keyType(lastType))
                     type = lastType;
-                else
+                else if (
+                    type == T_FNC && (lastType == C_CIF || lastType == C_EIF ||
+                                      lastType == C_WHL || lastType == C_UNT)) {
+                    type = C_CDO;
+                } else
                     error_exit(
                         "expected %s got %s\nignored %s control",
                         typeName(type), keyTypeName(lastType),
@@ -400,10 +405,11 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             // INFO("0 %.*s", 20, c);
             // separator -> end current line, begin new
             if (*c == separator) {
-                if (line.size() == 1 && VARisType(line[0]))
-                    block.push_back(line[0]);
-                else
-                    block.push_back(incRef(newTrmC(line)));
+                if (line.size() == 1 && VARisType(line[0])) {
+                    if (!decl || getType(line[0]) != T_VAR)
+                        scope.push_back(line[0]);
+                } else
+                    scope.push_back(incRef(newTrmC(line)));
 
                 line.clear();
                 lastType = T_NIL;
@@ -452,10 +458,17 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                 // keyword
                 else {
                     auto kwtype = keywords.find(word);
-                    // invalid
+                    // variable
                     if (kwtype == keywords.end()) {
-                        if (lastType == T_VAR) parent.vars[word] = funcResult;
-                        addVar(newVarC(word));
+                        if (lastType == T_VAR) {
+                            parent.vars[word] = funcResult;
+                            addVar(newVarC(word));
+                        } else {
+                            if (word == "args" || findVar(word, &parent))
+                                addVar(newVarC(word));
+                            else
+                                error_exit("unexpected token %s", word.c_str());
+                        }
                         continue;
                     }
 
@@ -479,6 +492,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
 
                     default:
                         if (IDisType(kwtype->second)) {
+                            decl = true;
                             switch (kwtype->second) {
                             // case T_NIL: funcResult = newNil(); break;
                             case T_BIN: funcResult = newBin(0); break;
@@ -508,7 +522,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
     }
 
     if (*c != end) {
-        block.clear();
+        scope.clear();
         // END();
         if (!end)
             error_exit("invalid token '%c' - expected EOF", *c);
@@ -518,23 +532,26 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
 
     // if single value dont push list
     if (line.size() == 1 && VARisType(line[0])) {
-        block.push_back(line[0]);
+        if (!decl || getType(line[0]) != T_VAR) scope.push_back(line[0]);
     }
     // dont push if line empty
     else if (!line.empty()) {
-        block.push_back(incRef(newTrmC(line)));
+        scope.push_back(incRef(newTrmC(line)));
     }
 
-    END("%s", TOSTR(block));
-    return block;
+    END("%s", TOSTR(scope));
+    return scope;
 }
 
+// find variable by name
 PVar findVar(string name, var_fnc* scope) {
     do {
-        auto var = scope->vars.find(name);
+        auto var = scope->vars.find(name); // search name in vars object
+        // return value if variable found and defined
         if (var != scope->vars.end() && var->second) return var->second;
     } while ((scope = scope->parent));
 
+    error_exit("variable '%s' not found", name.c_str());
     return NULL;
 }
 

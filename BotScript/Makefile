@@ -11,7 +11,7 @@ ISBOT = $(shell [ -e isbot ] || echo false > isbot; cat isbot)
 ISDBG = $(shell [ -e isdbg ] || echo false > isdbg; cat isdbg)
 
 	# compiler flags
-CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -fPIE -D ISPI=$(ISPI) -D ISBOT=$(ISBOT) # -O3
+CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -O1 -fPIE -D ISPI=$(ISPI) -D ISBOT=$(ISBOT)
 
 	# linker flags
 LDFLAGS  = -pthread -pie

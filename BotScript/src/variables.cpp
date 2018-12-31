@@ -155,8 +155,10 @@ TVar<var_obj>::~TVar() {
 bool initOperations() {
     BEGIN();
 
+    // Nil operators
     operations[T_NIL] = {};
 
+    // Bool operators
     operations[T_BIN] = {
         DEFOPR("equal", { return newBin(getBinRaw(a) == getBin(b)); }),
         DEFOPR("and", { return newBin(getBinRaw(a) && getBin(b)); }),
@@ -164,6 +166,7 @@ bool initOperations() {
         DEFOPR("xor", { return newBin(getBinRaw(a) ^ getBin(b)); }),
     };
 
+    // Integer operators
     operations[T_INT] = {
         DEFOPR("assign", {
             switch (getType(b)) {
@@ -276,6 +279,7 @@ bool initOperations() {
         })
     };
 
+    // Float operators
     operations[T_FLT] = {
         DEFOPR("assign", {
             switch (getType(b)) {
@@ -355,7 +359,7 @@ bool initOperations() {
             }
         }),
         DEFOPR("mod", {
-            var_flt c = getFltRaw(a), d;
+            var_flt c = getFltRaw(a), d = 1;
             switch (getType(b)) {
             case T_INT: d = getIntRaw(b);
             case T_FLT: d = getFltRaw(b);
@@ -382,6 +386,7 @@ bool initOperations() {
         })
     };
 
+    // String operators
     operations[T_STR] = {
         DEFOPR("assign", {
             getStrRaw(a) = getStr(b);
@@ -409,6 +414,7 @@ bool initOperations() {
         DEFOPR("toFlt", { return newFlt(stod2(getStrRaw(a))); })
     };
 
+    // Func operators
     operations[T_FNC] = {
         DEFOPR("assign", {
              if (!a->isConst) getFncRaw(a) = getFnc(b);
@@ -424,6 +430,7 @@ bool initOperations() {
         })
     };
 
+    // BuiltinFunc operators
     operations[T_BFN] = {
         DEFOPR("call", {
             PVar res = getBfnRaw(a)->func(getArg(b));
@@ -431,6 +438,7 @@ bool initOperations() {
         })
     };
 
+    // List operators
     operations[T_LST] = {
         DEFOPR("assign", {
             if (!a->isConst) getLstRaw(a) = getLst(b);
@@ -494,6 +502,7 @@ bool initOperations() {
         DEFOPR("getLength", { return newInt(getLstRaw(a).size()); })
     };
 
+    // Argument operators
     operations[T_ARG] = {
         DEFOPR("at", {
             if (getType(b) == T_INT) {
@@ -687,7 +696,7 @@ string toStr(var_lst& v, uint8_t type) {
         break;
 
     default:
-        error_exit("unknown list type id %i", type);
+        error_exit("unknown list type '%s'", typeName(type));
         // result = "|"; lstEnd = '|';
     }
 
@@ -736,9 +745,14 @@ string toStr(var_bfn& v, uint8_t type) {
 }
 
 string toStr(var_fnc& v, uint8_t type) {
-    string result = "()";
-    if (v.name) result = v.name + result;
-    result += toStr(v.func, T_FNC);
+    string result = toStr(v.func, T_FNC);
+    if (type == T_FNC) {
+        result = "()" + result; // args
+        if (v.name) result = v.name + result;
+    } else if (type >= TCNT)
+        result = typeName(type) + (' ' + result);
+    else
+        error_exit("unknown func type '%s'", typeName(type));
     /*
     if (v->argc) {
         result += "(";
