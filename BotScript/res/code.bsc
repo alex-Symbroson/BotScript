@@ -4,7 +4,7 @@ string a = "";
 
 func init = {
     a = "Hello ";
-    if(args.getLength() >= 2) {
+    if (args.getLength() >= 2) {
         a = (a + (args[1]) + "!");
     } else {
         a = (a + "World!");

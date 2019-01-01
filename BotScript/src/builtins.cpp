@@ -42,13 +42,13 @@ bool initBuiltins() {
         DEFFUNC( "print", {
             if (!args.empty())
                 for (PVar& v: args) printf("%s", TOSTR(v));
+            fflush(stdout);
             FEND("print", "null");
         }),
 
         DEFFUNC( "println", {
             if (!args.empty())
-                for (PVar& v: args) printf("%s", TOSTR(v));
-            printf("\n");
+                for (PVar& v: args) printf("%s\n", TOSTR(v));
 
             FEND("println", "null");
         }),
@@ -80,20 +80,39 @@ bool initBuiltins() {
             return newFlt(clock() / 1000.0);
         }),
 
+        DEFFUNC( "random", {
+                // clang-format on
+                var_int res = 0;
+                srand(clock() + rand());
+
+                switch (args.size()) {
+                case 1: res = rand() % getInt(args[0]); break;
+                case 2:
+                    res = getInt(args[0]) +
+                          rand() % (getInt(args[1]) - getInt(args[0]) + 1);
+                    break;
+                default: err_iac("random", args, 1);
+                }
+
+                FEND("random", "%i", res);
+                return newInt(res);
+                // clang-format off
+        }),
+
         DEFFUNC( "typeof", {
             if (args.size() == 1) {
                 FEND("typeof", "%s", getTypeName(args[0]));
                 return newStr(getTypeName(args[0]));
-            }
-            else err_iac("typeof", args, 1);
+            } else
+                err_iac("typeof", args, 1);
         }),
 
         DEFFUNC( "toString", {
             if (args.size() == 1) {
                 FEND("toString", "%s", args[0]->toString(true).c_str());
                 return newStr(args[0]->toString(true));
-            }
-            else err_iac("toString", args, 1);
+            } else
+                err_iac("toString", args, 1);
         }),
 
         DEFFUNC( "stop", {
@@ -105,6 +124,12 @@ bool initBuiltins() {
 
 #if ISBOT
             ,
+        DEFBOTFUNC( "BOT_IsBot", {
+            if(!args.size())
+                RaspiBot::Call("isBot", args);
+            else err_iac("BOT_IsBot", args, 1);
+        }),
+
         DEFBOTFUNC( "Bot_Write", {
             size_t size = args.size();
             if(size >= 1) {
@@ -113,60 +138,38 @@ bool initBuiltins() {
                     assertT(args[1], T_INT); // x
                     assertT(args[2], T_INT); // y
                 }
-            } else if(size != 1) {
-                error_exit(
-                    "invalid argument count for Bot_write: got " FMT_SIZE "; "
-                    "expected 1 to 3", size
-                );
-            }
-
-            RaspiBot::Call("write", args);
+                RaspiBot::Call("write", args);
+            } else if(size != 1)
+                err_iac("Bot_write", args, 1);
         }),
 
         // Serial (Attiny)
         DEFBOTFUNC( "Bot_GetEncoders", {
             if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_GetEncoders: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("getEncoders", args);
+                RaspiBot::Call("getEncoders", args);
+            else err_iac("Bot_GetEncoders", args, 0);
         }),
 
         DEFBOTFUNC( "Bot_ResetEncoders", {
             if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_ResetEncoders: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("resetEncoders", args);
+                RaspiBot::Call("resetEncoders", args);
+            else err_iac("Bot_ResetEncoders", args, 0);
         }),
 
         DEFBOTFUNC( "Bot_StopMotors", {
             if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_StopMotors: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("stopMotors", args);
+                RaspiBot::Call("stopMotors", args);
+            else err_iac("Bot_StopMotors", args, 0);
         }),
 
         DEFBOTFUNC( "Bot_SetMotors", {
             size_t size = args.size();
             if (size == 2) {
-                assertT(args[0], T_INT); // left [-127, 127]
-                assertT(args[1], T_INT); // right
-            } else {
-                error_exit(
-                    "invalid argument count for Bot_SetMotors: got " FMT_SIZE "; "
-                    "expected 2", size
-                );
-            }
-
-            RaspiBot::Call("setMotors", args);
+                getInt(args[0]) *= 1.27; // left  [-100, 100] -> [-127, 127]
+                getInt(args[1]) *= 1.27; // right [-100, 100] -> [-127, 127]
+                RaspiBot::Call("setMotors", args);
+            } else
+                err_iac("Bot_SetMotors", args, 2);
         }),
 
         DEFBOTFUNC( "Bot_SetBuzzer", {
@@ -174,97 +177,104 @@ bool initBuiltins() {
             if (size == 3) {
                 assertT(args[0], T_INT); // frequency (0, 65535)
                 assertT(args[1], T_INT); // duration (0, 65535) ms
-                assertT(args[2], T_INT); // volume (0, 15)
-            } else {
-                error_exit(
-                    "invalid argument count for Bot_SetBuzzer: got " FMT_SIZE "; "
-                    "expected 3", size
-                );
-            }
 
-            RaspiBot::Call("setBuzzer", args);
+                // volume [0, 100] -> [0, 15]
+                if(getType(args[2]) == T_FLT) {
+                    var_flt vol = getFltRaw(args[2]);
+                    REPVAR(args[2], newInt(vol * 0.15));
+                } else
+                    getInt(args[2]) *= 0.15;
+
+                RaspiBot::Call("setBuzzer", args);
+            } else
+                err_iac("Bot_SetBuzzer", args, 3);
         }),
 
         DEFBOTFUNC( "Bot_StopBuzzer", {
-            if (!args.empty())
-                error_exit(
-                    "invalid argument count for Bot_StopBuzzer: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("stopBuzzer", args);
+            if (args.empty())
+                RaspiBot::Call("stopBuzzer", args);
+            else err_iac("Bot_StopBuzzer", args, 0);
         }),
 
         // Buttons
         DEFBOTFUNC( "Bot_SetRedLED", {
             size_t size = args.size();
             if (size == 2) {
-                assertT(args[0], T_INT); // [1, 3]
-                assertT(args[1], T_FLT); // [0, 255]
-            } else {
-                error_exit(
-                    "invalid argument count for Bot_SetRedLED: got " FMT_SIZE "; "
-                    "expected 2", size
-                );
-            }
+                assertT(args[0], T_INT); // led [1, 3]
+                // level [0, 100] -> [0, 255]
+                if(getType(args[1]) == T_INT)
+                    getIntRaw(args[1]) *= 2.55;
+                else
+                    getFlt(args[1]) *= 2.55;
 
-            RaspiBot::Call("setRedLED", args);
+                RaspiBot::Call("setRedLED", args);
+            } else
+                err_iac("Bot_SetRedLED", args, 2);
         }),
 
         DEFBOTFUNC( "Bot_SetGreenLED", {
             size_t size = args.size();
             if (size == 2) {
                 assertT(args[0], T_INT); // [1, 3]
-                assertT(args[1], T_FLT); // [0, 255]
-            } else {
-                error_exit(
-                    "invalid argument count for Bot_SetGreenLED: got " FMT_SIZE "; "
-                    "expected 2", size
-                );
-            }
+                // level [0, 100] -> [0, 255]
+                if(getType(args[1]) == T_INT)
+                    getIntRaw(args[1]) *= 2.55;
+                else
+                    getFlt(args[1]) *= 2.55;
 
-            RaspiBot::Call("setGreenLED", args);
+                RaspiBot::Call("setGreenLED", args);
+            } else
+                err_iac("Bot_SetGreenLED", args, 2);
         }),
 
         DEFBOTFUNC( "Bot_WaitForBtnPress", {
-            if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_WaitForBtnPress: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("waitForBtnPress", args);
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("waitForBtnPress", args);
+            } else
+                err_iac("waitForBtnPress", args, 1);
         }),
 
         DEFBOTFUNC( "Bot_WaitForBtnRelease", {
-            if (args.empty())
-               error_exit(
-                    "invalid argument count for Bot_WaitForBtnRelease: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("waitForBtnRelease", args);
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("waitForBtnRelease", args);
+            } else
+                err_iac("Bot_WaitForBtnRelease", args, 1);
         }),
 
         DEFBOTFUNC( "Bot_WaitForBtn", {
-            if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_WaitForBtn: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
-
-            RaspiBot::Call("waitForBtn", args);
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("waitForBtn", args);
+            } else
+                err_iac("Bot_WaitForBtn", args, 1);
         }),
 
         DEFBOTFUNC( "Bot_IsBtnPressed", {
-            if (args.empty())
-                error_exit(
-                    "invalid argument count for Bot_IsBtnPressed: got " FMT_SIZE "; "
-                    "expected 0", args.size()
-                );
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("isBtnPressed", args);
+            } else
+                err_iac("Bot_IsBtnPressed", args, 1);
+        }),
 
-            RaspiBot::Call("isBtnPressed", args);
+        DEFBOTFUNC( "Bot_GetSharp", {
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("getSharp", args);
+            } else
+                err_iac("Bot_GetSharp", args, 1);
+        }),
+
+        DEFBOTFUNC( "Bot_GetBattery", {
+            if (args.size() == 1) {
+                assertT(args[1], T_INT);
+                RaspiBot::Call("getBattery", args);
+            } else
+                err_iac("Bot_GetBattery", args, 1);
         })
+
 #endif
     };
 

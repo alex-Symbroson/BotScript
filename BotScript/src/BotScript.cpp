@@ -42,6 +42,7 @@ uint8_t status   = 0;
 
 bool Init() {
     status = S_INIT;
+    srand(clock());
 
     INFO("init operations");
     if (initOperations()) return true;

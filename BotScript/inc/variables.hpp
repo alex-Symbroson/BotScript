@@ -52,6 +52,8 @@ typedef IVar* PVar;
 #define C_UNT 26 // until ()
 #define CCNT 27
 
+#define T_NUM 30 // int or flt - no general type! just for assertT()
+
 // check type category
 #define IDisType(id) (id < TCNT)
 #define IDisKeyw(id) (id < KCNT)
@@ -290,7 +292,8 @@ inline PVar REPVAR(PVar& var, PVar v) {
 // compare variable with expected type -> throw error if mismatch
 #define assertT(var, type) _assertT(var, type ERR_ARGS)
 inline PVar _assertT(PVar v, uint8_t type ERR_PARAM) {
-    if (getType(v) != type)
+    uint8_t vtype = getType(v);
+    if (type == T_NUM ? (vtype != T_INT && vtype != T_FLT) : vtype != type)
         error_exit(
             ERR_STR "incompatible types %s and %s", ERR_VALS, getTypeName(v),
             typeName(type));

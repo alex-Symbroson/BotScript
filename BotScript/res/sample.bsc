@@ -1,0 +1,16 @@
+
+func init = {};
+
+func loop = {
+    print(random(1, 6), ", ");
+    delay(400);
+};
+
+func main = {
+    Bot_Write("Press 2");
+    Bot_SetGreenLED(2, 100);
+    Bot_WaitForBtnPress(2);
+    Bot_SetGreenLED(2,  50);
+    Bot_WaitForBtnRelease(2);
+    Bot_SetGreenLED(2,   0);
+};

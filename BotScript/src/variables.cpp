@@ -57,6 +57,8 @@ const char* typeName(uint8_t t) {
     case T_MFN: return "member_function";
     case T_VAR: return "variable";
 
+    case T_NUM: return "number";
+
     case K_NIL: return "null";
     case K_TRU: return "true";
     case K_FLS: return "false";
@@ -70,7 +72,6 @@ const char* typeName(uint8_t t) {
     case C_CDO: return "do";
     case C_WHL: return "while";
     case C_UNT: return "until";
-
 
     default: error_exit("unknown type id %i - report", t); return "undefined";
     }
