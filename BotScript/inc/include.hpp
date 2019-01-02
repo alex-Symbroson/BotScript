@@ -34,6 +34,6 @@ string unescape(string s);
 string escape(string s);
 
 // ignore == true -> ignore useless whitespace
-string readFile(const char* path, bool ignore);
+string readFile(FILE* f, bool ignore);
 
 #endif //_BSINC_CPP_

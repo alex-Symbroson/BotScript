@@ -244,12 +244,13 @@ string escape(string s) {
 }
 
 // ignore == true -> ignore useless whitespace
-string readFile(const char* path, bool ignore) {
-    BEGIN("char*path=\"%s\",bool ignore=%i", path, ignore);
-    // file buffer
-    FILE* f = fopen(path, "r");
+string readFile(FILE* f, bool ignore) {
+    BEGIN("FILE *f,bool ignore=%i", ignore);
 
-    if (!f) error("file \"%s\" does not exist!", path);
+    if (!f) {
+        error_exit("file does not exist!");
+        return "";
+    }
 
     // character from file
     int c, lc = 0;

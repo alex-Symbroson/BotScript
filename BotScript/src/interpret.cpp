@@ -545,14 +545,14 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
 }
 
 // find variable by name
-PVar findVar(string name, var_fnc* scope) {
+PVar findVar(string name, var_fnc* scope, bool throwErr) {
     do {
         auto var = scope->vars.find(name); // search name in vars object
         // return value if variable found and defined
         if (var != scope->vars.end() && var->second) return var->second;
     } while ((scope = scope->parent));
 
-    error_exit("variable '%s' not found", name.c_str());
+    if (throwErr) error_exit("variable '%s' not found", name.c_str());
     return NULL;
 }
 

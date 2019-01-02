@@ -95,49 +95,88 @@ int main(int argc, char* argv[]) {
     }
     INFO("variables: " FMT_SIZE, collector.size());
 
-    INFO("reading file");
-    const char* path = argc > 1 ? argv[1] : "res/code.bsc";
-    string code      = readFile(path, true);
-    INFO("file input:\n%s\n", code.c_str());
+    if (argc > 1) {
+        INFO("reading file");
+        FILE* input = fopen(argv[1], "r");
+        INFO("file input:\n%s\n", code.c_str());
+
+        string code = readFile(input, true);
 
 #if _DEBUG_
-    uint alloc = collector.size(), delloc;
+        uint alloc = collector.size(), delloc;
 #endif
 
-    // create code scope of content from default or argument file path
-    INFO("formatting code");
-    status       = S_FORMAT;
-    var_fnc main = toCode(code);
-    INFO("allocated %u variables", alloc = collector.size() - alloc);
+        // create code scope of content from default or argument file path
+        INFO("formatting code");
+        status       = S_FORMAT;
+        var_fnc main = toCode(code);
+        INFO("allocated %u variables", alloc = collector.size() - alloc);
 
-    INFO("\nmain: %s\n", TOSTR(main.func));
+        INFO("\nglobal: %s\n", TOSTR(main.func));
 
-    // create var_lst of program (sys)args
-    var_lst vargs = {incRef(newStrC(path), 2)};
-    for (int i = 2; i < argc; i++) vargs.push_back(incRef(newStrC(argv[i]), 2));
+        // create var_lst of program (sys)args
+        var_lst vargs = {incRef(newStrC(argv[1]), 2)};
+        for (int i = 2; i < argc; i++)
+            vargs.push_back(incRef(newStrC(argv[i]), 2));
 
-    // execute code
-    INFO("execute global");
-    status     = S_EXEC;
-    funcResult = incRef(newNil());
-    handleFunc(newFnc(main), newArgC(vargs));
+        // execute code
+        INFO("execute global");
+        status     = S_EXEC;
+        funcResult = incRef(newNil());
+        handleFunc(newFnc(main), newArgC(vargs));
 
-    INFO("execute init");
-    if (status == S_RETURN) status = S_EXEC;
-    PVar func = findVar("init", &main);
-    if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
+        INFO("execute init");
+        if (status == S_RETURN) status = S_EXEC;
+        PVar func = findVar("init", &main, false);
+        if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
 
-    INFO("execute main");
-    if (status == S_RETURN) status = S_EXEC;
-    func = findVar("main", &main);
-    if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
+        INFO("execute main");
+        if (status == S_RETURN) status = S_EXEC;
+        func = findVar("main", &main, false);
+        if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
 
-    INFO("execute loop");
-    if (status == S_RETURN) status = S_EXEC;
-    func = findVar("loop", &main);
-    if (func && getType(func) == T_FNC)
-        while (status < S_STOP) handleFunc(func, newArgC({}));
+        INFO("execute loop");
+        if (status == S_RETURN) status = S_EXEC;
+        func = findVar("loop", &main, false);
+        if (func && getType(func) == T_FNC)
+            while (status < S_STOP) handleFunc(func, newArgC({}));
 
+        INFO("freeing code");
+        for (PVar& v: main.func) delete v;
+        INFO("freed");
+
+        decRef(funcResult);
+    } else { /*
+         while (status != S_STOP) {
+             INFO("reading file");
+             printf("> ");
+             fflush(stdout);
+             string code = readFile(stdin, true);
+
+             // create code scope of content from default or argument file path
+             INFO("formatting code");
+             status       = S_FORMAT;
+             var_fnc main = toCode(code);
+             INFO("allocated %u variables", alloc = collector.size() - alloc);
+
+             INFO("\nline: %s\n", TOSTR(main.func));
+             // execute code
+             INFO("execute line");
+             status     = S_EXEC;
+             funcResult = incRef(newNil());
+             handleFunc(newFnc(main), newArgC({}));
+
+             printf("< %s\n", TOSTR(funcResult));
+
+             INFO("freeing code");
+             for (PVar& v: main.func) delete v;
+             INFO("freed");
+
+             decRef(funcResult);
+         }
+         */
+        error("no input file");
+    }
 
     INFO("stop program");
     int res = 0;
@@ -149,21 +188,8 @@ int main(int argc, char* argv[]) {
         error_exit("expected numeric exit code. got %s", baseTypeName(res));
         break;
     }
-    decRef(funcResult);
 
     // free all allocated variables
-    INFO("freeing code (%u)", alloc);
-    status = S_FREE;
-
-#if _DEBUG_
-    delloc = collector.size();
-    for (PVar& v: main.func) delete v;
-    delloc -= collector.size();
-#else
-    for (PVar& v: main.func) delete v;
-#endif
-
-    INFO("freed %u of %u code vars", delloc, alloc);
     Free();
 
     INFO("end.");

@@ -60,6 +60,7 @@ bool initBuiltins() {
             string input;
             getline(std::cin, input);
             FEND("input", "%s", input.c_str());
+            fflush(stdout);
             return newStr(input);
         }),
 

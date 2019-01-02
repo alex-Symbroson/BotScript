@@ -1,112 +1,21 @@
 
-println("sysargs: ", args);
-string a = "";
-
-func init = {
-    a = "Hello ";
-    if (args.getLength() >= 2) {
-        a = (a + (args[1]) + "!");
-    } else {
-        a = (a + "World!");
-    };
-};
-
-func doPrint = {
-    println("Hello from foo!");
-    println(args[0]);
+if(Bot_IsBot() == false) {
+    println("no RaspiBot found!");
+    stop(1);
 };
 
 func main = {
-    doPrint(a);
-    return 0;
-};
+    Bot_Write("Welcome :)");
+    Bot_SetMotors(50, 50);
 
-int i;
+    Bot_Write("Press 2", 0, 1);
+    Bot_SetGreenLED(2, 100);
+    Bot_WaitForBtn(2);
+    Bot_SetGreenLED(2, 0);
+};
 
 func loop = {
-    i = (i + 1);
-    println("loop ", i);
-    if(i >= 10) { stop(0); };
-    delay(200);
+    if(Bot_GetSharp(1) < 20) {
+        Bot_StopMotors();
+    }
 };
-
-return;
-
-
-// Bot tests
-
-Bot_Write("Hello World");
-Bot_Write("Hello World", 2, 1);
-
-while(clock() < 3000) do {
-    if(clock() < 1000) do {
-        Bot_SetRedLED(1, clock() / 10);
-    };
-
-    if(clock() > 1000 && (clock() < 2000)) do {
-        Bot_SetRedLED(2, clock() / 10 - 100);
-        Bot_SetGreenLED(2, clock() / 10 - 100);
-    };
-
-    if(clock() > 2000) do {
-        Bot_SetGreenLED(3, clock() / 10 - 200);
-    };
-
-    delay(500);
-}
-
-if  (false) do { println(" is true");  }
-elif(false) do { println("eis true"); }
-else { println("is false"); };
-
-/* input test */
-// print("you typed:", input("type smth: "));
-
-
-return 0;
-
-// timing test
-print("timing:\n", clock(), "\n");
-delay(50);       println(clock());
-delay(16x32);    println(clock());
-delay(2x110010); println(clock());
-
-// operator test
-// strings will be concatenated
-print(
-    "dec: 3+-5*-.4 = ", 3 + -5 * -.4, "\n" // cat
-    "hex: -16x1.8  = ", -16x1.8, "\n"
-);
-
-// list test
-print(
-    "[1,2.5,1.+.1] = ", [1,2.5,1.+.1],
-    [-1], " = ", [1,2.5,1.+.1][-1], "\n"
-);
-
-//typeof test
-println(typeof((5).toStr));
-
-println("");
-
-//print float rounding test
-println([
-    "float rounding: ",
-     99.9999999,  1299.999999,  1234.9999999,
-     12.3499999,     0.999999,     0.1299999,
-    -99.9999999, -1299.999999, -1234.9999999,
-    -12.3499999,    -0.999999,    -0.1299999, -0.04567
-].join(" " + " "));
-
-while(true) do {
-    if (input("type quit: ") == "quit")
-    do { break; }
-    else {
-        println("invalid");
-        return 1;
-    };
-    print("near end");
-};
-
-println("ok");
-return 0;

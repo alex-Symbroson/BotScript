@@ -1,0 +1,41 @@
+
+func init = {};
+
+if(Bot_IsBot() == false) {
+    println("Error: no bot available");
+    stop(1);
+};
+
+int stime;
+int dtime;
+
+func loop = {
+    dtime = (clock() - stime);
+
+    if(time < 1000) {
+       Bot_SetRedLED(1, time / 10);
+    } elif (time < 2000) {
+       Bot_SetRedLED(2, time / 10 - 100);
+       Bot_SetGreenLED(2, time / 10 - 100);
+    } elif (time < 3000) {
+       Bot_SetGreenLED(3, time / 10 - 200);
+    } else {
+        input("press enter to exit:");
+        stop(0);
+    };
+
+    delay(500);
+};
+
+func main = {
+    Bot_Write("Welcome :)");
+
+    Bot_Write("Press 2", 0, 1);
+    Bot_SetGreenLED(2, 100);
+    Bot_WaitForBtnPress(2);
+    Bot_SetGreenLED(2,  50);
+    Bot_WaitForBtnRelease(2);
+    Bot_SetGreenLED(2,   0);
+
+    stime = (clock());
+};

@@ -1,0 +1,93 @@
+
+println("sysargs: ", args);
+string a = "";
+
+func init = {
+    a = "Hello ";
+    if (args.getLength() >= 2) {
+        a = (a + (args[1]) + "!");
+    } else {
+        a = (a + "World!");
+    };
+};
+
+func doPrint = {
+    println("Hello from foo!");
+    println(args[0]);
+};
+
+func main = {
+    doPrint(a);
+    return 0;
+};
+
+int i;
+
+func loop = {
+    i = (i + 1);
+    println("loop ", i);
+    if(i >= 10) { stop(0); };
+    delay(200);
+};
+
+return;
+
+
+// Bot tests
+
+
+if  (false) do { println(" is true");  }
+elif(false) do { println("eis true"); }
+else { println("is false"); };
+
+/* input test */
+// print("you typed:", input("type smth: "));
+
+
+return 0;
+
+// timing test
+print("timing:\n", clock(), "\n");
+delay(50);       println(clock());
+delay(16x32);    println(clock());
+delay(2x110010); println(clock());
+
+// operator test
+// strings will be concatenated
+print(
+    "dec: 3+-5*-.4 = ", 3 + -5 * -.4, "\n" // cat
+    "hex: -16x1.8  = ", -16x1.8, "\n"
+);
+
+// list test
+print(
+    "[1,2.5,1.+.1] = ", [1,2.5,1.+.1],
+    [-1], " = ", [1,2.5,1.+.1][-1], "\n"
+);
+
+//typeof test
+println(typeof((5).toStr));
+
+println("");
+
+//print float rounding test
+println([
+    "float rounding: ",
+     99.9999999,  1299.999999,  1234.9999999,
+     12.3499999,     0.999999,     0.1299999,
+    -99.9999999, -1299.999999, -1234.9999999,
+    -12.3499999,    -0.999999,    -0.1299999, -0.04567
+].join(" " + " "));
+
+while(true) do {
+    if (input("type quit: ") == "quit")
+    do { break; }
+    else {
+        println("invalid");
+        return 1;
+    };
+    print("near end");
+};
+
+println("ok");
+return 0;

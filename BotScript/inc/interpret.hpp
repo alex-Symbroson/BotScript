@@ -38,7 +38,7 @@ void handleFunc(PVar func, PVar args);
 var_lst toFunction(char*& c, char separator, char end, var_fnc& parent);
 
 // find variable by name
-PVar findVar(string name, var_fnc* scope);
+PVar findVar(string name, var_fnc* scope, bool throwErr = true);
 
 // start recursive conversation from string to term
 var_fnc toCode(string& code);
