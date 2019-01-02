@@ -33,7 +33,9 @@
 
 unordered_map<string, TBltFunc> builtins;
 
+#if ISBOT
 PVar& RaspiRes = RaspiBot::getRes();
+#endif
 
 bool initBuiltins() {
     BEGIN();

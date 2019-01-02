@@ -1,21 +1,30 @@
-
-if(Bot_IsBot() == false) {
-    println("no RaspiBot found!");
-    stop(1);
-};
-
+//wait for btn2
 func main = {
     Bot_Write("Welcome :)");
-    Bot_SetMotors(50, 50);
-
     Bot_Write("Press 2", 0, 1);
     Bot_SetGreenLED(2, 100);
     Bot_WaitForBtn(2);
     Bot_SetGreenLED(2, 0);
 };
 
+// max velocity
+int vmax = 50;
+
+// returns velocity relative to sharp distance
+func testSharp = {
+    int dist = Bot_GetSharp(args[0]);
+
+    if(dist < 30) {
+        // v: 30  20  10    0
+        // d: 50  25   0  -25
+        return vmax * (dist - 10) / 20;
+    } else {
+        return vmax;
+    };
+};
+
 func loop = {
-    if(Bot_GetSharp(1) < 20) {
-        Bot_StopMotors();
-    }
+    // set motors depending on sharps
+    Bot_SetMotors(testSharp(2), testSharp(1));
+    delay(50);
 };

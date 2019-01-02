@@ -12,7 +12,7 @@
     Variables:
         IDis... not, >=
         decl var without initialisation
-
+! import (args) "file";
 !   RaspiBot functions:
         drive, rotate, curve, accumulateTo, accumulateBy,
         getIRSensors, getButtonStates,
@@ -95,12 +95,13 @@ int main(int argc, char* argv[]) {
     }
     INFO("variables: " FMT_SIZE, collector.size());
 
+    int res = 0;
+
     if (argc > 1) {
         INFO("reading file");
         FILE* input = fopen(argv[1], "r");
-        INFO("file input:\n%s\n", code.c_str());
-
         string code = readFile(input, true);
+        INFO("file input:\n%s\n", code.c_str());
 
 #if _DEBUG_
         uint alloc = collector.size(), delloc;
@@ -128,12 +129,12 @@ int main(int argc, char* argv[]) {
         INFO("execute init");
         if (status == S_RETURN) status = S_EXEC;
         PVar func = findVar("init", &main, false);
-        if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
+        if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
 
         INFO("execute main");
         if (status == S_RETURN) status = S_EXEC;
         func = findVar("main", &main, false);
-        if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
+        if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
 
         INFO("execute loop");
         if (status == S_RETURN) status = S_EXEC;
@@ -142,8 +143,19 @@ int main(int argc, char* argv[]) {
             while (status < S_STOP) handleFunc(func, newArgC({}));
 
         INFO("freeing code");
+        status = S_FREE;
         for (PVar& v: main.func) delete v;
         INFO("freed");
+
+        INFO("stop program");
+        switch (getBaseType(funcResult)) {
+        case T_INT: res = getInt(funcResult); break;
+        case T_FLT: res = getFlt(funcResult); break;
+        case T_NIL: break;
+        default:
+            error_exit("expected numeric exit code. got %s", baseTypeName(res));
+            break;
+        }
 
         decRef(funcResult);
     } else { /*
@@ -176,20 +188,11 @@ int main(int argc, char* argv[]) {
          }
          */
         error("no input file");
-    }
-
-    INFO("stop program");
-    int res = 0;
-    switch (getBaseType(funcResult)) {
-    case T_INT: res = getInt(funcResult); break;
-    case T_FLT: res = getFlt(funcResult); break;
-    case T_NIL: break;
-    default:
-        error_exit("expected numeric exit code. got %s", baseTypeName(res));
-        break;
+        res = 1;
     }
 
     // free all allocated variables
+    status = S_FREE;
     Free();
 
     INFO("end.");
