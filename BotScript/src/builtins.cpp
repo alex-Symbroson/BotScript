@@ -124,10 +124,10 @@ bool initBuiltins() {
 
 #if ISBOT
             ,
-        DEFBOTFUNC( "BOT_IsBot", {
+        DEFBOTFUNC( "Bot_IsBot", {
             if(!args.size())
                 RaspiBot::Call("isBot", args);
-            else err_iac("BOT_IsBot", args, 1);
+            else err_iac("Bot_IsBot", args, 1);
         }),
 
         DEFBOTFUNC( "Bot_Write", {
@@ -201,11 +201,7 @@ bool initBuiltins() {
             size_t size = args.size();
             if (size == 2) {
                 assertT(args[0], T_INT); // led [1, 3]
-                // level [0, 100] -> [0, 255]
-                if(getType(args[1]) == T_INT)
-                    getIntRaw(args[1]) *= 2.55;
-                else
-                    getFlt(args[1]) *= 2.55;
+                assertT(args[1], T_NUM); // level [0, 100]
 
                 RaspiBot::Call("setRedLED", args);
             } else
@@ -215,12 +211,8 @@ bool initBuiltins() {
         DEFBOTFUNC( "Bot_SetGreenLED", {
             size_t size = args.size();
             if (size == 2) {
-                assertT(args[0], T_INT); // [1, 3]
-                // level [0, 100] -> [0, 255]
-                if(getType(args[1]) == T_INT)
-                    getIntRaw(args[1]) *= 2.55;
-                else
-                    getFlt(args[1]) *= 2.55;
+                assertT(args[0], T_INT); // led [1, 3]
+                assertT(args[1], T_NUM); // level [0, 100]
 
                 RaspiBot::Call("setGreenLED", args);
             } else
@@ -229,7 +221,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_WaitForBtnPress", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("waitForBtnPress", args);
             } else
                 err_iac("waitForBtnPress", args, 1);
@@ -237,7 +229,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_WaitForBtnRelease", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("waitForBtnRelease", args);
             } else
                 err_iac("Bot_WaitForBtnRelease", args, 1);
@@ -245,7 +237,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_WaitForBtn", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("waitForBtn", args);
             } else
                 err_iac("Bot_WaitForBtn", args, 1);
@@ -253,7 +245,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_IsBtnPressed", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("isBtnPressed", args);
             } else
                 err_iac("Bot_IsBtnPressed", args, 1);
@@ -261,7 +253,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_GetSharp", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("getSharp", args);
             } else
                 err_iac("Bot_GetSharp", args, 1);
@@ -269,7 +261,7 @@ bool initBuiltins() {
 
         DEFBOTFUNC( "Bot_GetBattery", {
             if (args.size() == 1) {
-                assertT(args[1], T_INT);
+                assertT(args[0], T_INT);
                 RaspiBot::Call("getBattery", args);
             } else
                 err_iac("Bot_GetBattery", args, 1);

@@ -90,6 +90,7 @@ namespace RaspiBot {
                 REPVAR(res, toBSVar(pValue));
             Py_DECREF(pValue);
         } else {
+            printf("\033[0;31m");
             PyErr_Print();
             error_exit("Call of \"%s\" failed", func);
             END();

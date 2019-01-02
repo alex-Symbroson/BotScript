@@ -270,13 +270,15 @@ bool initOperations() {
         DEFOPR("bxor", { return newInt(getIntRaw(a) ^ getInt(b)); }),
         DEFOPR("toStr", {
             var_lst args = getArg(b);
+            string str;
 
-            if (!args.empty()) {
-                FILLARGS(args, {});
-                PVar res = newStr(dtos2(getIntRaw(a), getInt(args[0])));
-                return res;
-            } else
-                return newStr(dtos2(getIntRaw(a), 10));
+            if (!args.empty())
+                str = dtos2(getIntRaw(a), getInt(args[0]));
+            else
+                str = dtos2(getIntRaw(a), 10);
+
+            if(str[str.size() - 2] == '.') str.erase(str.size() - 2);
+            return newStr(str);
         })
     };
 
@@ -532,7 +534,7 @@ PVar copyVar(PVar& var) {
     // BEGIN("%s", TOSTR(var));
     // END();
     switch (getBaseType(var)) {
-    case T_NIL: return newNil();
+    case T_NIL: return NEWVAR(TChr(getChrRaw(var), getType(var)));
     case T_INT: return NEWVAR(TInt(getIntRaw(var), getType(var)));
     case T_FLT: return NEWVAR(TFlt(getFltRaw(var), getType(var)));
     case T_STR: return NEWVAR(TStr(getStrRaw(var), getType(var)));

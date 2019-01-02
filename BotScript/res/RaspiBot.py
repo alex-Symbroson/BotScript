@@ -1,6 +1,9 @@
 
 ISBOT = True
 
+def warn(msg, type):
+    warnings.warn(msg, type)
+
 try:
     import warnings
     import raspibot, RPi.GPIO as GPIO
@@ -8,7 +11,7 @@ try:
     from smbus import SMBus
 except ImportError as e:
     ISBOT = False
-    warnings.warn("raspibot module couldnt be loaded:\n" + e.msg, Warning)
+    warn("\033[0;33mraspibot module couldnt be loaded:\n" + str(e) + "\033[0;37m", Warning)
 
 objs = {}
 methods = {}
@@ -85,5 +88,7 @@ else:
 def callMethod(method, *args):
     foo = methods.get(method)
     # print((method + " " * 15)[:15], args)
-    assert foo != None
+    if foo == None:
+        error = AssertionError("\033[0;31mmethod '%s' not found\033[0;37m" % method)
+        raise error
     return foo(*args)

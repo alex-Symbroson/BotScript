@@ -221,6 +221,7 @@ ctrl:
                         "%s has no operator %s", getTypeName(res),
                         TOSTR(it[0]));
 
+                DEBUG("ARGS: %s", TOSTR(it[1]));
                 args      = incRef(evalExpr(it[1], true)); // get 2nd operand
                 PVar tRes = res; // for safe overriding & freeing
 
@@ -316,7 +317,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
         switch (*c) {
         case '"': {
             char* begin = ++c;
-            while (*c != '"' && *c != end) c++;
+            while (*c != '"' && *c != EOF) c++;
             // create string by start, length
             word = unescape(string(begin, c - begin));
 
@@ -383,7 +384,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
             // scan functions
             c++;
             if (type == T_FNC || (type > KCNT && keyType(type) == T_FNC)) {
-                var_fnc scope = {NULL, {}, {}, &parent};
+                var_fnc scope = {NULL, {{}}, {}, &parent};
                 scope.func    = toFunction(c, sep, end, scope);
                 addVar(NEWVAR(TFnc(scope, type, true)));
 
@@ -500,7 +501,7 @@ var_lst toFunction(char*& c, char separator, char end, var_fnc& parent) {
                             case T_FLT: funcResult = newFlt(0); break;
                             case T_STR: funcResult = newStr(""); break;
                             case T_LST: funcResult = newLst({}); break;
-                            case T_OBJ: funcResult = newObj({}); break;
+                            case T_OBJ: funcResult = newObj({{}}); break;
                             case T_FNC: funcResult = newFnc({}); break;
                             case T_PIN: funcResult = newPin(0); break;
                             }
@@ -558,7 +559,7 @@ PVar findVar(string name, var_fnc* scope) {
 // start recursive conversation from string to term
 var_fnc toCode(string& code) {
     BEGIN("string*code=\"%s\"", code.c_str());
-    var_fnc scope = {"main", {}, {}, NULL};
+    var_fnc scope = {"main", {{}}, {}, NULL};
     char* c       = &code[0];
     scope.func    = toFunction(c, ';', *code.end(), scope);
     END();

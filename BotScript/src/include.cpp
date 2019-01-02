@@ -292,7 +292,7 @@ string readFile(const char* path, bool ignore) {
                 } else if (c == EOF)
                     break;
                 else {
-                    content += '/';
+                    content += lc = '/';
                     goto check;
                 }
 

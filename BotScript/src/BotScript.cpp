@@ -123,18 +123,18 @@ int main(int argc, char* argv[]) {
     handleFunc(newFnc(main), newArgC(vargs));
 
     INFO("execute init");
-    status    = S_EXEC;
+    if (status == S_RETURN) status = S_EXEC;
     PVar func = findVar("init", &main);
     if (func && getType(func) == T_FNC) handleFunc(func, newArgC(vargs));
 
     INFO("execute main");
-    status = S_EXEC;
-    func   = findVar("main", &main);
+    if (status == S_RETURN) status = S_EXEC;
+    func = findVar("main", &main);
     if (func && getType(func) == T_FNC) handleFunc(func, newArgC({}));
 
     INFO("execute loop");
-    status = S_EXEC;
-    func   = findVar("loop", &main);
+    if (status == S_RETURN) status = S_EXEC;
+    func = findVar("loop", &main);
     if (func && getType(func) == T_FNC)
         while (status < S_STOP) handleFunc(func, newArgC({}));
 
