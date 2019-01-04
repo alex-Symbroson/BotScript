@@ -1,32 +1,11 @@
 
-/* TODO:
-    toFunction():
-        control statements: for
-
-    allow `while condition do function;` with variables
-        add term type (dont eval terms on assignment)
-
-    function args:
-        declaration, type assertion
-
-    Variables:
-        IDis... not, >=
-        decl var without initialisation
-! import (args) "file";
-!   RaspiBot functions:
-        drive, rotate, curve, accumulateTo, accumulateBy,
-        getIRSensors, getButtonStates,
-        setButtonColors
-!    Python part AttinyProtocol
-
-!   T_PIN operators & WiringPi
-
-    copy const on modify
-    operator precedence
-    check stod2 //?
-    type casts, int<>float automatic?
-    // all isOperator to prev.hasOperator
+/* TODO
+    IR-Sensors -> cm
+    Encoder -> cm
+    check btn id, ir id, motor id
+    battery
 */
+
 
 #include "include.hpp"
 #include "interpret.hpp"
@@ -42,7 +21,7 @@ uint8_t status   = 0;
 
 bool Init() {
     status = S_INIT;
-    srand(clock());
+    srand(clock()); // randomize
 
     INFO("init operations");
     if (initOperations()) return true;
@@ -60,8 +39,11 @@ bool Init() {
 
 void Free() {
     BEGIN();
-    status    = S_FREE;
+    status = S_FREE;
+
+#if _INFO_
     int alloc = collector.size();
+#endif
 
 #if ISBOT
     INFO("freeing RaspiBot");
@@ -103,7 +85,7 @@ int main(int argc, char* argv[]) {
         string code = readFile(input, true);
         INFO("file input:\n%s\n", code.c_str());
 
-#if _DEBUG_
+#if _INFO_
         uint alloc = collector.size(), delloc;
 #endif
 

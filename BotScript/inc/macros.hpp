@@ -7,9 +7,11 @@
 #include <string.h>
 
 // Toggles
-// 1<<3:parent error lines;  1<<2:BEGIN,END macro;  1<<1:DEBUG;  1<<0:INFO;
-#define _DEBUG_ 0b1000 // 0b1001
-#define _ERR_EXIT_ 1   // exit on error
+#define _DEBUG_ 1    // debug logs
+#define _P_ERROR_ 1  // parent errors
+#define _F_CALLS_ 0  // function calls
+#define _INFO_ 0     // info logs
+#define _ERR_EXIT_ 1 // exit on error
 
 // Statuses
 #define S_INIT 1
@@ -45,49 +47,51 @@ extern uint debug_depth;
 extern void Free();
 extern bool debg;
 
-// count macro araguments
-// doesnt work for empty argument list
-#define VA_ARGC_SEQ(                                                         \
-    _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16,   \
-    _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, N, ...) N
 
-#define VA_ARGC(...) VA_ARGC_SEQ( \
-    __VA_ARGS__, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, \
-    15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
-
-
+// keep comma in macro call
 #define COMMA ,
+// execute expression ince
 #define ONCE(...) do { __VA_ARGS__ } while (0)
+// escape seq to reset color to white
 #define NORMCOL "\033[0;37m\n"
+// format file names to equal length
 #define FILESPACE(name) ("                    " + strlen(name))
 
+// size_t format
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define FMT_SIZE "%lu" // 64 bit
 #elif UINTPTR_MAX == 0xffffffff
 #define FMT_SIZE "%u" // 32 bit
 #endif
 
-// macros for error mesages
+// macros for error mesage types
+//invalid operator
 #define err_iop(o, a, b) error_exit( \
     "no operator %s for %s and %s", (o), getTypeName(a), getTypeName(b))
 
+// invalid member
 #define err_imb(a, b) error_exit( \
     "%ss has no member '%s'", getTypeName(a), TOSTR(b))
 
+// invalid argument type
 #define err_iat(a, b, f, t) error_exit( \
     "invalid argument type '%s' for %s.%s: expected '%s'", getTypeName(b), \
     getTypeName(a), (f), typeName(t))
 
+// invalid argument type
 #define err_iac(f, a, c) error_exit( \
     "invalid argument count for %s: got " FMT_SIZE "; expected %i", (f), \
     (a).size(), (c))
 
+// invalid argument type on subfunction
 #define err_iac2(a, b, f, c) error_exit( \
     "invalid argument count for %s.%s: got " FMT_SIZE "; expected %i", \
     getTypeName(a), (f), (b).size(), (c))
 
+// range error
 #define err_rng(a, b) error_exit( \
     "%s index '%s' out of range", getTypeName(a), TOSTR(b))
+
 
 // bold red error
 #define error(a, ...) fprintf(stderr, \
@@ -111,7 +115,8 @@ extern bool debg;
 
 #define wait_enter() ONCE(stdin = freopen(NULL, "r", stdin); getchar();)
 
-#if _DEBUG_ & 1 << 3
+// parent func info on error
+#if _P_ERROR_
 #define ERR_PARAM , const char* func , const char* file , uint line
 #define ERR_ARGS , __func__ , __FILE__ , __LINE__
 #define ERR_STR "error %s%s line %4i %s:\n"
@@ -124,7 +129,7 @@ extern bool debg;
 #endif
 
 // green info
-#if _DEBUG_ & 1 << 0
+#if _INFO_
 #    define INFO(s, ...) fprintf(stderr, \
         "%5i\033[0;32m " s NORMCOL, debug_depth, ##__VA_ARGS__)
 #else
@@ -133,7 +138,7 @@ extern bool debg;
 
 
 // yellow debug
-#if _DEBUG_ & 1 << 1
+#if _DEBUG_
 #    define DEBUG(s, ...) fprintf(stderr, \
     "%5i\033[0;33m " s NORMCOL, debug_depth, ##__VA_ARGS__)
 #else
@@ -141,7 +146,7 @@ extern bool debg;
 #endif
 
 // grey begin / end
-#if _DEBUG_ & 1 << 2
+#if _F_CALLS_
 #    define _BEGIN(func_fmt, func, s, ...)                \
         if (!debg && (debg = true)) fprintf(stderr,       \
             "\033[0;93m%5i\033[0;90m %s%s line %4i "      \
@@ -175,7 +180,7 @@ extern bool debg;
 
 
 // compilation infos
-#define PRINT_STATUS() fprintf(stderr, \
+#define PRINT_STATUS() INFO(                   \
     "compiled: " _DATE_S_ _TIME_S_ _OS_NAME_S_ \
     "\n\n", __DATE__, __TIME__, _OS_NAME_)
 
