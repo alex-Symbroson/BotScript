@@ -141,7 +141,7 @@ bool initBuiltins() {
                     assertT(args[1], T_INT); // x
                     assertT(args[2], T_INT); // y
                 }
-                RaspiBot::Call("write", args);
+                RaspiBot::Call("writeLCD", args);
             } else if(size != 1)
                 err_iac("Bot_write", args, 1);
         }),

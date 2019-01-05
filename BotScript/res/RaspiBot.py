@@ -8,35 +8,21 @@ objs = {}
 def warn(msg, type):
     warnings.warn(msg, type)
 
-def m_cleanup():
-    for obj in objs.values:
-        if hasattr(obj, "cleanup"): obj.cleanup()
-    return True
-
-# remove values with greatest difference and calc arithmetic mean
-def arith(foo, vlen, remove):
-    values = [foo() for i in range(vlen)]
-    arm = sum(values) / vlen
-    # calc difference med <-> values
-    diff = [abs(val - arm) for val in values]
-    # remove elements with greatest difference
-    for i in range(remove): values.pop(diff.index(max(diff)))
-    return sum(values) / vlen
-
 
 try:
     import warnings, raspibot, RPi.GPIO as GPIO
     from serial import Serial, PARITY_EVEN
     from smbus import SMBus
+    from time import sleep
 
     # create components
     objs = {
         "GPIO": GPIO,
-        "Button1": raspibot.button(13, 26, 23),
-        "Button2": raspibot.button(19, 20, 24),
-        "Button3": raspibot.button(16, 21, 25),
+        "Button1": raspibot.Button(13, 26, 23),
+        "Button2": raspibot.Button(19, 20, 24),
+        "Button3": raspibot.Button(16, 21, 25),
         "Display": raspibot.Display(),
-        "SMBus":   raspibot.ADC(SMBus(1)),
+        "ADC":   raspibot.ADC(SMBus(1)),
         "Attiny":  raspibot.AttinyProtocol(Serial('/dev/ttyAMA0', 4800, 8, PARITY_EVEN, 2))
     }
 
@@ -48,48 +34,91 @@ try:
 
 except ImportError as e:
     ISBOT = False
-    warn("\033[0;33mraspibot module couldnt be loaded:\n" + str(e) + "\033[0;37m", Warning)
+    warn("\n\033[1;33mraspibot module couldnt be loaded:\033[0;33m\n" + str(e) + "\033[0;37m", Warning)
+
+
+class BaseMethods:
+
+    def cleanup(_):
+        for obj in objs.values:
+            if hasattr(obj, "cleanup"): obj.cleanup()
+        return True
+
+    def isBot(_): return ISBOT
+
+    # remove values with greatest difference and calc arithmetic mean
+    def arith(_, values, remove):
+        arm = sum(values) / len(values)
+        # calc difference med <-> values
+        diff = [abs(val - arm) for val in values]
+
+        # remove elements with greatest difference
+        for _ in range(remove):
+            i = diff.index(max(diff))
+            values.pop(i)
+            diff.pop(i)
+        return sum(values) / len(values)
 
 
 if ISBOT:
 
-    def m_write(s, x = None, y = None, *args):
-        if y != None: objs["Display"].cursor_goto_xy(int(x), int(y))
-        objs["Display"].write(s)
+    class Methods(BaseMethods):
 
-    methods = {
-        "cleanup": m_cleanup,
-        "write": m_write,
-        # Serial (Attiny)
-        "setMotors":    lambda l, r: objs["Attiny"].set_motors(l, r), # left, right
-        "setBuzzer":    lambda f, d, v: objs["Attiny"].set_buzzer(f, d, v), # frequency, duration, volume
-        "getEncoders":  lambda : objs["Attiny"].get_encoders(),
-        "resetEncoders":lambda : objs["Attiny"].reset_encoders(),
-        "stopMotors":   lambda : objs["Attiny"].stop_motors(),
-        "stopBuzzer":   lambda : objs["Attiny"].stop_buzzer(),
-        # ADC
-        "getSharp":     arith(lambda i: objs["ADC"].read_channel(i), 8, 4), # 1 - 2
-        "getBattery":   lambda i: objs["ADC"].read_channel(4),
-        # Buttons
-        "setRedLED":    lambda  i, v: objs["Button%i" % i].setRedLED(int(v)),
-        "setGreenLED":  lambda  i, v: objs["Button%i" % i].setGreenLED(int(v)),
-        "waitForBtnPress":  lambda i: objs["Button%i" % i].waitForButtonPress(),
-        "waitForBtnRelease":lambda i: objs["Button%i" % i].waitForButtonRelease(),
-        "waitForBtn":       lambda i: objs["Button%i" % i].waitForButton(),
-        "isBtnPressed":     lambda i: objs["Button%i" % i].isPressed(),
-        "isBot":            lambda  : True
-    }
+    # Display
+        # writeLCD(test, x, y) = ("text", [0 - 15], [0 - 1])
+        def writeLCD(_, s, x = None, y = None, *args):
+            if x != None and y != None: objs["Display"].cursor_goto_xy(int(x), int(y))
+            objs["Display"].write(s)
+
+        clearLCD = objs["Display"].clear # ()
+
+    # Serial (Attiny)
+        # setMotors(left right) = ([0 - 100], [0 - 100])
+        setMotors = objs["Attiny"].set_motors,
+        # setBuzzer(frequency, duration , volume   )
+        #          ([0 - 2^16], [0 - 2^16], [0 - 100])
+        setBuzzer = objs["Attiny"].set_buzzer
+        resetEncoders = objs["Attiny"].reset_encoders # ()
+        stopMotors = objs["Attiny"].stop_motors # ()
+        stopBuzzer = objs["Attiny"].stop_buzzer # ()
+
+        # getEncoders -> [left, right] = ([0 - 100], [0 - 100])
+        def getEncoders(_, opt = None):
+            vals = objs["Attiny"].get_encoders()
+            if opt == "raw": return vals
+            return vals
+
+    # ADC
+        def getSharp(_, i, opt = None): # i = ([1 - 2])
+            # get arith from 4 best of 8 inputs
+            d = arith([objs["ADC"].read_channel(i) for _ in range(8)], 4)
+            if opt == "raw": return d
+
+            # convert data into cm
+            d /= 100
+            #d = (-0.648*d + 7.543)*d*d - 33.0*d + 62.2
+            #d = (-0.155*d + 3.300)*d*d - 24.5*d + 75.5
+            d = (-0.0865*d + 2.000)*d*d - 17.0*d + 61.6
+            return int(d * 1000) / 1000
+
+        def getBattery(_): objs["ADC"].read_channel(4)
+
+    # Buttons
+        # (i, v) = ([1 - 3], [0 - 100])
+        def setRedLED(_, i, v): objs["Button%i" % i].setRedLED(int(v))
+        def setGreenLED(_, i, v): objs["Button%i" % i].setGreenLED(int(v))
+        def waitForBtnPress(_, i): objs["Button%i" % i].waitForButtonPress()
+        def waitForBtnRelease(_, i): objs["Button%i" % i].waitForButtonRelease()
+        def waitForBtn(_, i): objs["Button%i" % i].waitForButton()
+        def isBtnPressed(_, i): objs["Button%i" % i].isPressed()
+
 else:
-    methods = {
-        "cleanup": lambda : True,
-        "isBot": lambda : False
-    }
-
+    class Methods(BaseMethods): pass
 
 def callMethod(method, *args):
-    foo = methods.get(method)
-    # print((method + " " * 15)[:15], args)
-    if foo == None:
+    # print((method + 15*" ")[:15], args)
+    if hasattr(Methods, method):
+        return getattr(Methods, method)(*args)
+    else:
         error = AssertionError("\033[0;31mmethod '%s' not found\033[0;37m" % method)
         raise error
-    return foo(*args)
