@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3.6
 
 # initialized correctly
 ISBOT = True
@@ -36,7 +36,9 @@ except ImportError as e:
     warn("\n\033[1;33mraspibot module couldnt be loaded:\033[0;33m\n" + str(e) + "\033[0;37m", Warning)
 
 
+# Methode available without botlib
 class BaseMethods:
+
     def cleanup(_):
         for key in objs:
             if hasattr(objs[key], "cleanup"): objs[key].cleanup()
@@ -56,6 +58,7 @@ class BaseMethods:
             diff.pop(i)
         return sum(values) / len(values)
 
+    # arithmetic mean from 4 of 6 measured sensor values, one dummy measure
     def getSensor(_, foo):
             return self.arith([foo() for _ in range(7)][1:], 2)
 
@@ -67,10 +70,11 @@ if ISBOT:
     # Display
         # writeLCD(test, x, y) = ("text", [0 - 15], [0 - 1])
         def writeLCD(_, s, x = None, y = None):
-            print("write %i %i %s"%(x,y,s))
-            if x != None and y != None: objs["Display"].cursor_goto_xy(int(x), int(y))
+            if None not in (x, y):
+                objs["Display"].cursor_goto_xy(int(x), int(y))
             objs["Display"].write(s)
 
+        # take defined functions if no conversion / args required
         clearLCD = objs["Display"].clear # ()
 
     # Serial (Attiny)
@@ -91,34 +95,34 @@ if ISBOT:
 
     # ADC
         def getSharp(self, i, opt = None): # i = ([1 - 2])
-            # get arith from 4 best of 8 inputs
-            d = self.getSensor(lambda : objs["ADC"].read_channel(3-i))
+            # read sensor value
+            d = self.getSensor(lambda : objs["ADC"].read_channel(3 - i))
             if opt == "raw": return d
 
             # convert data into cm
-            d /= 100
-            #d = (-0.648*d + 7.543)*d*d - 33.0*d + 62.2
-            #d = (-0.155*d + 3.300)*d*d - 24.5*d + 75.5
-            d = (-0.0865*d + 2.000)*d*d - 17.0*d + 61.6
-            return int(d * 1000) / 1000
+            d /= 100  # less zeros in equation
+            d = (-d/11.56 + 2)*d*d - 17*d + 61.6
+            return int(d * 1000) / 1000  # 3 float digits
 
         def getBattery(_): getSharp(0, "raw")
 
     # Buttons
         # (i, v) = ([1 - 3], [0 - 100])
-        def setRedLED(_, i, v): objs["Button%i" % i].setRedLED(int(v))
-        def setGreenLED(_, i, v): objs["Button%i" % i].setGreenLED(int(v))
-        def waitForBtnPress(_, i): objs["Button%i" % i].waitForButtonPress()
+        def setRedLED(_, i, v):      objs["Button%i" % i].setRedLED(int(v))
+        def setGreenLED(_, i, v):    objs["Button%i" % i].setGreenLED(int(v))
+        def waitForBtnPress(_, i):   objs["Button%i" % i].waitForButtonPress()
         def waitForBtnRelease(_, i): objs["Button%i" % i].waitForButtonRelease()
-        def waitForBtn(_, i): objs["Button%i" % i].waitForButton()
+        def waitForBtn(_, i):        objs["Button%i" % i].waitForButton()
         def isBtnPressed(_, i): return objs["Button%i" % i].isPressed()
 else:
     class _Methods(BaseMethods): pass
 
+
 Methods = _Methods()
 
+# call method from Methods object
 def callMethod(method, *args):
-    # print((method + 15*" ")[:15], args)
+
     if hasattr(Methods, method):
         return getattr(Methods, method)(*args)
     else:
