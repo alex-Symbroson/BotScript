@@ -3,15 +3,12 @@
 #define _BS_EXT_HPP_
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 // Toggles
-#define _DEBUG_ 1    // debug logs
-#define _P_ERROR_ 1  // parent errors
-#define _F_CALLS_ 0  // function calls
-#define _INFO_ 0     // info logs
-#define _ERR_EXIT_ 1 // exit on error
+#define _DEBUG_ 1   // debug logs
+#define _P_ERROR_ 1 // parent errors
+#define _F_CALLS_ 0 // function calls
+#define _INFO_ 0    // info logs
 
 // Statuses
 #define S_INIT 1
@@ -24,31 +21,27 @@
 #define S_ERROR 8
 #define S_FREE 9
 
-//#define BREAK ("\0\0\0\0\1\1\1\1\0"[status])
-//#define RETURN ("\0\0\0\0\0\1\0\1\0")[status])
+// #define BREAK ("\0\0\0\0\1\1\1\1\1\0"[status])
+// #define RETURN ("\0\0\0\0\0\1\0\1\1\0")[status])
 #define BREAK                                                        \
     (status == S_BREAK || status == S_RETURN || status == S_ERROR || \
      status == S_CONTINUE || status == S_STOP)
 #define RETURN (status == S_RETURN || status == S_ERROR || status == S_STOP)
 
 
-#ifndef ISPI
-#    define ISPI false
-#endif
-
 #ifndef ISBOT
-#    define ISBOT false
+#    define ISBOT true
 #endif
 
 
 // clang-format off
 
-extern uint debug_depth;
-extern void Free();
+extern int debug_depth;
 extern bool debg;
+extern void Exit();
 
 
-// keep comma in macro call
+// keep comma in macro calls
 #define COMMA ,
 // execute expression ince
 #define ONCE(...) do { __VA_ARGS__ } while (0)
@@ -103,15 +96,7 @@ extern bool debg;
     "%5i\033[1;33m %s%s line %4i %s\n" a NORMCOL, debug_depth, \
     __FILE__, FILESPACE(__FILE__), __LINE__, __func__, ##__VA_ARGS__)
 
-#define Exit() (status != S_FREE && (Free(), exit(1), 1))
-
-
-#if defined(_ERR_EXIT_) && _ERR_EXIT_ != 0
-#    define error_exit(a, ...) (error(a, ##__VA_ARGS__), Exit())
-#else
-#    define error_exit error
-#endif
-
+#define error_exit(a, ...) (error(a, ##__VA_ARGS__), Exit())
 
 #define wait_enter() ONCE(stdin = freopen(NULL, "r", stdin); getchar();)
 

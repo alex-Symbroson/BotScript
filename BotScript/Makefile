@@ -5,31 +5,29 @@ DIR_SRC   = src/
 DIR_INC   = inc/
 PCH       = headers.hpp
 
-	# check for pi and bot
-ISPI  = $(shell [ -e ispi  ] || echo false > ispi;  cat ispi)
-ISBOT = $(shell [ -e isbot ] || echo false > isbot; cat isbot)
+	# check for pi bot and debug mode
+ISBOT = $(shell [ -e isbot ] || echo true  > isbot; cat isbot)
 ISDBG = $(shell [ -e isdbg ] || echo false > isdbg; cat isdbg)
 
 	# compiler flags
-CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -O1 -fPIE -D ISPI=$(ISPI) -D ISBOT=$(ISBOT)
+CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -O1 -fPIE -D ISBOT=$(ISBOT)
 
 	# linker flags
 LDFLAGS  = -pthread -pie
 
-GLOBDEP = ispi isbot isdbg Makefile
+	# global compile dependencies
+GLOBDEP = isbot isdbg Makefile
 
-ifeq ($(ISPI),true)
-	LDFLAGS += -lwiringPi
-endif
-
+	# link Python and WiringPi
 ifeq ($(ISBOT),true)
 	CFLAGS += $(shell python2.7-config --includes)
-	LDFLAGS += $(shell python2.7-config --libs)
+	LDFLAGS += $(shell python2.7-config --libs) -lwiringPi
 endif
 
+	# debug tools
 ifeq ($(ISDBG),true)
 	CFLAGS += -g # -Invwa
-	LDFLAGS += #nvwa/debug_new.cpp
+	LDFLAGS += # nvwa/debug_new.cpp
 endif
 
 	# clean extensions
