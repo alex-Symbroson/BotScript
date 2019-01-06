@@ -10,7 +10,7 @@ from time import sleep
 
 def _bits(byte):
     return [(0 if (byte & (1 << i)) == 0 else 1) for i in reversed(range(8))]
-
+    return [1 if c == '1' else 0 for c in bin(byte)[2:].zfill(8)]
 
 class Display:
     """Implements the communication protocol for the RaspiBot v2's LCD."""
@@ -65,9 +65,7 @@ class Display:
         GPIO.output(self.rw, 1)
         GPIO.output(self.register_select, 0)
         GPIO.setup(self.d7, GPIO.IN)
-        while not GPIO.input(self.d7):
-            a=1
-            #make it nicer
+        while not GPIO.input(self.d7): pass
         GPIO.setup(self.d7, GPIO.OUT)
 
     def _write_nibble(self, nibble):
@@ -125,12 +123,12 @@ class Display:
         GPIO.output(self.register_select, 0)
         self._write_byte([0, 0, 0, 0, 1, 1, 1, 1])
 
-    def write(self, string):
+    def write(self, string): ## renamed
         """Print a string at the cursor position."""
         # ASCII encoding is probably the closest to the HDS44780's actual
-        # encoding
-        for c in string.encode('ascii'):
-            self.print_codepoint(_bits(ord(c)))
+        ## encoding
+        for c in bytearray(string, "ascii"):
+            self.print_codepoint(_bits(c))
 
     # TODO: figure out a better way to cleanup GPIO instead of letting the
     # user call this manually...

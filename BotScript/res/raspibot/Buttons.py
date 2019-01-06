@@ -1,3 +1,4 @@
+
 import RPi.GPIO as GPIO
 from time import sleep
 
@@ -11,9 +12,9 @@ class Button(object):
         GPIO.setup(self.BUTTON, direction=GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.setup([self.LED_RED, self.LED_GREEN], direction=GPIO.OUT, initial=1)
 
-        # PWM
-        self.led_red = GPIO.PWM(self.LED_RED, 50)
-        self.led_green = GPIO.PWM(self.LED_GREEN, 50)
+        ## PWM
+        self.led_red = GPIO.PWM(self.LED_RED, 80)
+        self.led_green = GPIO.PWM(self.LED_GREEN, 80)
         
         self.led_red.start(100)
         self.led_green.start(100)
@@ -21,16 +22,16 @@ class Button(object):
 
     def setRedLED(self, dc):
         # true or false works as well as 1 or 0. Numbers other than 0 will be interpreted as true
-        #GPIO.output(self.LED_RED, not dc)
+        ## GPIO.output(self.LED_RED, not dc)
 
-        # [0, 100]
+        ## [0, 100]
         self.led_red.ChangeDutyCycle(100 - dc)
 
     def setGreenLED(self, dc):
         # true or false works as well as 1 or 0. Numbers other than 0 will be interpreted as true
-        #GPIO.output(self.LED_GREEN, not dc)
+        ## GPIO.output(self.LED_GREEN, not dc)
 
-        # [0, 100]
+        ## [0, 100]
         self.led_green.ChangeDutyCycle(100 - dc)
 
     def waitForButtonPress(self):

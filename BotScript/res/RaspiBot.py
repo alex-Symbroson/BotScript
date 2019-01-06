@@ -17,7 +17,6 @@ try:
 
     # create components
     objs = {
-        "GPIO": GPIO,
         "Button1": raspibot.Button(13, 26, 23),
         "Button2": raspibot.Button(19, 20, 24),
         "Button3": raspibot.Button(16, 21, 25),
@@ -28,7 +27,7 @@ try:
 
     # initialize components
     obj = objs["Display"]
-    obj.clear()
+    # obj.clear()
     obj.init()
     obj.cursor_goto_xy(0, 0)
 
@@ -38,16 +37,14 @@ except ImportError as e:
 
 
 class BaseMethods:
-
     def cleanup(_):
-        for obj in objs.values:
-            if hasattr(obj, "cleanup"): obj.cleanup()
-        return True
+        for key in objs:
+            if hasattr(objs[key], "cleanup"): objs[key].cleanup()
 
     def isBot(_): return ISBOT
 
     # remove values with greatest difference and calc arithmetic mean
-    def arith(_, values, remove):
+    def arith(_, values, remove=0):
         arm = sum(values) / len(values)
         # calc difference med <-> values
         diff = [abs(val - arm) for val in values]
@@ -59,14 +56,18 @@ class BaseMethods:
             diff.pop(i)
         return sum(values) / len(values)
 
+    def getSensor(_, foo):
+            return self.arith([foo() for _ in range(7)][1:], 2)
+
 
 if ISBOT:
 
-    class Methods(BaseMethods):
+    class _Methods(BaseMethods):
 
     # Display
         # writeLCD(test, x, y) = ("text", [0 - 15], [0 - 1])
-        def writeLCD(_, s, x = None, y = None, *args):
+        def writeLCD(_, s, x = None, y = None):
+            print("write %i %i %s"%(x,y,s))
             if x != None and y != None: objs["Display"].cursor_goto_xy(int(x), int(y))
             objs["Display"].write(s)
 
@@ -74,7 +75,7 @@ if ISBOT:
 
     # Serial (Attiny)
         # setMotors(left right) = ([0 - 100], [0 - 100])
-        setMotors = objs["Attiny"].set_motors,
+        setMotors = objs["Attiny"].set_motors
         # setBuzzer(frequency, duration , volume   )
         #          ([0 - 2^16], [0 - 2^16], [0 - 100])
         setBuzzer = objs["Attiny"].set_buzzer
@@ -86,12 +87,12 @@ if ISBOT:
         def getEncoders(_, opt = None):
             vals = objs["Attiny"].get_encoders()
             if opt == "raw": return vals
-            return vals
+            return vals/22.5
 
     # ADC
-        def getSharp(_, i, opt = None): # i = ([1 - 2])
+        def getSharp(self, i, opt = None): # i = ([1 - 2])
             # get arith from 4 best of 8 inputs
-            d = arith([objs["ADC"].read_channel(i) for _ in range(8)], 4)
+            d = self.getSensor(lambda : objs["ADC"].read_channel(3-i))
             if opt == "raw": return d
 
             # convert data into cm
@@ -101,7 +102,7 @@ if ISBOT:
             d = (-0.0865*d + 2.000)*d*d - 17.0*d + 61.6
             return int(d * 1000) / 1000
 
-        def getBattery(_): objs["ADC"].read_channel(4)
+        def getBattery(_): getSharp(0, "raw")
 
     # Buttons
         # (i, v) = ([1 - 3], [0 - 100])
@@ -110,10 +111,11 @@ if ISBOT:
         def waitForBtnPress(_, i): objs["Button%i" % i].waitForButtonPress()
         def waitForBtnRelease(_, i): objs["Button%i" % i].waitForButtonRelease()
         def waitForBtn(_, i): objs["Button%i" % i].waitForButton()
-        def isBtnPressed(_, i): objs["Button%i" % i].isPressed()
-
+        def isBtnPressed(_, i): return objs["Button%i" % i].isPressed()
 else:
-    class Methods(BaseMethods): pass
+    class _Methods(BaseMethods): pass
+
+Methods = _Methods()
 
 def callMethod(method, *args):
     # print((method + 15*" ")[:15], args)

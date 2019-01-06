@@ -1,12 +1,15 @@
 
-from RaspiBot import Methods
+from RaspiBot import Methods, sleep, objs
 
 class Btn:
 
-    def __init__(self, red, green, next = None):
+    def __init__(self, red, green, nextid = None):
+        print(nextid)
         self.red   = red
         self.green = green
-        self.next  = next
+        self.next  = nextid
+
+    def __str__(self): return "Btn(%i,%i,%i)"%(self.red,self.green,self.next)
 
 class State:
 
@@ -18,14 +21,14 @@ class State:
 
     def run(self):
         Methods.clearLCD()
-        Methods.writeLCD(state.title, 0, 0)
-        Methods.writeLCD(state.param, 0, 1)
+        Methods.writeLCD(self.title, 0, 0)
+        Methods.writeLCD(self.param, 0, 1)
 
-        for i in range(len(state.btns)):
-            methods.setRedLED(i, state.btns[i].red)
-            methods.setGreenLED(i, state.btns[i].green)
+        for i in range(len(self.btns)):
+            Methods.setRedLED(i + 1, self.btns[i].red)
+            Methods.setGreenLED(i + 1, self.btns[i].green)
 
-        self.func(self)
+        return self.func(self)
 
 class StateMachine:
     state = {}
@@ -33,56 +36,83 @@ class StateMachine:
 
     getStates = range
 
-    def setState(self, id, *args):
-        self.state[id] = State(*args)
+    def setState(self, id, *StateArgs):
+        self.state[id] = State(*StateArgs)
         self.states += 1
         return self.states
 
     def run(self, id):
-        while id: id = self.state[id].run()
+        while id != None: id = self.state[id].run()
 
 
 def select(state):
-
+    
     while True:
-        if Methods.isButtonPressed(1): return btns[0].next
-        if Methods.isButtonPressed(2): return btns[1].next
-        if Methods.isButtonPressed(3): return btns[2].next
+        
+        if Methods.isBtnPressed(1):
+            Methods.waitForBtnRelease(1)
+            return state.btns[0].next
+        
+        if Methods.isBtnPressed(2): 
+            Methods.waitForBtnRelease(2)
+            return state.btns[1].next
+        
+        if Methods.isBtnPressed(3): 
+            Methods.waitForBtnRelease(3)
+            return state.btns[2].next
+        
         sleep(0.1)
 
-def cal_sharps():
+def cal_sharps(state):
     i = 0
     sharp = 1
+    
     while True:
-        if Methods.isButtonPressed(1):
+        
+        if Methods.isBtnPressed(1):
             sharp = 1
             Methods.writeLCD("left ", 5, 0)
-        if Methods.isButtonPressed(2):
+            Methods.waitForBtnRelease(1)
+            
+        if Methods.isBtnPressed(2):
             sharp = 2
             Methods.writeLCD("right", 5, 0)
-        if Methods.isButtonPressed(3): return btns[2].next
+            Methods.waitForBtnRelease(2)
+            
+        if Methods.isBtnPressed(3):  
+            Methods.waitForBtnRelease(3)
+            return state.btns[2].next
 
-        if i % 10 == 0:
-            Methods.writeLCD("%i" % Methods.getSharp(1, "raw"), 12, 0)
+        if i % 8 == 0:
+            Methods.writeLCD("%i" % Methods.getSharp(sharp, "raw"), 12, 0)
 
         sleep(0.1)
         i += 1
 
-def cal_radenc():
+def cal_radenc(state):
     time = 1
+    
     while True:
-        if Methods.isButtonPressed(1):
+        
+        if Methods.isBtnPressed(1):
             time = (time + 1) % 10
             Methods.writeLCD("%i" % time, 5, 1)
-        if Methods.isButtonPressed(2):
+            Methods.waitForBtnRelease(1)
+            
+        if Methods.isBtnPressed(2):
             Methods.writeLCD("l: ---- r: ---- ", 0, 0)
+            Methods.waitForBtnRelease(2)
+            
             Methods.resetEncoders()
             Methods.setMotors(50, 50)
             sleep(time)
+            
             Methods.stopMotors()
-            Methods.writeLCD("l:%5i r:%5i" % Methods.getEncoders(1, "raw"), 0, 0)
+            Methods.writeLCD("l:%5i r:%5i" % tuple(Methods.getEncoders("raw")), 0, 0)
 
-        if Methods.isButtonPressed(3): return btns[2].next
+        if Methods.isBtnPressed(3):  
+            Methods.waitForBtnRelease(3)
+            return state.btns[2].next
 
         sleep(0.1)
 
@@ -101,11 +131,11 @@ Calibrate.setState(S_C_IRS, "      sharp",     "left right     x",
 )
 
 Calibrate.setState(S_C_RNC, "l:      r:      ",  "time 1s start x",
-    [Btn(100, 100), Btn(0, 100), Btn(100, 0)], cal_radenc
+    [Btn(100, 100), Btn(0, 100), Btn(100, 0, S_START)], cal_radenc
 )
 
 Calibrate.setState(S_EXIT, "", "",
-    [Btn(0, 0), Btn(0, 0), Btn(0, 0)], lambda : False
+    [Btn(0, 0), Btn(0, 0), Btn(0, 0)], lambda _: Methods.cleanup()
 )
 
 Calibrate.run(S_START)
