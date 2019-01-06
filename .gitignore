@@ -27,7 +27,7 @@
 *.exe
 *.out
 *.app
-
+BotScript
 
 #   hidden folders / files
 .*

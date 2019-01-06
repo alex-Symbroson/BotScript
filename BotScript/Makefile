@@ -31,10 +31,10 @@ ifeq ($(ISDBG),true)
 endif
 
 	# clean extensions
-FILES_CLEAN = *.o
+FILES_CLEAN = $(DIR_BUILD) $(DIR_INC)*.gch $(OUTPUT) */*.pyc */*/*.pyc
 
 	# output file name
-OUTPUT = main
+OUTPUT = BotScript
 
 	# list of source files
 SRC = $(wildcard $(DIR_SRC)*.cpp)
@@ -49,18 +49,20 @@ OBJ = $(patsubst $(DIR_SRC)%,$(DIR_BUILD)%,$(foreach source, $(basename $(SRC)),
 .SECONDARY: $(OBJECTS_NORMAL)
 
 	# define phony targets for make commands
-.PHONY: all all_init clean run
+.PHONY: all run clean all_init program
 
-all: all_init $(DIR_INC)$(PCH).gch $(OUTPUT).out
+all: all_init program
 	@printf "\nCompilation done - No Errors.\n"
 
 all_init:
 	@echo "pi: $(ISPI) bot: $(ISBOT) dbg:$(ISDBG)"
-	@printf "\nbasepth: $(foreach name, $(basename $(notdir $(SRC))), $(DIR_BUILD)$(name).o)\n"
-	@printf "\n#### compiling project\n"
+	@printf "\n#### initialize project\n"
 	mkdir -p $(DIR_BUILD)
 
-%.out: $(OBJ) $(GLOBDEP)
+program: $(DIR_INC)$(PCH).gch $(OUTPUT)
+	@printf "\n#### compiling project\n"
+
+$(OUTPUT): $(OBJ) $(GLOBDEP)
 	@printf "\n#### linking project\n"
 	g++ $(OBJ) -o $@ $(LDFLAGS)
 
@@ -73,9 +75,9 @@ $(DIR_BUILD)%.o: $(DIR_SRC)%.cpp $(HDR) $(GLOBDEP)
 	g++ -o $@ -c $(CFLAGS) $<
 
 run: all
-	@printf "\n#### executing $(OUTPUT).out\n"
-	./$(OUTPUT).out $(ARGS)
+	@printf "\n#### executing $(OUTPUT)\n"
+	./$(OUTPUT) $(ARGS)
 
 clean:
 	@printf "\n#### cleaning project\n"
-	rm -f $(DIR_BUILD)*.o $(DIR_INC)*.gch $(OUTPUT).out */*.pyc */*/*.pyc
+	rm -rf $(FILES_CLEAN)
