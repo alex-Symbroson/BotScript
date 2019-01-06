@@ -7,17 +7,18 @@ func main = {
     Bot_SetGreenLED(2, 0);
 };
 
-// max velocity
-int vmax = 50;
+int vmax = 50; // max velocity
+int dmax = 30; // max distance -> v = 40
+int dmin = 10; // min distance -> v < 0
 
 // returns velocity relative to sharp distance
 func testSharp = {
     int dist = (Bot_GetSharp(args[0]));
 
-    if(dist < 30) {
-        // v: 30  20  10    0
-        // d: 50  25   0  -25
-        return vmax * (dist - 10) / 20;
+    if(dist < dmax) {
+        // d: 30  20  10    0
+        // v: 50  25   0  -25
+        return vmax * (dist - dmin) / (dmax - dmin);
     } else {
         return vmax;
     };

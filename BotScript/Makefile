@@ -20,8 +20,8 @@ GLOBDEP = isbot isdbg Makefile
 
 	# link Python and WiringPi
 ifeq ($(ISBOT),true)
-	CFLAGS += $(shell python2.7-config --includes)
-	LDFLAGS += $(shell python2.7-config --libs) -lwiringPi
+	CFLAGS += $(shell python3.4-config --includes)
+	LDFLAGS += $(shell python3.4-config --libs) -lwiringPi
 endif
 
 	# debug tools

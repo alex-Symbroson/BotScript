@@ -14,7 +14,7 @@ try:
     from serial import Serial, PARITY_EVEN
     from smbus import SMBus
     from time import sleep
-
+    
     # create components
     objs = {
         "Button1": raspibot.Button(13, 26, 23),

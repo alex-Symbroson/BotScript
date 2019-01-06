@@ -1,7 +1,7 @@
 
 #if ISBOT
 
-#    include <python2.7/Python.h>
+#    include <python3.4/Python.h>
 
 #    define CUSTOM_BEGIN
 #    include "RaspiBot.hpp"
@@ -29,9 +29,9 @@ namespace RaspiBot {
 
         PyObject *sys  = PyImport_ImportModule("sys");
         PyObject *path = PyObject_GetAttrString(sys, "path");
-        PyList_Append(path, PyUnicode_FromString("res"));
+        PyList_Insert(path, 0, PyUnicode_FromString("res"));
 
-        pName   = PyString_FromString("RaspiBot");
+        pName   = PyUnicode_FromString("RaspiBot");
         pModule = PyImport_Import(pName);
         Py_DECREF(pName);
 
@@ -64,7 +64,7 @@ namespace RaspiBot {
         pArgs = PyTuple_New(argc + 1);
 
         // method name
-        pValue = PyString_FromString(func);
+        pValue = PyUnicode_FromString(func);
         PyTuple_SetItem(pArgs, 0, pValue);
 
         for (i = 0; i < argc; ++i) {
@@ -107,7 +107,7 @@ namespace RaspiBot {
         case T_INT: return PyLong_FromLong(getInt(v));
         case T_PIN: return PyLong_FromLong(getPin(v));
         case T_FLT: return PyFloat_FromDouble(getFlt(v));
-        case T_STR: return PyString_FromString(getStr(v).c_str());
+        case T_STR: return PyUnicode_FromString(getStr(v).c_str());
 
         case K_NIL: return Py_None;
         case K_TRU: return Py_True;
@@ -121,13 +121,11 @@ namespace RaspiBot {
     }
 
     PVar toBSVar(PyObject *v) {
-        if (PyInt_CheckExact(v))
-            return newInt(PyInt_AsLong(v));
-        else if (PyLong_CheckExact(v))
+        if (PyLong_Check(v))
             return newInt(PyLong_AsLong(v));
-        else if (PyString_CheckExact(v))
-            return newStr(PyString_AsString(v));
-        else if (PyFloat_CheckExact(v))
+        else if (PyUnicode_Check(v))
+            return newStr(PyUnicode_AsUTF8(v));
+        else if (PyFloat_Check(v))
             return newFlt(PyFloat_AsDouble(v));
         else if (v == Py_True)
             return newBin(true);
