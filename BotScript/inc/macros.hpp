@@ -3,9 +3,10 @@
 #define _BS_EXT_HPP_
 
 #include <stdio.h>
+#include <string.h>
 
 // Toggles
-#define _DEBUG_ 1   // debug logs
+#define _DEBUG_ 0   // debug logs
 #define _P_ERROR_ 1 // parent errors
 #define _F_CALLS_ 0 // function calls
 #define _INFO_ 0    // info logs

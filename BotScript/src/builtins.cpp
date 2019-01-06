@@ -50,19 +50,19 @@ bool initBuiltins() {
 
         DEFFUNC( "println", {
             if (!args.empty())
-                for (PVar& v: args) printf("%s\n", TOSTR(v));
-
+                for (PVar& v: args) printf("%s", TOSTR(v));
+            printf("\n");
             FEND("println", "null");
         }),
 
         DEFFUNC( "input", {
             if (!args.empty())
-                printf("%s", TOSTR(args[0]));
+                for (PVar& v: args) printf("%s", TOSTR(v));
+            fflush(stdout);
 
             string input;
             getline(std::cin, input);
             FEND("input", "%s", input.c_str());
-            fflush(stdout);
             return newStr(input);
         }),
 

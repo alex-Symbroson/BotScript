@@ -674,7 +674,7 @@ string toStr(var_str& v, uint8_t type) {
 
 string toStr(var_lst& v, uint8_t type) {
     string result;
-    char lstEnd;
+    char lstEnd = '0';
     switch ((int)type >= KCNT ? keyType(type) : type) {
     case (uint8_t)-1:
     case T_LST:

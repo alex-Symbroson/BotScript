@@ -273,7 +273,7 @@ void handleFunc(PVar func, PVar args) {
     curScope           = &getFnc(func);
 
     if (curScope->vars["args"])
-        REPVAR(curScope->vars["args"], args);
+        incRef(REPVAR(curScope->vars["args"], args));
     else
         curScope->vars["args"] = incRef(args);
 

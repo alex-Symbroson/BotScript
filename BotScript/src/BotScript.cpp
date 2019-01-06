@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     INFO("file input:\n%s\n", code.c_str());
 
 #if _INFO_
-    uint alloc = collector.size(), delloc;
+    uint alloc = collector.size();
 #endif
 
     // create code scope of content from default or argument file path

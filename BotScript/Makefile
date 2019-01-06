@@ -10,7 +10,7 @@ ISBOT = $(shell [ -e isbot ] || echo true  > isbot; cat isbot)
 ISDBG = $(shell [ -e isdbg ] || echo false > isdbg; cat isdbg)
 
 	# compiler flags
-CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -O1 -fPIE -D ISBOT=$(ISBOT)
+CFLAGS  = -I. -I$(DIR_INC) -Wall -std=c++11 -fPIE -D ISBOT=$(ISBOT)
 
 	# linker flags
 LDFLAGS  = -pthread -pie
@@ -28,6 +28,8 @@ endif
 ifeq ($(ISDBG),true)
 	CFLAGS += -g # -Invwa
 	LDFLAGS += # nvwa/debug_new.cpp
+else
+	CFLAGS += -O1
 endif
 
 	# clean extensions
