@@ -12,7 +12,7 @@ int vmax = 50;
 
 // returns velocity relative to sharp distance
 func testSharp = {
-    int dist = Bot_GetSharp(args[0]);
+    int dist = (Bot_GetSharp(args[0]));
 
     if(dist < 30) {
         // v: 30  20  10    0

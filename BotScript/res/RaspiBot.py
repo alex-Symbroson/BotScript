@@ -59,7 +59,7 @@ class BaseMethods:
         return sum(values) / len(values)
 
     # arithmetic mean from 4 of 6 measured sensor values, one dummy measure
-    def getSensor(_, foo):
+    def getSensor(self, foo):
             return self.arith([foo() for _ in range(7)][1:], 2)
 
 
