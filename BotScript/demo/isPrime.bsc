@@ -1,0 +1,25 @@
+
+func loop = {
+    int num = (input("number: ").toInt());
+    num = (notPrime(num));
+    
+    if(num == 0) {
+        print("prime");
+    } else {
+        println("not prime! Factor ", num);
+    };
+};
+
+func notPrime = {
+	int n = (args[0]);
+
+	int i = 2;
+	while(i * i <= n) {
+        if(n % i == 0) {
+            return i;
+        };
+		i = (i + 1);
+	};
+	return 0;
+};
+

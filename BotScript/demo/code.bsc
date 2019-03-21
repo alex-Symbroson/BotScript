@@ -1,0 +1,39 @@
+//wait for btn2
+func main = {
+    Bot_Write("Welcome :)");
+    Bot_Write("Press 2 to start", 0, 1);
+    Bot_SetGreenLED(2, 100);
+    Bot_WaitForBtn(2);
+    Bot_SetGreenLED(2, 0);
+    
+    Bot_Write("Press 2 to stop", 0, 1);
+    Bot_SetRedLED(2, 100);
+    println();
+};
+
+// int vmax = 60; // max velocity
+// int dmax = 30; // max distance -> v = 40
+// int dmin = 10; // min distance -> v < 0
+
+// returns velocity relative to sharp distance
+func testSharp = {
+    int dist = (Bot_GetSharp(args[0]));
+    
+    if(dist < 40) {
+        // d: 30  20  10    0
+        // v: 
+        return 60 * (dist - 10) / (40 - 10);
+    } else {
+        return 1 * 50;
+    };
+};
+
+func loop = {
+    // set motors depending on sharps
+    Bot_SetMotors(testSharp(1), testSharp(2));
+    // println("left: ", Bot_GetSharp(1), " right: ", Bot_GetSharp(2));
+    println("left: ",    testSharp(1), " right: ",    testSharp(2));
+    if(Bot_IsBtnPressed(2)) { stop(); };
+    println();
+    delay(50);
+};

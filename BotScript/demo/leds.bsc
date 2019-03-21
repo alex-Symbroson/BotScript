@@ -1,0 +1,20 @@
+
+func loop = {
+    Bot_WaitForBtnPress(2);
+       Bot_SetGreenLED(1, 100);
+       Bot_SetGreenLED(2, 100);
+       Bot_SetRedLED(2, 100);
+       Bot_SetRedLED(3, 100);
+    Bot_WaitForBtnRelease(2);
+    
+    if(Bot_IsBtnPressed(3)) { stop(); };
+    
+    Bot_WaitForBtnPress(2);
+       Bot_SetGreenLED(1, 0);
+       Bot_SetGreenLED(2, 0);
+       Bot_SetRedLED(2, 0);
+       Bot_SetRedLED(3, 0);
+    Bot_WaitForBtnRelease(2);
+    
+    if(Bot_IsBtnPressed(3)) { stop(); };
+};
