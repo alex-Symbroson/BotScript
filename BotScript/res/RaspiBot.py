@@ -121,7 +121,8 @@ if ISBOT:
         def waitForBtn(_, i):        objs["Button%i" % i].waitForButton()
         def isBtnPressed(_, i): return objs["Button%i" % i].isPressed()
 else:
-    class _Methods(BaseMethods): pass
+    class _Methods(BaseMethods):
+        def cleanup(_): pass
 
 
 Methods = _Methods()

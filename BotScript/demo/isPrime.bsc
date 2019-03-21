@@ -1,10 +1,12 @@
 
+func notPrime;
+
 func loop = {
     int num = (input("number: ").toInt());
     num = (notPrime(num));
-    
+
     if(num == 0) {
-        print("prime");
+        println("prime");
     } else {
         println("not prime! Factor ", num);
     };
@@ -22,4 +24,3 @@ func notPrime = {
 	};
 	return 0;
 };
-
