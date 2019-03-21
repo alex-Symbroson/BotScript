@@ -39,9 +39,10 @@ except ImportError as e:
 # Methode available without botlib
 class BaseMethods:
 
-    def cleanup(_):
+    def cleanupGPIO(_):
         for key in objs:
             if hasattr(objs[key], "cleanup"): objs[key].cleanup()
+        GPIO.cleanup()
 
     def isBot(_): return ISBOT
 
@@ -67,6 +68,10 @@ if ISBOT:
 
     class _Methods(BaseMethods):
 
+        def cleanup(self):
+            self.stopMotors()
+            self.stopBuzzer()
+            self.cleanupGPIO()
     # Display
         # writeLCD(test, x, y) = ("text", [0 - 15], [0 - 1])
         def writeLCD(_, s, x = None, y = None):
@@ -91,7 +96,7 @@ if ISBOT:
         def getEncoders(_, opt = None):
             vals = objs["Attiny"].get_encoders()
             if opt == "raw": return vals
-            return vals/22.5
+            return (vals[0]/22.5, vals[1]/22.5)
 
     # ADC
         def getSharp(self, i, opt = None): # i = ([1 - 2])
@@ -101,10 +106,11 @@ if ISBOT:
 
             # convert data into cm
             d /= 100  # less zeros in equation
-            d = (-d/11.56 + 2)*d*d - 17*d + 61.6
+            if i == 1: d = (-d/2.065 + 9.62)*d*d - 65.3754*d + 159.2
+            if i == 2: d = (-d/11.56 + 2   )*d*d - 17     *d +  61.6
             return int(d * 1000) / 1000  # 3 float digits
 
-        def getBattery(_): getSharp(0, "raw")
+        def getBattery(self): return self.getSharp(0, "raw")
 
     # Buttons
         # (i, v) = ([1 - 3], [0 - 100])

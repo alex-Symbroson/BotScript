@@ -121,18 +121,18 @@ namespace RaspiBot {
     }
 
     PVar toBSVar(PyObject *v) {
-        if (PyLong_Check(v))
-            return newInt(PyLong_AsLong(v));
-        else if (PyUnicode_Check(v))
-            return newStr(PyUnicode_AsUTF8(v));
-        else if (PyFloat_Check(v))
-            return newFlt(PyFloat_AsDouble(v));
-        else if (v == Py_True)
+        if (v == Py_True)
             return newBin(true);
         else if (v == Py_False)
             return newBin(false);
         else if (v == Py_None)
             return newNil();
+        else if (PyLong_Check(v))
+            return newInt(PyLong_AsLong(v));
+        else if (PyUnicode_Check(v))
+            return newStr(PyUnicode_AsUTF8(v));
+        else if (PyFloat_Check(v))
+            return newFlt(PyFloat_AsDouble(v));
         else
             error_exit(
                 "cannot convert %s to BotScript variable", Py_TYPE(v)->tp_name);

@@ -38,7 +38,7 @@ class StateMachine:
     states = 1
 
     # returns ids to create new states
-    def getStates(num): return range(states, states + num)
+    def getStates(self, num): return range(self.states, self.states + num)
 
     # define state of specific id
     def setState(self, id, *StateArgs):
