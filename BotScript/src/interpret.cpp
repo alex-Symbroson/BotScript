@@ -43,7 +43,7 @@ var_fnc* curScope;
 PVar handleLine(var_lst& line) {
     BEGIN("line=%s", TOSTR(line));
     // reset return value
-    REPVAR(funcResult, incRef(newNil()));
+    REPVAR(funcResult, newNil());
 
     if (line.empty()) {
         END("0 null");
@@ -59,7 +59,7 @@ PVar handleLine(var_lst& line) {
     // handle single-parted control structures
     if (size == 1) {
         if (IDisType(type))
-            REPVAR(funcResult, evalExpr(*it, false));
+            REPVAR(funcResult, evalExpr(*it, true));
         else {
             switch (type) {
             // keywords
@@ -203,6 +203,7 @@ ctrl:
         default: error_exit("invalid line %s", TOSTR(line));
         }
 
+        decRef(res);
         END(" %s", TOSTR(funcResult));
         return funcResult;
 

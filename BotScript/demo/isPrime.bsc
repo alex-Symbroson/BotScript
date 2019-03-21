@@ -3,6 +3,7 @@ func notPrime;
 
 func loop = {
     int num = (input("number: ").toInt());
+    if(num == 0) { stop(); };
     num = (notPrime(num));
 
     if(num == 0) {
