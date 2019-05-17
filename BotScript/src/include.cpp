@@ -188,11 +188,10 @@ long double stod2(const char* s) {
 }
 
 // delay in milliseonds
-void delay(long double time) {
+void delay_ms(long double time) {
     BEGIN("time=%Lf", time);
     time = clock() + round(time * 1000);
-    while (clock() < time)
-        ;
+    while (clock() < time) NOP;
     END();
 }
 

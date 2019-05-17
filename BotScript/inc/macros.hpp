@@ -42,6 +42,7 @@ extern bool debg;
 extern void Exit();
 
 
+#define NOP
 // keep comma in macro calls
 #define COMMA ,
 // execute expression ince

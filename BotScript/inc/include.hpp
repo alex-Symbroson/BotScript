@@ -16,7 +16,7 @@ inline bool isOperator(char c) {
 string replace(string str, string src, string ovr);
 
 // delay in milliseonds
-void delay(long double time);
+void delay_ms(long double time);
 
 // convert number string with radix (RxN) to double
 long double stod2(const char* s);

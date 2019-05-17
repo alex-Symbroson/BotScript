@@ -25,6 +25,12 @@ inline bool isOperator(string s) {
     return operators.find(s) != operators.end();
 }
 
+// delay in milliseonds
+void delay(long double time);
+
+// semi parallel processes (min 10ms delay)
+void do_parallels();
+
 // execute single code line
 PVar handleLine(var_lst& line);
 

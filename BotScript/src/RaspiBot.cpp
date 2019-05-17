@@ -100,6 +100,19 @@ namespace RaspiBot {
         return false;
     }
 
+    int cmp(int a, int b) {
+        return a == b ? 0 : a < b ? -1 : 1;
+    }
+
+    void accelerate_motors() {
+        leftMotor += cmp(leftMotorTarget, leftMotor);
+        rightMotor += cmp(rightMotorTarget, rightMotor);
+        PVar left = newInt(leftMotor), right = newInt(rightMotor);
+        RaspiBot::Call("setMotors", {left, right});
+        delete left;
+        delete right;
+    }
+
     PyObject *toPyVar(PVar &v) {
         switch (getType(v)) {
         case T_NIL: return Py_None;

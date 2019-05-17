@@ -1,6 +1,8 @@
 
 #include "interpret.hpp"
 
+#include "RaspiBot.hpp"
+
 // clang-format off
 #define Op(SYM, NAM, PRI, DIR) { SYM, { NAM, PRI, DIR } }
 // clang-format on
@@ -38,6 +40,29 @@ const uint8_t CtrlType[CCNT - KCNT] = {T_TRM, T_TRM, T_FNC,
 // func return value
 PVar funcResult;
 var_fnc* curScope;
+
+// delay in milliseonds
+void delay(long double time) {
+    BEGIN("time=%Lf", time);
+    time = clock() + round(time * 1000);
+    while (clock() < time) do_parallels();
+    END();
+}
+
+void exec_parallels() {
+    RaspiBot::accelerate_motors();
+}
+
+// semi parallel processes (min 10ms delay)
+void do_parallels() {
+    clock_t cur           = clock() * 1000 / CLOCKS_PER_SEC;
+    static clock_t target = 10 + cur;
+
+    if (cur >= target) {
+        target = 10 + cur;
+        exec_parallels();
+    }
+}
 
 // execute single code line
 PVar handleLine(var_lst& line) {
@@ -262,6 +287,7 @@ void handleScope(PVar scope) {
     BEGIN("var_lst*scope");
     for (auto& line: getFncRaw(scope).func) {
         handleLine(getTrm(line));
+        do_parallels();
         if (BREAK) break;
     }
     END();
