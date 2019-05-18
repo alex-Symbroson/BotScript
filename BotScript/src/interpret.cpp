@@ -42,10 +42,10 @@ PVar funcResult;
 var_fnc* curScope;
 
 // delay in milliseonds
-void delay(long double time) {
+void rdelay_ms(long double time) {
     BEGIN("time=%Lf", time);
-    time = clock() + round(time * 1000);
-    while (clock() < time) do_parallels();
+    time += rclock_ms();
+    while (rclock_ms() < time) do_parallels();
     END();
 }
 
@@ -57,12 +57,11 @@ void exec_parallels() {
 
 // semi parallel processes (min 10ms delay)
 void do_parallels() {
-    clock_t cur           = clock() * 1000 / CLOCKS_PER_SEC;
+    clock_t cur           = rclock_ms();
     static clock_t target = 10 + cur;
 
     if (cur >= target) {
         target = 10 + cur;
-        INFO("clock: %li", cur);
         exec_parallels();
     }
 }

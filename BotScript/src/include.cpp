@@ -4,6 +4,33 @@
 
 #define INF (unsigned)!((var_flt)0)
 
+struct timespec start;
+
+void rtime_init() {
+    clock_gettime(CLOCK_REALTIME, &start);
+}
+
+clock_t rtime(uint f_s, uint f_ns) {
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return f_s * now.tv_sec + now.tv_nsec / f_ns;
+}
+
+clock_t rclock(uint f_s, uint f_ns) {
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return f_s * (now.tv_sec - start.tv_sec) +
+           (now.tv_nsec - start.tv_nsec) / f_ns;
+}
+
+// delay in milliseonds
+void rsys_delay_ms(long double time) {
+    BEGIN("time=%Lf", time);
+    time += rclock_ms();
+    while (rclock_ms() < time) NOP;
+    END();
+}
+
 char* dtos2(long double num, uint8_t rad) {
     // BEGIN("num=%Lf,r=%i", num, rad);
 
@@ -185,14 +212,6 @@ long double stod2(const char* s) {
     if (isneg) res = -res;
     // END("%Lf", res);
     return res;
-}
-
-// delay in milliseonds
-void delay_ms(long double time) {
-    BEGIN("time=%Lf", time);
-    time = clock() + round(time * 1000);
-    while (clock() < time) NOP;
-    END();
 }
 
 // replace all in string

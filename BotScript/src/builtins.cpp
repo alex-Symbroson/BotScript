@@ -70,22 +70,22 @@ bool initBuiltins() {
                 uint8_t type = getType(args[0]);
 
                 if (type == T_INT)
-                    delay(getInt(args[0]));
+                    rdelay_ms(getInt(args[0]));
                 else if (type == T_FLT)
-                    delay(getFlt(args[0]));
+                    rdelay_ms(getFlt(args[0]));
             }
             FEND("delay", "null");
         }),
 
         DEFFUNC( "clock", {
-            FEND("clock", "%s", dtos2(clock() / 1000.0));
-            return newFlt(clock() / 1000.0);
+            FEND("clock", "%s", dtos2(rclock_ms()));
+            return newFlt(rclock_ms());
         }),
 
         DEFFUNC( "random", {
                 // clang-format on
                 var_int res = 0;
-                srand(clock() + rand());
+                srand(rclock_ns() + clock() + rand());
 
                 switch (args.size()) {
                 case 1: res = rand() % getInt(args[0]); break;

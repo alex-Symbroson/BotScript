@@ -14,7 +14,8 @@ uint8_t status  = 0;
 // initialize libraries
 bool Init() {
     status = S_INIT;
-    srand(clock()); // randomize
+    rtime_init();
+    srand(rclock_ns() + clock() + rand());
 
     INFO("init operations");
     if (initOperations()) return true;

@@ -26,7 +26,7 @@ inline bool isOperator(string s) {
 }
 
 // delay in milliseonds
-void delay(long double time);
+void rdelay_ms(long double time);
 
 // semi parallel processes (min 10ms delay)
 void do_parallels();
