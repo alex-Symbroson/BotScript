@@ -9,7 +9,6 @@
 #    define BEGIN(...) BEGIN_1("RaspiBot::", __func__, __VA_ARGS__)
 #    define END(...) END_1("RaspiBot::", __func__, __VA_ARGS__)
 
-
 namespace RaspiBot {
     PVar toBSVar(PyObject *v);
     PyObject *toPyVar(PVar &v);
@@ -18,12 +17,17 @@ namespace RaspiBot {
     PVar res     = NULL;
     bool freeing = false;
 
+    var_int leftMotor, rightMotor, leftMotorTarget, rightMotorTarget;
+
     PVar &getRes() {
         return res;
     }
 
     bool Init() {
         BEGIN();
+
+        leftMotor = leftMotorTarget = rightMotor = rightMotorTarget = 0;
+
         PyObject *pName;
         Py_Initialize();
 
@@ -101,16 +105,17 @@ namespace RaspiBot {
     }
 
     int cmp(int a, int b) {
-        return a == b ? 0 : a < b ? -1 : 1;
+        return a == b ? 0 : (a < b ? -1 : 1);
     }
 
     void accelerate_motors() {
         leftMotor += cmp(leftMotorTarget, leftMotor);
         rightMotor += cmp(rightMotorTarget, rightMotor);
-        PVar left = newInt(leftMotor), right = newInt(rightMotor);
+        PVar left  = incRef(newInt(leftMotor)),
+             right = incRef(newInt(rightMotor));
         RaspiBot::Call("setMotors", {left, right});
-        delete left;
-        delete right;
+        decRef(left);
+        decRef(right);
     }
 
     PyObject *toPyVar(PVar &v) {

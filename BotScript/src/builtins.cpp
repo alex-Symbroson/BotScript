@@ -6,7 +6,6 @@
 #    include "RaspiBot.hpp"
 #endif
 
-
 #define BEGIN(...) BEGIN_1("", __func__, __VA_ARGS__)
 #define END(...) END_1("", __func__, __VA_ARGS__)
 
@@ -170,8 +169,8 @@ bool initBuiltins() {
             if (size == 2) {
                 // getInt(args[0]) *= 1.27; // left  [-100, 100] -> [-127, 127]
                 // getInt(args[1]) *= 1.27; // right [-100, 100] -> [-127, 127]
-                Raspibot::leftMotorTarget = getInt(args[0]);
-                Raspibot::rightMotorTarget = getInt(args[0]);
+                RaspiBot::leftMotorTarget = getInt(args[0]);
+                RaspiBot::rightMotorTarget = getInt(args[0]);
                 // RaspiBot::Call("setMotors", args);
             } else
                 err_iac("Bot_SetMotors", args, 2);

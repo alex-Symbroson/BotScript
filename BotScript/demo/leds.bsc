@@ -1,4 +1,9 @@
 
+func main = {
+    Bot_Write("Welcome :)");
+    Bot_Write("Press Btn2", 0, 1);
+};
+
 func loop = {
     Bot_WaitForBtnPress(2);
        Bot_SetGreenLED(1, 100);

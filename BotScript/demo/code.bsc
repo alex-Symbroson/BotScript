@@ -6,7 +6,7 @@ func main = {
     Bot_WaitForBtn(2);
     Bot_SetGreenLED(2, 0);
     
-    Bot_Write("Press 2 to stop", 0, 1);
+    Bot_Write("Press 2 to stop ", 0, 1);
     Bot_SetRedLED(2, 100);
     println();
 };

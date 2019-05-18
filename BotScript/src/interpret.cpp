@@ -50,7 +50,9 @@ void delay(long double time) {
 }
 
 void exec_parallels() {
+#if ISBOT
     RaspiBot::accelerate_motors();
+#endif // ISBOT
 }
 
 // semi parallel processes (min 10ms delay)
@@ -60,6 +62,7 @@ void do_parallels() {
 
     if (cur >= target) {
         target = 10 + cur;
+        INFO("clock: %li", cur);
         exec_parallels();
     }
 }

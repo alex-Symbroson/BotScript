@@ -4,6 +4,7 @@
 
 #include "include.hpp"
 #include "variables.hpp"
+#include "interpret.hpp"
 
 #define getBltin(NAME) (&builtins[NAME])
 extern unordered_map<string, TBltFunc> builtins;
